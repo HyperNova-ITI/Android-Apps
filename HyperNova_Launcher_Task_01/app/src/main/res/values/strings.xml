@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+
+    <string name="app_name">HyperNova Launcher Dev</string>
+
+    <!-- Registered HyperNova applications -->
+    <string name="app_name_nova_ai">NOVA AI</string>
+    <string name="app_name_navigation">HyperNova Navigation</string>
+    <string name="app_name_media">HyperNova Media</string>
+    <string name="app_name_phone">HyperNova Phone</string>
+    <string name="app_name_climate">HyperNova Climate</string>
+    <string name="app_name_weather">HyperNova Weather</string>
+    <string name="app_name_driver_profile">HyperNova Driver Profile</string>
+    <string name="app_name_settings">HyperNova Settings</string>
+
+    <!-- Application launch results -->
+    <string name="app_not_installed_message">%1$s is not installed</string>
+    <string name="app_no_launch_activity_message">%1$s is installed but has no launchable screen</string>
+    <string name="app_launch_failed_message">Could not open %1$s</string>
+
+    <!-- General application states -->
+    <string name="state_app_not_installed">%1$s is not installed</string>
+    <string name="state_no_launchable_activity">%1$s has no launchable screen</string>
+    <string name="state_service_disconnected">Service not connected</string>
+    <string name="state_connecting">Connecting…</string>
+    <string name="state_ready">Ready</string>
+    <string name="state_service_error">Service error</string>
+
+    <!-- Shared visual text -->
+    <string name="ui_separator" translatable="false">|</string>
+
+    <!-- Status bar -->
+    <string name="system_status_unavailable">SYSTEM</string>
+    <string name="temperature_value_unavailable">--°C</string>
+    <string name="network_value_unavailable">--</string>
+    <string name="driver_default_name">Driver</string>
+
+    <!-- Theme toggle -->
+    <string name="theme_switch_to_dark">Switch to Dark mode</string>
+    <string name="theme_switch_to_light">Switch to Light mode</string>
+
+    <!-- Existing status resources -->
+    <string name="system_ready">SYSTEM</string>
+    <string name="outside_temperature">--°C</string>
+    <string name="network_type">--</string>
+    <string name="driver_name">Driver</string>
+
+    <!-- NOVA branding -->
+    <string name="nova_name">NOVA</string>
+    <string name="nova_ai_suffix">AI</string>
+    <string name="nova_artwork_description">NOVA AI energy orb</string>
+
+    <!-- NOVA states -->
+    <string name="assistant_unavailable_title">Assistant unavailable</string>
+    <string name="assistant_disconnected_title">Assistant disconnected</string>
+    <string name="assistant_connecting_title">Starting NOVA AI</string>
+    <string name="assistant_ready_title">How can I help?</string>
+    <string name="assistant_ready_subtitle">NOVA AI is ready</string>
+    <string name="assistant_service_not_connected">Assistant service not connected</string>
+    <string name="assistant_error_title">Assistant error</string>
+
+    <!-- Existing NOVA layout values -->
+    <string name="nova_greeting">Assistant unavailable</string>
+    <string name="nova_question">Open NOVA AI to continue</string>
+
+    <!-- NOVA actions -->
+    <string name="navigate_home">Navigate Home</string>
+    <string name="play_music">Open Media</string>
+    <string name="set_climate">Open Climate</string>
+    <string name="call_contact">Open Phone</string>
+
+    <!-- AI capabilities -->
+    <string name="on_device_ai">ON-DEVICE AI</string>
+    <string name="private_ai">PRIVATE</string>
+    <string name="offline_ready">OFFLINE READY</string>
+
+    <!-- Navigation -->
+    <string name="navigation_title">NAVIGATION</string>
+    <string name="navigation_no_active_route">No active route</string>
+    <string name="navigation_no_active_route_hint">Navigation is ready</string>
+    <string name="navigation_service_not_connected">Navigation service not connected</string>
+    <string name="navigation_eta_unavailable">ETA: —</string>
+    <string name="navigation_distance_unavailable">—</string>
+    <string name="navigation_arrival_unavailable">Arrival —</string>
+    <string name="navigation_map_description">Navigation preview background</string>
+    <string name="route_position_description">Vehicle position indicator</string>
+
+    <!-- Existing Navigation layout values -->
+    <string name="route_destination">No active route</string>
+    <string name="route_name">Navigation app not connected</string>
+    <string name="route_eta">ETA: —</string>
+    <string name="route_distance">—</string>
+    <string name="route_arrival">Arrival —</string>
+
+    <!-- Media -->
+    <string name="media_title">MEDIA</string>
+    <string name="media_no_active_playback">No media playing</string>
+    <string name="media_no_active_playback_hint">No active playback</string>
+    <string name="media_session_not_connected">MediaSession not connected</string>
+    <string name="media_connecting">Connecting to HyperNova Media…</string>
+    <string name="media_connection_error">Media connection error</string>
+    <string name="media_unknown_title">Unknown track</string>
+    <string name="media_unknown_artist">Unknown artist</string>
+    <string name="media_time_unavailable">--:--</string>
+
+    <!-- Existing Media layout values -->
+    <string name="media_track_title">No media playing</string>
+    <string name="media_artist">Media app not connected</string>
+    <string name="media_elapsed">--:--</string>
+    <string name="media_duration">--:--</string>
+    <string name="album_art_description">Media artwork area</string>
+    <string name="equalizer_description">Media state</string>
+    <string name="previous_track_description">Previous media item</string>
+    <string name="play_pause_description">Play or pause</string>
+    <string name="next_track_description">Next media item</string>
+
+    <!-- Phone -->
+    <string name="phone_title">PHONE</string>
+    <string name="phone_unavailable">Phone unavailable</string>
+    <string name="phone_service_not_connected">Phone service not connected</string>
+    <string name="open_phone">Open Phone</string>
+    <string name="phone_icon_description">Phone application</string>
+    <string name="phone_recent_contact">RECENT CONTACT</string>
+    <string name="phone_call_action">Call</string>
+    <string name="phone_contacts_action">Contacts</string>
+
+    <!-- Climate -->
+    <string name="climate_title">CLIMATE</string>
+    <string name="climate_temperature_unavailable">--°C</string>
+    <string name="climate_service_not_connected">Climate service not connected</string>
+    <string name="open_climate">Open Climate</string>
+    <string name="climate_icon_description">Climate application</string>
+    <string name="climate_fan_unavailable">Fan: —</string>
+    <string name="climate_auto">AUTO</string>
+    <string name="climate_fan">FAN</string>
+    <string name="climate_ac">A/C</string>
+    <string name="climate_recirculation">RECIRC</string>
+    <string name="climate_fan_icon_description">Climate fan</string>
+    <string name="climate_ac_icon_description">Air conditioning</string>
+    <string name="climate_recirculation_icon_description">Air recirculation</string>
+
+    <!-- Weather -->
+    <string name="weather_title">Weather</string>
+    <string name="weather_location_unavailable">Location unavailable</string>
+    <string name="weather_icon_description">Weather application</string>
+
+    <!-- Driver profile -->
+    <string name="driver_title">Driver</string>
+    <string name="driver_profile_label">Profile</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_unavailable">Settings unavailable</string>
+    <string name="settings_not_installed">Not installed</string>
+    <string name="settings_icon_description">Settings application</string>
+
+    <!-- Bottom navigation -->
+    <string name="bottom_nav_home">Home</string>
+    <string name="bottom_nav_navigation">Navigation</string>
+    <string name="bottom_nav_media">Media</string>
+    <string name="bottom_nav_climate">Climate</string>
+    <string name="bottom_nav_nova_ai">NOVA AI</string>
+    <string name="bottom_nav_phone">Phone</string>
+    <string name="bottom_nav_settings">Settings</string>
+
+</resources>

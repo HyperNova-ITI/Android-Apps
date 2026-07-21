@@ -1,0 +1,1549 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_launcher">
+
+    <!-- ====================================================== -->
+    <!-- Status bar                                             -->
+    <!-- ====================================================== -->
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/customStatusBar"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/status_bar_height"
+        android:paddingStart="@dimen/screen_padding"
+        android:paddingEnd="@dimen/screen_padding"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/textSystemState"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/system_status_unavailable"
+            android:textColor="@color/hypernova_success"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <LinearLayout
+            android:id="@+id/temperatureGroup"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginStart="14dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            app:layout_constraintStart_toEndOf="@id/textSystemState">
+
+            <ImageView
+                android:layout_width="@dimen/status_icon_size"
+                android:layout_height="@dimen/status_icon_size"
+                android:contentDescription="@string/temperature_value_unavailable"
+                android:src="@drawable/ic_thermometer" />
+
+            <TextView
+                android:id="@+id/textOutsideTemperature"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:text="@string/temperature_value_unavailable"
+                android:textColor="@color/hypernova_text_primary"
+                android:textSize="13sp" />
+
+        </LinearLayout>
+
+        <TextClock
+            android:id="@+id/textClock"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:format12Hour="h:mm"
+            android:format24Hour="HH:mm"
+            android:textColor="@color/hypernova_text_primary"
+            android:textSize="13sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <LinearLayout
+            android:id="@+id/profileGroup"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <androidx.appcompat.widget.AppCompatImageButton
+                android:id="@+id/buttonThemeToggle"
+                android:layout_width="27dp"
+                android:layout_height="27dp"
+                android:layout_marginEnd="7dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/theme_switch_to_dark"
+                android:padding="5dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_theme_dark"
+                app:tint="@color/hypernova_text_primary" />
+
+            <TextView
+                android:id="@+id/textNetworkType"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/network_value_unavailable"
+                android:textColor="@color/hypernova_text_primary"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:layout_width="@dimen/status_icon_size"
+                android:layout_height="@dimen/status_icon_size"
+                android:layout_marginStart="7dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_wifi" />
+
+            <ImageView
+                android:layout_width="@dimen/status_icon_size"
+                android:layout_height="@dimen/status_icon_size"
+                android:layout_marginStart="6dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_bluetooth" />
+
+            <ImageView
+                android:layout_width="@dimen/status_icon_size"
+                android:layout_height="@dimen/status_icon_size"
+                android:layout_marginStart="6dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_location" />
+
+            <TextView
+                android:id="@+id/textDriverName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="7dp"
+                android:text="@string/driver_default_name"
+                android:textColor="@color/hypernova_text_primary"
+                android:textSize="11sp" />
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/imageDriverAvatar"
+                android:layout_width="@dimen/profile_avatar_size"
+                android:layout_height="@dimen/profile_avatar_size"
+                android:layout_marginStart="6dp"
+                android:contentDescription="@string/driver_default_name"
+                android:scaleType="centerCrop"
+                android:src="@drawable/avatar_ayman"
+                android:visibility="gone"
+                app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.HyperNova.Circle"
+                app:strokeColor="@color/hypernova_text_primary"
+                app:strokeWidth="1dp" />
+
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <View
+        android:id="@+id/statusDivider"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:background="@color/hypernova_border_soft"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/customStatusBar" />
+
+    <!-- ====================================================== -->
+    <!-- Main content                                           -->
+    <!-- ====================================================== -->
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/launcherScrollView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavigationBar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/statusDivider">
+
+        <LinearLayout
+            android:id="@+id/launcherContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/screen_padding"
+            android:paddingTop="6dp"
+            android:paddingEnd="@dimen/screen_padding"
+            android:paddingBottom="10dp">
+
+            <!-- ================================================== -->
+            <!-- NOVA hero                                          -->
+            <!-- ================================================== -->
+
+            <!-- ================================================== -->
+            <!-- Navigation and Media                               -->
+            <!-- ================================================== -->
+
+            <LinearLayout
+                android:id="@+id/novaHeroSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="24dp"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="@dimen/nova_brand_icon_width"
+                        android:layout_height="@dimen/nova_brand_icon_height"
+                        android:adjustViewBounds="true"
+                        android:contentDescription="@string/nova_name"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/nova_ai_orb" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:text="@string/nova_name"
+                        android:textColor="@color/hypernova_text_primary"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="5dp"
+                        android:text="@string/nova_ai_suffix"
+                        android:textColor="@color/hypernova_cyan"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/textNovaGreeting"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="@string/assistant_unavailable_title"
+                    android:textColor="@color/hypernova_text_primary"
+                    android:textSize="28sp" />
+
+                <TextView
+                    android:id="@+id/textNovaQuestion"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="-3dp"
+                    android:gravity="center"
+                    android:text="@string/nova_question"
+                    android:textColor="@color/hypernova_text_secondary"
+                    android:textSize="16sp" />
+
+                <!-- First NOVA action row -->
+
+                <ImageView
+                    android:id="@+id/imageNovaOrb"
+                    android:layout_width="@dimen/nova_orb_width"
+                    android:layout_height="@dimen/nova_orb_height"
+                    android:adjustViewBounds="true"
+                    android:contentDescription="@string/nova_artwork_description"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/nova_ai_orb" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="40dp"
+                    android:layout_marginEnd="40dp"
+                    android:orientation="horizontal">
+
+                    <androidx.appcompat.widget.AppCompatTextView
+                        android:id="@+id/buttonNavigateHome"
+                        android:layout_width="0dp"
+                        android:layout_height="@dimen/action_button_height"
+                        android:layout_marginEnd="4dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_action_button"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:text="@string/navigate_home"
+                        android:textColor="@color/hypernova_text_dark"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <androidx.appcompat.widget.AppCompatTextView
+                        android:id="@+id/buttonPlayMusic"
+                        android:layout_width="0dp"
+                        android:layout_height="@dimen/action_button_height"
+                        android:layout_marginStart="4dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_action_button"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:text="@string/play_music"
+                        android:textColor="@color/hypernova_text_dark"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+
+                </LinearLayout>
+
+                <!-- Second NOVA action row -->
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="40dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginEnd="40dp"
+                    android:orientation="horizontal">
+
+                    <androidx.appcompat.widget.AppCompatTextView
+                        android:id="@+id/buttonSetClimate"
+                        android:layout_width="0dp"
+                        android:layout_height="@dimen/action_button_height"
+                        android:layout_marginEnd="4dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_action_button"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:text="@string/set_climate"
+                        android:textColor="@color/hypernova_text_dark"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <androidx.appcompat.widget.AppCompatTextView
+                        android:id="@+id/buttonCallContact"
+                        android:layout_width="0dp"
+                        android:layout_height="@dimen/action_button_height"
+                        android:layout_marginStart="4dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_action_button"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:text="@string/call_contact"
+                        android:textColor="@color/hypernova_text_dark"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <!-- Capability row -->
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="22dp"
+                    android:layout_marginTop="5dp"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:layout_width="@dimen/capability_dot_size"
+                        android:layout_height="@dimen/capability_dot_size"
+                        android:background="@drawable/bg_capability_dot" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:text="@string/on_device_ai"
+                        android:textColor="@color/hypernova_text_secondary"
+                        android:textSize="10sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginEnd="12dp"
+                        android:text="|"
+                        android:textColor="@color/hypernova_divider"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/private_ai"
+                        android:textColor="@color/hypernova_text_secondary"
+                        android:textSize="10sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginEnd="12dp"
+                        android:text="|"
+                        android:textColor="@color/hypernova_divider"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/offline_ready"
+                        android:textColor="@color/hypernova_text_secondary"
+                        android:textSize="10sp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/navigationMediaRow"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/dashboard_row_height"
+                android:layout_marginTop="@dimen/section_spacing"
+                android:baselineAligned="false"
+                android:orientation="horizontal">
+
+                <!-- Navigation card -->
+
+                <FrameLayout
+                    android:id="@+id/navigationCard"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_dashboard_card"
+                    android:clickable="true"
+                    android:clipToOutline="true"
+                    android:focusable="true">
+
+                    <!-- Hidden until a real route preview is received -->
+
+                    <ImageView
+                        android:id="@+id/imageNavigationMap"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:alpha="0.82"
+                        android:contentDescription="@string/navigation_map_description"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/navigation_map_bg"
+                        android:visibility="invisible" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="top|start"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/navigation_title"
+                        android:textColor="@color/hypernova_text_primary"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <!-- Hidden until a real vehicle position is received -->
+
+                    <ImageView
+                        android:id="@+id/imageVehicleMarker"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:layout_gravity="bottom|start"
+                        android:layout_marginStart="92dp"
+                        android:layout_marginBottom="59dp"
+                        android:contentDescription="@string/route_position_description"
+                        android:src="@drawable/ic_route_arrow"
+                        android:visibility="gone" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/route_info_height"
+                        android:layout_gravity="bottom"
+                        android:background="@drawable/bg_route_info_overlay"
+                        android:orientation="vertical"
+                        android:paddingStart="11dp"
+                        android:paddingTop="5dp"
+                        android:paddingEnd="11dp"
+                        android:paddingBottom="5dp">
+
+                        <TextView
+                            android:id="@+id/textRouteDestination"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/navigation_no_active_route"
+                            android:textColor="@color/hypernova_text_primary"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/textRouteName"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:text="@string/navigation_service_not_connected"
+                            android:textColor="@color/hypernova_cyan"
+                            android:textSize="11sp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="0dp"
+                            android:layout_marginTop="3dp"
+                            android:layout_weight="1"
+                            android:gravity="bottom"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/textRouteEta"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/navigation_eta_unavailable"
+                                android:textColor="@color/hypernova_text_primary"
+                                android:textSize="9sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="|"
+                                android:textColor="@color/hypernova_border"
+                                android:textSize="10sp" />
+
+                            <TextView
+                                android:id="@+id/textRouteDistance"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="0.75"
+                                android:gravity="center"
+                                android:text="@string/navigation_distance_unavailable"
+                                android:textColor="@color/hypernova_text_primary"
+                                android:textSize="9sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="|"
+                                android:textColor="@color/hypernova_border"
+                                android:textSize="10sp" />
+
+                            <TextView
+                                android:id="@+id/textRouteArrival"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1.2"
+                                android:gravity="end"
+                                android:text="@string/navigation_arrival_unavailable"
+                                android:textColor="@color/hypernova_text_primary"
+                                android:textSize="9sp" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                </FrameLayout>
+
+                <!-- Media card -->
+
+                <LinearLayout
+                    android:id="@+id/mediaCard"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="4dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_dashboard_card"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:paddingStart="10dp"
+                    android:paddingTop="7dp"
+                    android:paddingEnd="10dp"
+                    android:paddingBottom="7dp">
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="20dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="start|center_vertical"
+                            android:text="@string/media_title"
+                            android:textColor="@color/hypernova_text_primary"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <ImageView
+                            android:id="@+id/imageMediaEqualizer"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_gravity="end|center_vertical"
+                            android:alpha="0.45"
+                            android:contentDescription="@string/equalizer_description"
+                            android:src="@drawable/ic_equalizer" />
+
+                    </FrameLayout>
+
+                    <ImageView
+                        android:id="@+id/imageAlbumArtwork"
+                        android:layout_width="@dimen/media_album_size"
+                        android:layout_height="@dimen/media_album_size"
+                        android:layout_marginTop="1dp"
+                        android:background="@drawable/bg_dashboard_card"
+                        android:clipToOutline="true"
+                        android:contentDescription="@string/album_art_description"
+                        android:scaleType="centerCrop"
+                        android:visibility="invisible" />
+
+                    <TextView
+                        android:id="@+id/textMediaTrackTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:ellipsize="end"
+                        android:gravity="center"
+                        android:maxLines="1"
+                        android:text="@string/media_no_active_playback"
+                        android:textColor="@color/hypernova_text_primary"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/textMediaArtist"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:gravity="center"
+                        android:maxLines="1"
+                        android:text="@string/media_session_not_connected"
+                        android:textColor="@color/hypernova_text_secondary"
+                        android:textSize="10sp" />
+
+                    <!-- Media progress -->
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="15dp"
+                        android:layout_marginTop="2dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/textMediaElapsed"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/media_time_unavailable"
+                            android:textColor="@color/hypernova_text_secondary"
+                            android:textSize="8sp" />
+
+                        <FrameLayout
+                            android:id="@+id/mediaProgressTrack"
+                            android:layout_width="0dp"
+                            android:layout_height="@dimen/media_progress_height"
+                            android:layout_marginStart="5dp"
+                            android:layout_marginEnd="5dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_progress_track">
+
+                            <View
+                                android:id="@+id/mediaProgressFill"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:background="@drawable/bg_progress_fill" />
+
+                        </FrameLayout>
+
+                        <TextView
+                            android:id="@+id/textMediaDuration"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/media_time_unavailable"
+                            android:textColor="@color/hypernova_text_secondary"
+                            android:textSize="8sp" />
+
+                    </LinearLayout>
+
+                    <!-- Media controls -->
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:id="@+id/buttonMediaPrevious"
+                            android:layout_width="@dimen/media_control_icon_size"
+                            android:layout_height="@dimen/media_control_icon_size"
+                            android:alpha="0.45"
+                            android:clickable="true"
+                            android:contentDescription="@string/previous_track_description"
+                            android:focusable="true"
+                            android:padding="2dp"
+                            android:src="@drawable/ic_previous" />
+
+                        <ImageView
+                            android:id="@+id/buttonMediaPlayPause"
+                            android:layout_width="@dimen/media_play_button_size"
+                            android:layout_height="@dimen/media_play_button_size"
+                            android:layout_marginStart="22dp"
+                            android:layout_marginEnd="22dp"
+                            android:alpha="0.45"
+                            android:background="@drawable/bg_play_button"
+                            android:clickable="true"
+                            android:contentDescription="@string/play_pause_description"
+                            android:focusable="true"
+                            android:padding="7dp"
+                            android:src="@drawable/ic_play" />
+
+                        <ImageView
+                            android:id="@+id/buttonMediaNext"
+                            android:layout_width="@dimen/media_control_icon_size"
+                            android:layout_height="@dimen/media_control_icon_size"
+                            android:alpha="0.45"
+                            android:clickable="true"
+                            android:contentDescription="@string/next_track_description"
+                            android:focusable="true"
+                            android:padding="2dp"
+                            android:src="@drawable/ic_next" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- ================================================== -->
+            <!-- Phone and Climate                                  -->
+            <!-- ================================================== -->
+
+            <LinearLayout
+                android:id="@+id/phoneClimateRow"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/phone_climate_row_height"
+                android:layout_marginTop="@dimen/section_spacing"
+                android:baselineAligned="false"
+                android:orientation="horizontal">
+
+                <!-- Phone card -->
+
+                <LinearLayout
+                    android:id="@+id/phoneCard"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_dashboard_card"
+                    android:clickable="true"
+                    android:clipToOutline="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:orientation="vertical"
+                    android:paddingStart="12dp"
+                    android:paddingTop="9dp"
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="10dp">
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="22dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="start|center_vertical"
+                            android:text="@string/phone_title"
+                            android:textColor="@color/hypernova_text_primary"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <ImageView
+                            android:id="@+id/imagePhoneConnection"
+                            android:layout_width="19dp"
+                            android:layout_height="19dp"
+                            android:layout_gravity="end|center_vertical"
+                            android:alpha="0.55"
+                            android:contentDescription="@string/phone_icon_description"
+                            android:src="@drawable/ic_bluetooth"
+                            app:tint="@color/hypernova_cyan" />
+
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_marginTop="5dp"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <FrameLayout
+                            android:layout_width="58dp"
+                            android:layout_height="58dp"
+                            android:layout_marginEnd="12dp">
+
+                            <com.google.android.material.imageview.ShapeableImageView
+                                android:id="@+id/imagePhoneContactAvatar"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:contentDescription="@string/phone_icon_description"
+                                android:scaleType="centerCrop"
+                                android:src="@drawable/avatar_ayman"
+                                android:visibility="invisible"
+                                app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.HyperNova.Circle"
+                                app:strokeColor="@color/hypernova_cyan"
+                                app:strokeWidth="1dp" />
+
+                            <ImageView
+                                android:id="@+id/imagePhonePlaceholder"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="@drawable/bg_play_button"
+                                android:contentDescription="@string/phone_icon_description"
+                                android:padding="16dp"
+                                android:src="@drawable/ic_phone"
+                                app:tint="@color/hypernova_cyan" />
+
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/textPhonePreviewLabel"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                android:text="@string/phone_recent_contact"
+                                android:textColor="@color/hypernova_text_secondary"
+                                android:textSize="9sp"
+                                android:visibility="gone" />
+
+                            <TextView
+                                android:id="@+id/textPhoneTitle"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                android:text="@string/phone_unavailable"
+                                android:textColor="@color/hypernova_text_primary"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/textPhoneStatus"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="3dp"
+                                android:ellipsize="end"
+                                android:maxLines="2"
+                                android:text="@string/phone_service_not_connected"
+                                android:textColor="@color/hypernova_text_secondary"
+                                android:textSize="10sp" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/action_button_height"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/buttonOpenPhone"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_marginEnd="4dp"
+                            android:layout_weight="1"
+                            android:alpha="0.45"
+                            android:background="@drawable/bg_secondary_action"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:text="@string/phone_call_action"
+                            android:textColor="@color/hypernova_cyan"
+                            android:textSize="10sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/buttonPhoneContacts"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_marginStart="4dp"
+                            android:layout_weight="1"
+                            android:alpha="0.45"
+                            android:background="@drawable/bg_secondary_action"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:text="@string/phone_contacts_action"
+                            android:textColor="@color/hypernova_cyan"
+                            android:textSize="10sp"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <!-- Climate card -->
+
+                <LinearLayout
+                    android:id="@+id/climateCard"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="4dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_dashboard_card"
+                    android:clickable="true"
+                    android:clipToOutline="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:paddingStart="12dp"
+                    android:paddingTop="9dp"
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="8dp">
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="22dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="start|center_vertical"
+                            android:text="@string/climate_title"
+                            android:textColor="@color/hypernova_text_primary"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_gravity="end|center_vertical"
+                            android:alpha="0.55"
+                            android:contentDescription="@string/climate_fan_icon_description"
+                            android:padding="2dp"
+                            android:scaleType="centerInside"
+                            android:src="@drawable/ic_climate_fan"
+                            app:tint="@color/hypernova_text_secondary" />
+
+                    </FrameLayout>
+
+                    <TextView
+                        android:id="@+id/textClimateTemperature"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:gravity="center"
+                        android:text="@string/climate_temperature_unavailable"
+                        android:textColor="@color/hypernova_text_primary"
+                        android:textSize="43sp" />
+
+                    <TextView
+                        android:id="@+id/textClimateFan"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="-3dp"
+                        android:gravity="center"
+                        android:text="@string/climate_fan_unavailable"
+                        android:textColor="@color/hypernova_text_secondary"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:id="@+id/textClimateStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:ellipsize="end"
+                        android:gravity="center"
+                        android:maxLines="1"
+                        android:text="@string/climate_service_not_connected"
+                        android:textColor="@color/hypernova_text_secondary"
+                        android:textSize="9sp" />
+
+                    <TextView
+                        android:id="@+id/textClimateAuto"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:alpha="0.45"
+                        android:gravity="center"
+                        android:text="@string/climate_auto"
+                        android:textColor="@color/hypernova_cyan"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_marginTop="5dp"
+                        android:layout_weight="1"
+                        android:gravity="bottom|center_horizontal"
+                        android:orientation="horizontal">
+
+                        <!-- Fan control -->
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="vertical">
+
+                            <ImageView
+                                android:layout_width="28dp"
+                                android:layout_height="0dp"
+                                android:layout_weight="1"
+                                android:alpha="0.45"
+                                android:contentDescription="@string/climate_fan_icon_description"
+                                android:padding="3dp"
+                                android:scaleType="centerInside"
+                                android:src="@drawable/ic_climate_fan"
+                                app:tint="@color/hypernova_cyan" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:alpha="0.45"
+                                android:gravity="center"
+                                android:text="@string/climate_fan"
+                                android:textColor="@color/hypernova_cyan"
+                                android:textSize="9sp" />
+
+                        </LinearLayout>
+
+                        <!-- Air conditioning control -->
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="vertical">
+
+                            <ImageView
+                                android:layout_width="28dp"
+                                android:layout_height="0dp"
+                                android:layout_weight="1"
+                                android:alpha="0.45"
+                                android:contentDescription="@string/climate_ac_icon_description"
+                                android:padding="3dp"
+                                android:scaleType="centerInside"
+                                android:src="@drawable/ic_climate_snowflake"
+                                app:tint="@color/hypernova_cyan" />
+
+                            <TextView
+                                android:id="@+id/buttonOpenClimate"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:alpha="0.45"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:gravity="center"
+                                android:text="@string/climate_ac"
+                                android:textColor="@color/hypernova_cyan"
+                                android:textSize="9sp" />
+
+                        </LinearLayout>
+
+                        <!-- Air recirculation replaces seat heating -->
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="vertical">
+
+                            <ImageView
+                                android:layout_width="30dp"
+                                android:layout_height="0dp"
+                                android:layout_weight="1"
+                                android:alpha="0.45"
+                                android:contentDescription="@string/climate_recirculation_icon_description"
+                                android:padding="2dp"
+                                android:scaleType="centerInside"
+                                android:src="@drawable/ic_climate_recirculation"
+                                app:tint="@color/hypernova_text_primary" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:alpha="0.45"
+                                android:gravity="center"
+                                android:text="@string/climate_recirculation"
+                                android:textColor="@color/hypernova_text_secondary"
+                                android:textSize="8sp" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+
+            <!-- ================================================== -->
+            <!-- Weather, Driver and Settings quick cards           -->
+            <!-- ================================================== -->
+
+            <LinearLayout
+                android:id="@+id/quickCardsRow"
+                android:layout_width="match_parent"
+                android:layout_height="96dp"
+                android:layout_marginTop="@dimen/section_spacing"
+                android:baselineAligned="false"
+                android:orientation="horizontal">
+
+                <!-- Weather quick card -->
+
+                <LinearLayout
+                    android:id="@+id/weatherCard"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_dashboard_card"
+                    android:clickable="true"
+                    android:clipToOutline="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:orientation="vertical"
+                    android:paddingStart="12dp"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="8dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/weather_title"
+                        android:textColor="@color/hypernova_text_primary"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_marginTop="4dp"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="42dp"
+                            android:layout_height="42dp"
+                            android:layout_marginStart="2dp"
+                            android:layout_marginEnd="8dp"
+                            android:contentDescription="@string/weather_icon_description"
+                            android:padding="3dp"
+                            android:src="@drawable/ic_thermometer"
+                            app:tint="@color/hypernova_cyan" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/textWeatherTemperature"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                android:text="@string/temperature_value_unavailable"
+                                android:textColor="@color/hypernova_text_primary"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/textWeatherLocation"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="1dp"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                android:text="@string/weather_location_unavailable"
+                                android:textColor="@color/hypernova_text_secondary"
+                                android:textSize="10sp" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <!-- Driver quick card -->
+
+                <LinearLayout
+                    android:id="@+id/driverCard"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_dashboard_card"
+                    android:clickable="true"
+                    android:clipToOutline="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:orientation="vertical"
+                    android:paddingStart="12dp"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="8dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/driver_title"
+                        android:textColor="@color/hypernova_text_primary"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_marginTop="4dp"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.imageview.ShapeableImageView
+                            android:id="@+id/imageDriverQuickAvatar"
+                            android:layout_width="42dp"
+                            android:layout_height="42dp"
+                            android:layout_marginStart="2dp"
+                            android:layout_marginEnd="8dp"
+                            android:contentDescription="@string/driver_default_name"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/avatar_ayman"
+                            android:visibility="invisible"
+                            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.HyperNova.Circle"
+                            app:strokeColor="@color/hypernova_border"
+                            app:strokeWidth="1dp" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/textDriverQuickName"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                android:text="@string/driver_default_name"
+                                android:textColor="@color/hypernova_text_primary"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="1dp"
+                                android:text="@string/driver_profile_label"
+                                android:textColor="@color/hypernova_text_secondary"
+                                android:textSize="10sp" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <!-- Settings quick card -->
+
+                <LinearLayout
+                    android:id="@+id/settingsCard"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="4dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_dashboard_card"
+                    android:clickable="true"
+                    android:clipToOutline="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:orientation="vertical"
+                    android:paddingStart="12dp"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="8dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_title"
+                        android:textColor="@color/hypernova_text_primary"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_marginTop="4dp"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:id="@+id/imageSettingsQuick"
+                            android:layout_width="42dp"
+                            android:layout_height="42dp"
+                            android:layout_marginStart="2dp"
+                            android:layout_marginEnd="8dp"
+                            android:alpha="0.82"
+                            android:contentDescription="@string/settings_icon_description"
+                            android:padding="3dp"
+                            android:scaleType="centerInside"
+                            android:src="@drawable/ic_nav_settings"
+                            app:tint="@color/hypernova_text_secondary" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/textSettingsPrimary"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                android:text="@string/settings_unavailable"
+                                android:textColor="@color/hypernova_text_primary"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/textSettingsSecondary"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                android:text="@string/settings_not_installed"
+                                android:textColor="@color/hypernova_text_secondary"
+                                android:textSize="9sp" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- ====================================================== -->
+    <!-- Fixed bottom navigation                                -->
+    <!-- ====================================================== -->
+
+    <LinearLayout
+        android:id="@+id/bottomNavigationBar"
+        android:layout_width="0dp"
+        android:layout_height="78dp"
+        android:layout_marginStart="14dp"
+        android:layout_marginEnd="14dp"
+        android:layout_marginBottom="12dp"
+        android:background="@drawable/bg_bottom_navigation"
+        android:baselineAligned="false"
+        android:clipToOutline="true"
+        android:elevation="8dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingStart="8dp"
+        android:paddingTop="6dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="6dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <!-- Home -->
+
+        <FrameLayout
+            android:id="@+id/navHome"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackgroundBorderless">
+
+            <ImageView
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_bottom_nav_selected"
+                android:contentDescription="@string/bottom_nav_home"
+                android:padding="16dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_nav_home"
+                app:tint="@color/hypernova_text_dark" />
+
+        </FrameLayout>
+
+        <!-- Navigation -->
+
+        <FrameLayout
+            android:id="@+id/navNavigation"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackgroundBorderless">
+
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_gravity="center"
+                android:alpha="0.88"
+                android:contentDescription="@string/bottom_nav_navigation"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_nav_navigation"
+                app:tint="@color/hypernova_text_secondary" />
+
+        </FrameLayout>
+
+        <!-- Media -->
+
+        <FrameLayout
+            android:id="@+id/navMedia"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackgroundBorderless">
+
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_gravity="center"
+                android:alpha="0.88"
+                android:contentDescription="@string/bottom_nav_media"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_nav_media"
+                app:tint="@color/hypernova_text_secondary" />
+
+        </FrameLayout>
+
+        <!-- Climate -->
+
+        <FrameLayout
+            android:id="@+id/navClimate"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackgroundBorderless">
+
+            <ImageView
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_gravity="center"
+                android:alpha="0.88"
+                android:contentDescription="@string/bottom_nav_climate"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_nav_climate"
+                app:tint="@color/hypernova_text_secondary" />
+
+        </FrameLayout>
+
+        <!-- NOVA AI -->
+
+        <FrameLayout
+            android:id="@+id/navNovaAi"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackgroundBorderless">
+
+            <ImageView
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center"
+                android:adjustViewBounds="true"
+                android:contentDescription="@string/bottom_nav_nova_ai"
+                android:scaleType="fitCenter"
+                android:src="@drawable/nova_ai_orb" />
+
+        </FrameLayout>
+
+        <!-- Phone -->
+
+        <FrameLayout
+            android:id="@+id/navPhone"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackgroundBorderless">
+
+            <ImageView
+                android:layout_width="35dp"
+                android:layout_height="35dp"
+                android:layout_gravity="center"
+                android:alpha="0.88"
+                android:contentDescription="@string/bottom_nav_phone"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_nav_phone"
+                app:tint="@color/hypernova_text_secondary" />
+
+        </FrameLayout>
+
+        <!-- Settings -->
+
+        <FrameLayout
+            android:id="@+id/navSettings"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackgroundBorderless">
+
+            <ImageView
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_gravity="center"
+                android:alpha="0.88"
+                android:contentDescription="@string/settings_icon_description"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_nav_settings"
+                app:tint="@color/hypernova_text_secondary" />
+
+        </FrameLayout>
+
+    </LinearLayout>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

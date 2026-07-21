@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <group android:pivotX="12" android:pivotY="12" android:rotation="0">
+        <path
+            android:fillColor="@color/hypernova_icon_primary"
+            android:pathData="M12,10.25C10.9,8.7 10.95,5.75 12.35,3.35C13.05,2.15 14.75,2.35 15.2,3.7C15.95,5.95 14.45,8.7 12.95,10.3C12.65,10.6 12.25,10.55 12,10.25Z" />
+    </group>
+
+    <group android:pivotX="12" android:pivotY="12" android:rotation="90">
+        <path
+            android:fillColor="@color/hypernova_icon_primary"
+            android:pathData="M12,10.25C10.9,8.7 10.95,5.75 12.35,3.35C13.05,2.15 14.75,2.35 15.2,3.7C15.95,5.95 14.45,8.7 12.95,10.3C12.65,10.6 12.25,10.55 12,10.25Z" />
+    </group>
+
+    <group android:pivotX="12" android:pivotY="12" android:rotation="180">
+        <path
+            android:fillColor="@color/hypernova_icon_primary"
+            android:pathData="M12,10.25C10.9,8.7 10.95,5.75 12.35,3.35C13.05,2.15 14.75,2.35 15.2,3.7C15.95,5.95 14.45,8.7 12.95,10.3C12.65,10.6 12.25,10.55 12,10.25Z" />
+    </group>
+
+    <group android:pivotX="12" android:pivotY="12" android:rotation="270">
+        <path
+            android:fillColor="@color/hypernova_icon_primary"
+            android:pathData="M12,10.25C10.9,8.7 10.95,5.75 12.35,3.35C13.05,2.15 14.75,2.35 15.2,3.7C15.95,5.95 14.45,8.7 12.95,10.3C12.65,10.6 12.25,10.55 12,10.25Z" />
+    </group>
+
+    <path
+        android:fillColor="@color/hypernova_icon_primary"
+        android:pathData="M12,9.7A2.3,2.3 0,1 1,11.99 9.7Z" />
+
+</vector>

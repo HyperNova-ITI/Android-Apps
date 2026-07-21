@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">HyperNova Navigation</string>
+
+    <string name="navigation_title">HyperNova Navigation</string>
+
+    <string name="map_content_description">
+        Interactive navigation map
+    </string>
+
+    <string name="online_label">Online</string>
+
+    <string name="map_status_loading">
+        Connecting to map service…
+    </string>
+
+    <string name="map_status_ready">
+        Real world map • Cairo
+    </string>
+
+    <string name="map_status_error">
+        Map service unavailable
+    </string>
+
+    <string name="map_loading_title">
+        Loading real map
+    </string>
+
+    <string name="map_loading_message">
+        Downloading roads, buildings and place names for Cairo.
+    </string>
+
+    <string name="map_error_title">
+        Map unavailable
+    </string>
+
+    <string name="map_error_message">
+        Check the Cuttlefish internet connection, then try again.
+    </string>
+
+    <string name="retry">Try again</string>
+
+</resources>

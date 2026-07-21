@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+
+    <!-- ====================================================== -->
+    <!-- HyperNova light color scheme                          -->
+    <!-- ====================================================== -->
+
+    <!-- Main backgrounds -->
+    <color name="hypernova_background">#EEF4F8</color>
+    <color name="hypernova_background_secondary">#E4EDF3</color>
+    <color name="hypernova_background_glow">#D5EEF2</color>
+
+    <!-- Cards and selected surfaces -->
+    <color name="hypernova_card">#FFFFFF</color>
+    <color name="hypernova_card_elevated">#F7FBFD</color>
+    <color name="hypernova_selected">#D9F1F4</color>
+
+    <!-- Borders and dividers -->
+    <color name="hypernova_border">#9BAFBD</color>
+    <color name="hypernova_border_soft">#C3D1DB</color>
+    <color name="hypernova_divider">#D4DFE6</color>
+
+    <!-- Primary HyperNova accent -->
+    <color name="hypernova_cyan">#087F91</color>
+    <color name="hypernova_cyan_bright">#0AA7B8</color>
+    <color name="hypernova_cyan_pressed">#066D7D</color>
+    <color name="hypernova_cyan_dark">#055563</color>
+
+    <!-- AI accent -->
+    <color name="hypernova_purple">#7140BA</color>
+
+    <!-- Text and icons -->
+    <color name="hypernova_text_primary">#071722</color>
+    <color name="hypernova_text_secondary">#4E616E</color>
+    <color name="hypernova_text_disabled">#82919B</color>
+    <color name="hypernova_text_dark">#021118</color>
+    <color name="hypernova_icon_primary">#071722</color>
+
+    <!-- Filled controls -->
+    <color name="hypernova_control_filled_background">#0A2635</color>
+    <color name="hypernova_control_filled_border">#284A5A</color>
+    <color name="hypernova_control_filled_icon">#FFFFFF</color>
+
+    <!-- System status -->
+    <color name="hypernova_success">#087B34</color>
+    <color name="hypernova_warning">#9A5900</color>
+    <color name="hypernova_error">#C62B42</color>
+
+    <!-- Launcher background gradient -->
+    <color name="hypernova_launcher_glow_start">#8AD6E4EE</color>
+    <color name="hypernova_launcher_glow_center">#50DCEAF1</color>
+    <color name="hypernova_launcher_glow_end">#00EEF4F8</color>
+
+    <!-- Hero gradient -->
+    <color name="hypernova_hero_start">#FFFFFF</color>
+    <color name="hypernova_hero_center">#F5FAFC</color>
+    <color name="hypernova_hero_end">#EAF3F7</color>
+
+    <!-- Dashboard cards -->
+    <color name="hypernova_dashboard_start">#F2FFFFFF</color>
+    <color name="hypernova_dashboard_end">#F2F5FAFC</color>
+
+    <!-- Route information overlay -->
+    <color name="hypernova_route_overlay_start">#FAFFFFFF</color>
+    <color name="hypernova_route_overlay_end">#F2EAF3F7</color>
+
+    <!-- Bottom navigation -->
+    <color name="hypernova_bottom_nav_start">#FCFFFFFF</color>
+    <color name="hypernova_bottom_nav_center">#FFF7FBFD</color>
+    <color name="hypernova_bottom_nav_end">#FCFFFFFF</color>
+
+    <!-- Selected bottom navigation item -->
+    <color name="hypernova_nav_selected_outer_fill">#26087F91</color>
+    <color name="hypernova_nav_selected_outer_stroke">#78087F91</color>
+    <color name="hypernova_nav_selected_inner_start">#31DCE7</color>
+    <color name="hypernova_nav_selected_inner_end">#11AABD</color>
+    <color name="hypernova_nav_selected_inner_stroke">#6EEAF0</color>
+
+    <!-- NOVA artwork glow -->
+    <color name="hypernova_orb_cyan_center">#AA25D9E8</color>
+    <color name="hypernova_orb_cyan_edge">#0025D9E8</color>
+    <color name="hypernova_orb_purple_center">#AAA855F7</color>
+    <color name="hypernova_orb_purple_edge">#00102737</color>
+    <color name="hypernova_orb_center_highlight">#FFFFFF</color>
+
+    <!-- Android template colors -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+</resources>

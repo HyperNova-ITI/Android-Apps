@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Theme-aware base background -->
+    <item>
+
+        <shape android:shape="rectangle">
+
+            <solid android:color="@color/hypernova_background" />
+
+        </shape>
+
+    </item>
+
+    <!-- Theme-aware glow near the top -->
+    <item>
+
+        <shape android:shape="rectangle">
+
+            <gradient
+                android:type="radial"
+                android:centerX="0.5"
+                android:centerY="0.15"
+                android:gradientRadius="540dp"
+                android:startColor="@color/hypernova_launcher_glow_start"
+                android:centerColor="@color/hypernova_launcher_glow_center"
+                android:endColor="@color/hypernova_launcher_glow_end" />
+
+        </shape>
+
+    </item>
+
+</layer-list>

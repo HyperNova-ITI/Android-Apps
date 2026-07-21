@@ -2620,3 +2620,13 @@ AOSP HOME integration
 ```
 
 Do not add an All Apps card, app drawer, Vehicle card, or production dummy data without an approved architecture change.
+
+# 49. Production Light and Dark Theme
+
+The launcher now follows the Android system day/night configuration and uses
+separate light and dark semantic color resources. It does not keep a private
+launcher-only mode. The future HyperNova Settings application owns the
+system-wide Light, Dark, or Automatic selection.
+
+See [THEMING.md](THEMING.md) for the resource structure, cross-application
+contract, and Cuttlefish test commands.

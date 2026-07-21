@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+        Granted only when the production launcher is installed as a
+        privileged AOSP application and allowlisted in privapp permissions.
+        Normal adb-installed builds automatically use application-only mode.
+    -->
+    <uses-permission
+        android:name="android.permission.MODIFY_DAY_NIGHT_MODE" />
+
+    <!-- This application is designed for Android Automotive OS. -->
+    <uses-feature
+        android:name="android.hardware.type.automotive"
+        android:required="true" />
+
+    <!--
+        Package visibility declarations.
+
+        Android limits which installed applications can be detected.
+        The launcher declares every HyperNova package and OPEN action
+        that it needs to discover or launch.
+    -->
+    <queries>
+
+        <!-- NOVA AI -->
+        <package android:name="com.hypernova.ai" />
+
+        <intent>
+            <action android:name="com.hypernova.ai.action.OPEN" />
+            <category android:name="android.intent.category.DEFAULT" />
+        </intent>
+
+        <!-- Navigation -->
+        <package android:name="com.hypernova.navigation" />
+
+        <intent>
+            <action android:name="com.hypernova.navigation.action.OPEN" />
+            <category android:name="android.intent.category.DEFAULT" />
+        </intent>
+
+        <!-- Media -->
+        <package android:name="com.hypernova.media" />
+
+        <intent>
+            <action android:name="com.hypernova.media.action.OPEN" />
+            <category android:name="android.intent.category.DEFAULT" />
+        </intent>
+
+        <!-- Phone -->
+        <package android:name="com.hypernova.phone" />
+
+        <intent>
+            <action android:name="com.hypernova.phone.action.OPEN" />
+            <category android:name="android.intent.category.DEFAULT" />
+        </intent>
+
+        <!-- Climate -->
+        <package android:name="com.hypernova.climate" />
+
+        <intent>
+            <action android:name="com.hypernova.climate.action.OPEN" />
+            <category android:name="android.intent.category.DEFAULT" />
+        </intent>
+
+        <!-- Weather -->
+        <package android:name="com.hypernova.weather" />
+
+        <intent>
+            <action android:name="com.hypernova.weather.action.OPEN" />
+            <category android:name="android.intent.category.DEFAULT" />
+        </intent>
+
+        <!-- Driver Profile -->
+        <package android:name="com.hypernova.driverprofile" />
+
+        <intent>
+            <action android:name="com.hypernova.driverprofile.action.OPEN" />
+            <category android:name="android.intent.category.DEFAULT" />
+        </intent>
+
+        <!-- HyperNova Settings -->
+        <package android:name="com.hypernova.settings" />
+
+        <intent>
+            <action android:name="com.hypernova.settings.action.OPEN" />
+            <category android:name="android.intent.category.DEFAULT" />
+        </intent>
+
+    </queries>
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.HyperNovaLauncher">
+
+        <activity
+            android:name=".MainActivity"
+            android:clearTaskOnLaunch="true"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:resizeableActivity="false"
+            android:screenOrientation="portrait"
+            android:stateNotNeeded="true">
+
+            <!--
+                Register HyperNova Launcher as a real HOME application.
+
+                Android uses this filter when:
+                - The system boots.
+                - The driver presses Home.
+                - The default launcher is selected.
+            -->
+            <intent-filter android:priority="10">
+
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+
+            </intent-filter>
+
+            <!--
+                Keep the normal launcher entry during development.
+
+                This allows Android Studio and adb to start the
+                application directly without changing the HOME app.
+            -->
+            <intent-filter>
+
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+
+            </intent-filter>
+
+        </activity>
+
+    </application>
+
+</manifest>
