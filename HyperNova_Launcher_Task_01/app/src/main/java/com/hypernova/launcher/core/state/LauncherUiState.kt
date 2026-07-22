@@ -40,10 +40,22 @@ data class SystemUiState(
  */
 data class AssistantUiState(
     val connectionState: AppConnectionState,
+    val runtimeState: AssistantRuntimeState,
     val headline: String,
     val subtitle: String,
     val artworkVisible: Boolean
 )
+
+enum class AssistantRuntimeState {
+    UNAVAILABLE,
+    IDLE,
+    LISTENING,
+    PROCESSING,
+    EXECUTING,
+    SUCCESS,
+    ERROR,
+    SPEAKING,
+}
 
 /**
  * State displayed by the Navigation card.

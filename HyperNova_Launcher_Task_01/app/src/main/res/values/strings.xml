@@ -59,6 +59,19 @@
     <string name="assistant_ready_subtitle">NOVA AI is ready</string>
     <string name="assistant_service_not_connected">Assistant service not connected</string>
     <string name="assistant_error_title">Assistant error</string>
+    <string name="assistant_reconnect_subtitle">Reconnect NOVA to continue</string>
+    <string name="assistant_idle_subtitle">Say “Hey NOVA” to get started</string>
+    <string name="assistant_listening_title">I’m listening</string>
+    <string name="assistant_listening_subtitle">Tell me what you need</string>
+    <string name="assistant_processing_title">One moment</string>
+    <string name="assistant_processing_subtitle">Understanding your request</string>
+    <string name="assistant_executing_title">On it</string>
+    <string name="assistant_executing_subtitle">Completing your request</string>
+    <string name="assistant_success_title">Done</string>
+    <string name="assistant_success_subtitle">Your request is complete</string>
+    <string name="assistant_error_subtitle">Open NOVA AI to try again</string>
+    <string name="assistant_speaking_title">Here’s what I found</string>
+    <string name="assistant_speaking_subtitle">NOVA is responding</string>
 
     <!-- Existing NOVA layout values -->
     <string name="nova_greeting">Assistant unavailable</string>

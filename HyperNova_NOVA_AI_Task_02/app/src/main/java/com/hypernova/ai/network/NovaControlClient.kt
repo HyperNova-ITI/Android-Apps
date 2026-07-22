@@ -1,0 +1,144 @@
+package com.hypernova.ai.network
+
+import android.util.Log
+import com.hypernova.ai.runtime.NovaEndpoint
+import org.json.JSONObject
+import java.io.BufferedReader
+import java.io.BufferedWriter
+import java.io.InputStreamReader
+import java.io.OutputStreamWriter
+import java.net.InetSocketAddress
+import java.net.Socket
+import java.util.UUID
+import java.util.concurrent.atomic.AtomicLong
+
+class NovaControlClient(
+    private val endpoint: NovaEndpoint,
+    private val listener: Listener,
+) {
+    interface Listener {
+        fun onControlConnectionChanged(connected: Boolean)
+        fun onControlMessage(message: JSONObject)
+    }
+
+    @Volatile private var running = false
+    @Volatile private var socket: Socket? = null
+    @Volatile private var writer: BufferedWriter? = null
+    private val sequence = AtomicLong(0)
+    private val writerLock = Any()
+    private var worker: Thread? = null
+
+    fun start() {
+        if (running) return
+        running = true
+        worker = Thread(::runLoop, "nova-control").also { it.start() }
+    }
+
+    fun stop() {
+        running = false
+        closeConnection()
+        worker?.interrupt()
+        worker = null
+    }
+
+    fun sendCommand(text: String, turnId: String = UUID.randomUUID().toString()): Boolean =
+        send(JSONObject().apply {
+            put("type", "command")
+            put("v", 1)
+            put("seq", sequence.incrementAndGet())
+            put("turn_id", turnId)
+            put("text", text)
+        })
+
+    fun sendPlayback(turnId: String?, value: String): Boolean = send(JSONObject().apply {
+        put("type", "playback")
+        put("v", 1)
+        put("seq", sequence.incrementAndGet())
+        if (turnId != null) put("turn_id", turnId)
+        put("value", value)
+    })
+
+    private fun runLoop() {
+        var backoffMs = 250L
+        while (running) {
+            try {
+                val connectedSocket = Socket().apply {
+                    tcpNoDelay = true
+                    keepAlive = true
+                    connect(InetSocketAddress(endpoint.host, endpoint.controlPort), CONNECT_TIMEOUT_MS)
+                }
+                socket = connectedSocket
+                writer = BufferedWriter(OutputStreamWriter(connectedSocket.getOutputStream(), Charsets.UTF_8))
+                listener.onControlConnectionChanged(true)
+                sendHello()
+                backoffMs = 250L
+
+                BufferedReader(InputStreamReader(connectedSocket.getInputStream(), Charsets.UTF_8)).use { reader ->
+                    while (running) {
+                        val line = reader.readLine() ?: break
+                        if (line.isBlank()) continue
+                        try {
+                            listener.onControlMessage(JSONObject(line))
+                        } catch (error: Exception) {
+                            Log.w(TAG, "Ignored invalid control message", error)
+                        }
+                    }
+                }
+            } catch (error: Exception) {
+                if (running) Log.d(TAG, "Control connection unavailable: ${error.message}")
+            } finally {
+                closeConnection()
+                listener.onControlConnectionChanged(false)
+            }
+
+            if (running) {
+                try {
+                    Thread.sleep(backoffMs)
+                } catch (_: InterruptedException) {
+                    Thread.currentThread().interrupt()
+                }
+                backoffMs = (backoffMs * 2).coerceAtMost(5_000L)
+            }
+        }
+    }
+
+    private fun sendHello() {
+        send(JSONObject().apply {
+            put("type", "hello")
+            put("v", 1)
+            put("seq", sequence.incrementAndGet())
+            put("client", "nova-android")
+            put("app_version", "0.1.0")
+        })
+    }
+
+    private fun send(message: JSONObject): Boolean = synchronized(writerLock) {
+        val activeWriter = writer ?: return@synchronized false
+        try {
+            activeWriter.write(message.toString())
+            activeWriter.newLine()
+            activeWriter.flush()
+            true
+        } catch (error: Exception) {
+            Log.w(TAG, "Control send failed", error)
+            false
+        }
+    }
+
+    private fun closeConnection() {
+        synchronized(writerLock) {
+            writer = null
+            try {
+                socket?.close()
+            } catch (_: Exception) {
+                // The reconnect loop owns recovery.
+            }
+            socket = null
+        }
+    }
+
+    private companion object {
+        const val TAG = "NovaControlClient"
+        const val CONNECT_TIMEOUT_MS = 3_000
+    }
+}

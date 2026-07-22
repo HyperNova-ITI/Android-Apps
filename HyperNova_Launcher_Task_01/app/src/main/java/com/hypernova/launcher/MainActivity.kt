@@ -1,16 +1,20 @@
 package com.hypernova.launcher
 
+import android.animation.ObjectAnimator
+import android.animation.PropertyValuesHolder
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.view.animation.LinearInterpolator
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.hypernova.launcher.core.assistant.NovaStatusClient
 import com.hypernova.launcher.core.integration.AppDestination
 import com.hypernova.launcher.core.integration.AppLaunchResult
 import com.hypernova.launcher.core.integration.AppLauncher
@@ -18,6 +22,7 @@ import com.hypernova.launcher.core.integration.AppRegistry
 import com.hypernova.launcher.core.media.MediaSessionClient
 import com.hypernova.launcher.core.media.MediaSessionSnapshot
 import com.hypernova.launcher.core.state.AppConnectionState
+import com.hypernova.launcher.core.state.AssistantRuntimeState
 import com.hypernova.launcher.core.state.LauncherStateController
 import com.hypernova.launcher.core.state.LauncherUiState
 import com.hypernova.launcher.core.state.MediaUiState
@@ -38,8 +43,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var appLauncher: AppLauncher
     private lateinit var stateController: LauncherStateController
     private lateinit var mediaSessionClient: MediaSessionClient
+    private lateinit var novaStatusClient: NovaStatusClient
     private lateinit var themeController: LauncherThemeController
     private lateinit var latestUiState: LauncherUiState
+    private var novaOrbAnimator: ObjectAnimator? = null
+    private var animatedNovaState: AssistantRuntimeState? = null
 
     private val resetFeedbackRunnable = Runnable {
         if (
@@ -90,6 +98,14 @@ class MainActivity : AppCompatActivity() {
                 }
             )
 
+        novaStatusClient =
+            NovaStatusClient(this) { snapshot ->
+                runOnUiThread {
+                    stateController.updateAssistantSnapshot(snapshot)
+                    refreshAndRenderState()
+                }
+            }
+
         configureFullScreenMode()
         configureThemeToggle()
         configureNovaActions()
@@ -119,6 +135,10 @@ class MainActivity : AppCompatActivity() {
 
             mediaSessionClient.connect()
         }
+
+        if (::novaStatusClient.isInitialized) {
+            novaStatusClient.connect()
+        }
     }
 
     override fun onResume() {
@@ -137,6 +157,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onStop() {
+        if (::novaStatusClient.isInitialized) {
+            novaStatusClient.disconnect()
+        }
+
         if (::mediaSessionClient.isInitialized) {
             Log.d(
                 TAG,
@@ -150,6 +174,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        novaOrbAnimator?.cancel()
+
         if (::binding.isInitialized) {
             binding.textNovaQuestion.removeCallbacks(
                 resetFeedbackRunnable
@@ -575,6 +601,45 @@ class MainActivity : AppCompatActivity() {
             alphaForConnectionState(
                 state.assistant.connectionState
             )
+
+        animateNovaOrb(state.assistant.runtimeState)
+    }
+
+    /** Keep the launcher widget visually synchronized with NOVA. */
+    private fun animateNovaOrb(state: AssistantRuntimeState) {
+        if (animatedNovaState == state) return
+        animatedNovaState = state
+        novaOrbAnimator?.cancel()
+        binding.imageNovaOrb.rotation = 0f
+        binding.imageNovaOrb.scaleX = 1f
+        binding.imageNovaOrb.scaleY = 1f
+
+        novaOrbAnimator = when (state) {
+            AssistantRuntimeState.LISTENING,
+            AssistantRuntimeState.SPEAKING -> ObjectAnimator.ofPropertyValuesHolder(
+                binding.imageNovaOrb,
+                PropertyValuesHolder.ofFloat(View.SCALE_X, 0.96f, 1.05f),
+                PropertyValuesHolder.ofFloat(View.SCALE_Y, 0.96f, 1.05f),
+            ).apply {
+                duration = if (state == AssistantRuntimeState.SPEAKING) 620L else 920L
+                repeatCount = ObjectAnimator.INFINITE
+                repeatMode = ObjectAnimator.REVERSE
+                start()
+            }
+            AssistantRuntimeState.PROCESSING,
+            AssistantRuntimeState.EXECUTING -> ObjectAnimator.ofFloat(
+                binding.imageNovaOrb,
+                View.ROTATION,
+                0f,
+                360f,
+            ).apply {
+                duration = if (state == AssistantRuntimeState.PROCESSING) 7_000L else 4_500L
+                interpolator = LinearInterpolator()
+                repeatCount = ObjectAnimator.INFINITE
+                start()
+            }
+            else -> null
+        }
     }
 
     /**

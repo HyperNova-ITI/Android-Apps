@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Exact HyperNova launcher dark palette. -->
+    <color name="hypernova_background">#020812</color>
+    <color name="hypernova_background_secondary">#061321</color>
+    <color name="hypernova_background_glow">#102A46</color>
+    <color name="hypernova_card">#071524</color>
+    <color name="hypernova_card_elevated">#0B1B2C</color>
+    <color name="hypernova_selected">#102337</color>
+    <color name="hypernova_border">#506174</color>
+    <color name="hypernova_border_soft">#30465B</color>
+    <color name="hypernova_divider">#293847</color>
+    <color name="hypernova_cyan">#25D9E8</color>
+    <color name="hypernova_cyan_bright">#43F2F4</color>
+    <color name="hypernova_cyan_pressed">#1FC2D0</color>
+    <color name="hypernova_cyan_dark">#0B8493</color>
+    <color name="hypernova_purple">#A855F7</color>
+    <color name="hypernova_text_primary">#F5F7FA</color>
+    <color name="hypernova_text_secondary">#A7B0BE</color>
+    <color name="hypernova_text_disabled">#687486</color>
+    <color name="hypernova_text_dark">#020A13</color>
+    <color name="hypernova_success">#39EA4B</color>
+    <color name="hypernova_warning">#F5A623</color>
+    <color name="hypernova_error">#FF5E68</color>
+    <color name="hypernova_launcher_glow_start">#2430557A</color>
+    <color name="hypernova_launcher_glow_center">#140A1D31</color>
+    <color name="hypernova_launcher_glow_end">#00020812</color>
+    <color name="hypernova_dashboard_start">#E60B1B2C</color>
+    <color name="hypernova_dashboard_end">#E6071524</color>
+    <color name="hypernova_bottom_nav_start">#071320</color>
+    <color name="hypernova_bottom_nav_end">#081827</color>
+
+    <color name="hn_background_primary">@color/hypernova_background</color>
+    <color name="hn_background_secondary">@color/hypernova_background_secondary</color>
+    <color name="hn_surface_primary">@color/hypernova_card</color>
+    <color name="hn_border_primary">@color/hypernova_border</color>
+    <color name="hn_primary_cyan">@color/hypernova_cyan</color>
+    <color name="hn_ai_blue">@color/hypernova_cyan_bright</color>
+    <color name="hn_ai_purple">@color/hypernova_purple</color>
+    <color name="hn_text_primary">@color/hypernova_text_primary</color>
+    <color name="hn_text_secondary">@color/hypernova_text_secondary</color>
+    <color name="hn_success">@color/hypernova_success</color>
+    <color name="hn_warning">@color/hypernova_warning</color>
+    <color name="hn_error">@color/hypernova_error</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>

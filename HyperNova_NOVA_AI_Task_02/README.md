@@ -1,5 +1,8 @@
 # HyperNova Cockpit — Task 02: NOVA AI Android App
 
+Current laptop setup and Android 16 AVD commands:
+[`docs/ANDROID_16_DEVELOPMENT.md`](docs/ANDROID_16_DEVELOPMENT.md).
+
 > **Project:** HyperNova Cockpit  
 > **Task:** Task 02 — NOVA AI  
 > **Package:** `com.hypernova.ai`  
@@ -11,7 +14,7 @@
 > **Architecture:** Single Activity + MVVM + State Machine + Service Clients  
 > **AI policy:** On-device first, no cloud dependency  
 > **Data policy:** Real state and real command results only  
-> **Status:** Ready for implementation  
+> **Status:** Android 16 integration baseline in progress
 
 ---
 
