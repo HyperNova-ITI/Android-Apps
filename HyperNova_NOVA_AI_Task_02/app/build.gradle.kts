@@ -44,6 +44,8 @@ android {
 }
 
 dependencies {
+    implementation(project(":hypernova-contracts"))
+
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.constraintlayout)

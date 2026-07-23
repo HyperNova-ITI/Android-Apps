@@ -124,9 +124,10 @@ Example:
 ```text
 NOVA AI
    |
-   | navigateHome()
+   | getSavedDestinations()
+   | setDestination(returnedHomeId)
    v
-Navigation Service
+NavigationCommandService
    |
    | calculate real route
    v
@@ -1381,39 +1382,53 @@ CommandStatus
 
 ---
 
-# 33. Navigation Service for Launcher and NOVA AI
+# 33. Navigation Services for Launcher and NOVA AI
 
-Service:
-
-```text
-com.hypernova.navigation.service.NavigationService
-```
-
-AIDL contracts:
+Keep read-only status and privileged commands separate:
 
 ```text
-INavigationService
-INavigationCallback
-NavigationState
-NavigationCommandResult
+Launcher status:
+com.hypernova.navigation.service.NavigationStatusService
+com.hypernova.navigation.action.BIND_STATUS
+
+NOVA commands:
+com.hypernova.navigation.service.NavigationCommandService
+com.hypernova.navigation.action.BIND_COMMAND
 ```
 
-Required operations:
+The NOVA command ABI is frozen in
+[HyperNova_Contracts](../HyperNova_Contracts/README.md). Navigation must consume that module rather
+than keeping a private AIDL copy.
 
-```text
-getApiVersion()
-getServiceVersion()
-getCurrentState()
-registerCallback()
-unregisterCallback()
-navigateHome()
-navigateToDestination(...)
-startRoute(...)
-cancelRouteCalculation()
-endNavigation()
-setVoiceGuidanceEnabled(...)
-openNavigation()
+Frozen Demo API v1:
+
+```aidl
+interface INavigationCommandService {
+    int getApiVersion();
+    void searchDestinations(
+        String requestId,
+        String query,
+        INavigationCommandCallback callback
+    );
+    void getSavedDestinations(
+        String requestId,
+        INavigationCommandCallback callback
+    );
+    void setDestination(
+        String requestId,
+        String destinationId,
+        INavigationCommandCallback callback
+    );
+    void cancelNavigation(
+        String requestId,
+        INavigationCommandCallback callback
+    );
+}
 ```
+
+Search and saved-destination calls return at most four real `NavigationDestination` values.
+`setDestination` accepts only an opaque ID returned by one of those calls. It returns confirmed only
+when real guidance is active.
 
 ---
 
@@ -1485,47 +1500,55 @@ The Launcher must not:
 
 # 36. NOVA AI Integration
 
-Example:
+The two frozen showcase journeys are:
 
 ```text
-Driver: “Navigate me home”
-        |
-        v
-NOVA AI detects NAVIGATE_HOME
-        |
-        v
-INavigationService.navigateHome()
-        |
-        v
-Navigation resolves saved Home
-        |
-        v
-Route calculation
-        |
-        +--> SUCCESS: route started
-        +--> ERROR: no Home saved
-        +--> ERROR: GPS unavailable
-        +--> ERROR: route failed
+"Find coffee shops near me"
+    -> searchDestinations()
+    -> up to four real ranked results
+    -> NOVA presents choices
+"Take me to the second one"
+    -> NOVA maps the ordinal to the returned opaque ID
+    -> setDestination()
+    -> route calculation
+    -> confirmed only after guidance is active
 ```
 
-NOVA AI must wait for the real result.
+```text
+"Show my saved destinations"
+    -> getSavedDestinations()
+    -> Home, Work, then recent saved favorites up to four total
+"Take me home"
+    -> setDestination(returnedHomeId)
+    -> confirmed only after guidance is active
+```
 
-Navigation must return explicit result codes.
+NOVA AI must wait for the real final result. `ACCEPTED` is not success.
 
-Suggested result states:
+Final statuses:
 
 ```text
-ACCEPTED
-IN_PROGRESS
-COMPLETED
+CONFIRMED
 REJECTED
-NO_HOME_LOCATION
-LOCATION_UNAVAILABLE
-ROUTE_NOT_FOUND
-OFFLINE_DATA_UNAVAILABLE
+UNAVAILABLE
 TIMEOUT
 CANCELLED
 ```
+
+Navigation-specific errors:
+
+```text
+NO_RESULTS
+NO_SAVED_DESTINATIONS
+DESTINATION_EXPIRED
+DESTINATION_NOT_FOUND
+LOCATION_UNAVAILABLE
+ROUTE_NOT_FOUND
+OFFLINE_DATA_UNAVAILABLE
+```
+
+The full frozen behavior, ordering, TTL, result payload, and tests are in
+[HyperNova_Contracts](../HyperNova_Contracts/README.md).
 
 ---
 
@@ -1664,7 +1687,7 @@ Use a signature permission.
 
 ```xml
 <permission
-    android:name="com.hypernova.permission.ACCESS_COCKPIT_SERVICES"
+    android:name="com.hypernova.permission.CONTROL_COCKPIT_APPS"
     android:protectionLevel="signature" />
 ```
 
@@ -1672,11 +1695,11 @@ Navigation service:
 
 ```xml
 <service
-    android:name=".service.NavigationService"
+    android:name=".service.NavigationCommandService"
     android:exported="true"
-    android:permission="com.hypernova.permission.ACCESS_COCKPIT_SERVICES">
+    android:permission="com.hypernova.permission.CONTROL_COCKPIT_APPS">
     <intent-filter>
-        <action android:name="com.hypernova.action.BIND_NAVIGATION_SERVICE" />
+        <action android:name="com.hypernova.navigation.action.BIND_COMMAND" />
     </intent-filter>
 </service>
 ```
@@ -1912,7 +1935,8 @@ Any state -> ERROR
 ## 51.3 Integration Tests
 
 - Launcher receives real route state.
-- NOVA navigateHome works.
+- NOVA search → four choices → selection works.
+- NOVA saved destinations → selection works.
 - Profile Home/Work loads correctly.
 - Search provider returns real data.
 - Route provider returns real alternatives.
@@ -2098,7 +2122,8 @@ No. The Launcher only receives the published Navigation state.
 
 ## Can NOVA AI start navigation directly?
 
-NOVA AI sends a command through `INavigationService` and waits for the real result.
+NOVA AI sends a typed command through `INavigationCommandService` and waits for the real final
+result.
 
 ## What happens without GPS?
 

@@ -26,3 +26,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "HyperNovaNovaAI"
 include(":app")
+include(":hypernova-contracts")
+project(":hypernova-contracts").projectDir = file("../HyperNova_Contracts/contracts")

@@ -6,7 +6,9 @@ Target hardware: NXP i.MX 8QM MEK Android 16 guest; laptop Android runtime durin
 
 ## Ownership
 
-The Raspberry Pi owns the CM108 USB microphone, openWakeWord, VAD, ASR, the agent/tool loop, and TTS synthesis. Android owns audio focus and speaker playback.
+The Raspberry Pi owns the CM108 USB microphone, openWakeWord, VAD, ASR, the agent/tool loop, and TTS
+synthesis. Android owns audio focus, speaker playback, and the typed AIDL bridge to Android feature
+applications.
 
 The Pi captures its microphone directly through ALSA. No microphone samples are captured or transmitted by the Android app. This avoids continuous network streaming, Android recording conflicts, and Android 15/16 microphone-service differences.
 
@@ -33,6 +35,7 @@ Android → Pi:
 {"type":"cancel","v":1,"seq":3,"turn_id":"uuid"}
 {"type":"playback","v":1,"seq":4,"turn_id":"uuid","value":"started"}
 {"type":"playback","v":1,"seq":5,"turn_id":"uuid","value":"ended"}
+{"type":"command_result","v":1,"seq":6,"turn_id":"uuid","request_id":"uuid","domain":"navigation","operation":"set_destination","status":"confirmed","message":"Route started","data":{"destination":{"id":"opaque-id","title":"Coffee Lab"},"eta_seconds":900,"distance_meters":8200}}
 ```
 
 Pi → Android:
@@ -46,9 +49,32 @@ Pi → Android:
 {"type":"result","v":1,"seq":6,"turn_id":"uuid","status":"success","text":"Air conditioning is on"}
 {"type":"state","v":1,"seq":7,"turn_id":"uuid","value":"speaking"}
 {"type":"error","v":1,"seq":8,"turn_id":"uuid","code":"ASR_FAILED","message":"I couldn't understand that"}
+{"type":"command_request","v":1,"seq":9,"turn_id":"uuid","request_id":"uuid","domain":"navigation","operation":"search_destinations","args":{"query":"coffee shops near me"}}
 ```
 
 Allowed state values are `idle`, `listening`, `processing`, `executing`, `success`, `error`, `speaking`, and `unavailable`. Unknown message fields are ignored. Unknown protocol versions are rejected with `UNSUPPORTED_VERSION`.
+
+## Destination-command extension
+
+`command_request` asks NOVA Android to invoke the frozen Navigation or Climate AIDL service.
+`command_result` returns its intermediate or final callback to the Pi.
+
+Rules:
+
+- `turn_id` identifies the voice turn; `request_id` identifies one destination-app operation.
+- Android echoes both IDs unchanged.
+- `accepted` is intermediate only.
+- Final statuses are `confirmed`, `rejected`, `unavailable`, `timeout`, and `cancelled`.
+- A duplicate `request_id` must not repeat a route or vehicle actuation.
+- The Pi must not emit its final `result`/`say` success until it receives a confirmed
+  `command_result`.
+- Navigation operations are `search_destinations`, `get_saved_destinations`, `set_destination`, and
+  `cancel_navigation`.
+- Climate operations are `get_capabilities`, `get_current_state`, `set_power`, `set_temperature`,
+  `set_fan_level`, `set_ac`, `set_auto`, and `set_recirculation`.
+
+Exact arguments, result payloads, AIDL methods, and showcase scenarios are frozen in
+[NAVIGATION_CLIMATE_COMMAND_HANDOFF.md](NAVIGATION_CLIMATE_COMMAND_HANDOFF.md).
 
 ## Binary audio channel (8766)
 
