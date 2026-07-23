@@ -3,6 +3,9 @@ package com.hypernova.launcher.core.state
 import android.content.Context
 import android.util.Log
 import com.hypernova.launcher.R
+import com.hypernova.launcher.core.assistant.NovaAssistantStateParser
+import com.hypernova.launcher.core.assistant.NovaServiceConnection
+import com.hypernova.launcher.core.assistant.NovaStatusSnapshot
 import com.hypernova.launcher.core.integration.AppAvailability
 import com.hypernova.launcher.core.integration.AppDestination
 import com.hypernova.launcher.core.integration.AppLauncher
@@ -46,12 +49,18 @@ class LauncherStateController(
      * Null means MediaSessionClient has not reported a state yet.
      */
     private var latestMediaSnapshot: MediaSessionSnapshot? = null
+    private var latestAssistantSnapshot: NovaStatusSnapshot? = null
 
     /**
      * Store the latest state received from HyperNova Media.
      */
     fun updateMediaSnapshot(snapshot: MediaSessionSnapshot) {
         latestMediaSnapshot = snapshot
+    }
+
+    /** Store the latest state published by NOVA AI. */
+    fun updateAssistantSnapshot(snapshot: NovaStatusSnapshot) {
+        latestAssistantSnapshot = snapshot
     }
 
     /**
@@ -98,95 +107,90 @@ class LauncherStateController(
         )
     }
 
-    /**
-     * Create NOVA AI state from application availability.
-     */
+    /** Create NOVA AI state from package availability and its live status service. */
     private fun createAssistantState(): AssistantUiState {
-        val destination =
-            AppDestination.NOVA_AI
+        val packageState = getConnectionState(AppDestination.NOVA_AI)
+        val appName = getAppName(AppDestination.NOVA_AI)
 
-        val connectionState =
-            getConnectionState(destination)
-
-        val appName =
-            getAppName(destination)
-
-        val headline: String
-        val subtitle: String
-
-        when (connectionState) {
-            AppConnectionState.NOT_INSTALLED -> {
-                headline = applicationContext.getString(
-                    R.string.assistant_unavailable_title
-                )
-
-                subtitle = applicationContext.getString(
-                    R.string.state_app_not_installed,
-                    appName
-                )
-            }
-
-            AppConnectionState.NO_LAUNCHABLE_ACTIVITY -> {
-                headline = applicationContext.getString(
-                    R.string.assistant_unavailable_title
-                )
-
-                subtitle = applicationContext.getString(
-                    R.string.state_no_launchable_activity,
-                    appName
-                )
-            }
-
-            AppConnectionState.DISCONNECTED -> {
-                headline = applicationContext.getString(
-                    R.string.assistant_disconnected_title
-                )
-
-                subtitle = applicationContext.getString(
-                    R.string.assistant_service_not_connected
-                )
-            }
-
-            AppConnectionState.CONNECTING -> {
-                headline = applicationContext.getString(
-                    R.string.assistant_connecting_title
-                )
-
-                subtitle = applicationContext.getString(
-                    R.string.state_connecting
-                )
-            }
-
-            AppConnectionState.READY -> {
-                headline = applicationContext.getString(
-                    R.string.assistant_ready_title
-                )
-
-                subtitle = applicationContext.getString(
-                    R.string.assistant_ready_subtitle
-                )
-            }
-
-            AppConnectionState.ERROR -> {
-                headline = applicationContext.getString(
-                    R.string.assistant_error_title
-                )
-
-                subtitle = applicationContext.getString(
-                    R.string.state_service_error
-                )
-            }
+        if (packageState == AppConnectionState.NOT_INSTALLED) {
+            return assistantState(
+                AppConnectionState.NOT_INSTALLED,
+                AssistantRuntimeState.UNAVAILABLE,
+                R.string.assistant_unavailable_title,
+                applicationContext.getString(R.string.state_app_not_installed, appName),
+            )
+        }
+        if (packageState == AppConnectionState.NO_LAUNCHABLE_ACTIVITY) {
+            return assistantState(
+                AppConnectionState.NO_LAUNCHABLE_ACTIVITY,
+                AssistantRuntimeState.UNAVAILABLE,
+                R.string.assistant_unavailable_title,
+                applicationContext.getString(R.string.state_no_launchable_activity, appName),
+            )
         }
 
-        return AssistantUiState(
-            connectionState = connectionState,
-            headline = headline,
-            subtitle = subtitle,
+        val snapshot = latestAssistantSnapshot
+        return when (snapshot?.connection) {
+            NovaServiceConnection.CONNECTING -> assistantState(
+                AppConnectionState.CONNECTING,
+                AssistantRuntimeState.UNAVAILABLE,
+                R.string.assistant_connecting_title,
+                applicationContext.getString(R.string.state_connecting),
+            )
+            NovaServiceConnection.ERROR -> assistantState(
+                AppConnectionState.ERROR,
+                AssistantRuntimeState.ERROR,
+                R.string.assistant_error_title,
+                applicationContext.getString(R.string.state_service_error),
+            )
+            NovaServiceConnection.CONNECTED -> createLiveAssistantState(snapshot.state)
+            NovaServiceConnection.DISCONNECTED, null -> assistantState(
+                AppConnectionState.DISCONNECTED,
+                AssistantRuntimeState.UNAVAILABLE,
+                R.string.assistant_unavailable_title,
+                applicationContext.getString(R.string.assistant_reconnect_subtitle),
+            )
+        }
+    }
 
-            // NOVA artwork is branding, not fake service data.
-            artworkVisible = true
+    private fun createLiveAssistantState(wireState: String?): AssistantUiState {
+        val runtimeState = NovaAssistantStateParser.parse(wireState)
+
+        val content = when (runtimeState) {
+            AssistantRuntimeState.IDLE -> R.string.assistant_ready_title to R.string.assistant_idle_subtitle
+            AssistantRuntimeState.LISTENING -> R.string.assistant_listening_title to R.string.assistant_listening_subtitle
+            AssistantRuntimeState.PROCESSING -> R.string.assistant_processing_title to R.string.assistant_processing_subtitle
+            AssistantRuntimeState.EXECUTING -> R.string.assistant_executing_title to R.string.assistant_executing_subtitle
+            AssistantRuntimeState.SUCCESS -> R.string.assistant_success_title to R.string.assistant_success_subtitle
+            AssistantRuntimeState.ERROR -> R.string.assistant_error_title to R.string.assistant_error_subtitle
+            AssistantRuntimeState.SPEAKING -> R.string.assistant_speaking_title to R.string.assistant_speaking_subtitle
+            AssistantRuntimeState.UNAVAILABLE -> R.string.assistant_unavailable_title to R.string.assistant_reconnect_subtitle
+        }
+        val connectionState = when (runtimeState) {
+            AssistantRuntimeState.ERROR -> AppConnectionState.ERROR
+            AssistantRuntimeState.UNAVAILABLE -> AppConnectionState.DISCONNECTED
+            else -> AppConnectionState.READY
+        }
+        return assistantState(
+            connectionState,
+            runtimeState,
+            content.first,
+            applicationContext.getString(content.second),
         )
     }
+
+    private fun assistantState(
+        connectionState: AppConnectionState,
+        runtimeState: AssistantRuntimeState,
+        headlineResource: Int,
+        subtitle: String,
+    ) = AssistantUiState(
+        connectionState = connectionState,
+        runtimeState = runtimeState,
+        headline = applicationContext.getString(headlineResource),
+        subtitle = subtitle,
+        artworkVisible = true,
+    )
 
     /**
      * Create Navigation state from application availability.

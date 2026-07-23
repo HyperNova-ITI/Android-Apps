@@ -10,6 +10,10 @@
     <uses-permission
         android:name="android.permission.MODIFY_DAY_NIGHT_MODE" />
 
+    <!-- Read-only NOVA state, granted only to an APK signed like NOVA AI. -->
+    <uses-permission
+        android:name="com.hypernova.ai.permission.READ_STATUS" />
+
     <!-- This application is designed for Android Automotive OS. -->
     <uses-feature
         android:name="android.hardware.type.automotive"
@@ -30,6 +34,10 @@
         <intent>
             <action android:name="com.hypernova.ai.action.OPEN" />
             <category android:name="android.intent.category.DEFAULT" />
+        </intent>
+
+        <intent>
+            <action android:name="com.hypernova.ai.action.BIND_STATUS" />
         </intent>
 
         <!-- Navigation -->

@@ -1,0 +1,193 @@
+package com.hypernova.ai.runtime
+
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.Service
+import android.content.Intent
+import android.os.IBinder
+import android.util.Log
+import androidx.core.app.NotificationCompat
+import com.hypernova.ai.NovaActivity
+import com.hypernova.ai.R
+import com.hypernova.ai.audio.NovaPcmPlayer
+import com.hypernova.ai.network.NovaAudioClient
+import com.hypernova.ai.network.NovaControlClient
+import com.hypernova.ai.protocol.AudioFrame
+import com.hypernova.ai.protocol.AudioFrameType
+import com.hypernova.ai.ui.NovaVisibleState
+import org.json.JSONObject
+
+class NovaRuntimeService : Service(),
+    NovaControlClient.Listener,
+    NovaAudioClient.Listener,
+    NovaPcmPlayer.Listener {
+
+    private lateinit var controlClient: NovaControlClient
+    private lateinit var audioClient: NovaAudioClient
+    private lateinit var player: NovaPcmPlayer
+    private val stateCoordinator = NovaStateCoordinator()
+    private var lastActionBlocked = false
+
+    override fun onCreate() {
+        super.onCreate()
+        createNotificationChannel()
+        startForeground(NOTIFICATION_ID, createNotification())
+
+        val endpoint = NovaEndpointStore.load(this)
+        controlClient = NovaControlClient(endpoint, this)
+        audioClient = NovaAudioClient(endpoint, this)
+        player = NovaPcmPlayer(this, this)
+
+        controlClient.start()
+        audioClient.start()
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACTION_RECONNECT && ::controlClient.isInitialized) {
+            controlClient.stop()
+            audioClient.stop()
+            controlClient.start()
+            audioClient.start()
+        }
+        return START_STICKY
+    }
+
+    override fun onDestroy() {
+        if (::player.isInitialized) player.stop()
+        if (::controlClient.isInitialized) controlClient.stop()
+        if (::audioClient.isInitialized) audioClient.stop()
+        NovaRuntimeState.publish(NovaVisibleState.UNAVAILABLE)
+        super.onDestroy()
+    }
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onControlConnectionChanged(connected: Boolean) {
+        NovaRuntimeState.publish(stateCoordinator.onControlConnectionChanged(connected))
+    }
+
+    override fun onAudioConnectionChanged(connected: Boolean) {
+        NovaRuntimeState.publish(stateCoordinator.onAudioConnectionChanged(connected))
+    }
+
+    override fun onControlMessage(message: JSONObject) {
+        val turnId = message.optionalText("turn_id")
+        when (message.optString("type")) {
+            "state" -> publishWireState(message.optString("value"))
+            "transcript" -> {
+                lastActionBlocked = false
+                NovaRuntimeState.publishTranscript(turnId, message.optString("text"))
+                publishControlState(NovaVisibleState.PROCESSING)
+            }
+            "action" -> {
+                lastActionBlocked = message.optBoolean("blocked", false)
+                NovaRuntimeState.publishAction(
+                    turnId = turnId,
+                    name = message.optionalText("tool"),
+                    result = message.optionalText("result"),
+                    blocked = lastActionBlocked,
+                    errorMessage = message.optionalText("reason"),
+                )
+                publishControlState(
+                    if (lastActionBlocked) NovaVisibleState.ERROR else NovaVisibleState.EXECUTING,
+                )
+            }
+            "result" -> {
+                val success = message.optString("status") == "success"
+                lastActionBlocked = !success
+                NovaRuntimeState.publishResult(turnId, message.optionalText("text"), success)
+                publishControlState(if (success) NovaVisibleState.SUCCESS else NovaVisibleState.ERROR)
+            }
+            // Actual PCM playback owns SPEAKING; the control socket records the completed result.
+            "say" -> {
+                NovaRuntimeState.publishResponse(turnId, message.optString("text"))
+                publishControlState(
+                    if (lastActionBlocked) NovaVisibleState.ERROR else NovaVisibleState.SUCCESS,
+                )
+            }
+            "error" -> {
+                lastActionBlocked = true
+                NovaRuntimeState.publishError(
+                    turnId,
+                    message.optionalText("message") ?: getString(R.string.error_subtitle),
+                )
+                publishControlState(NovaVisibleState.ERROR)
+            }
+        }
+    }
+
+    override fun onAudioFrame(frame: AudioFrame) {
+        when (frame.type) {
+            AudioFrameType.TTS_START -> player.start(frame.streamId, frame.payload)
+            AudioFrameType.TTS_PCM -> player.write(frame.streamId, frame.payload)
+            AudioFrameType.TTS_END -> player.end(frame.streamId)
+            AudioFrameType.AUDIO_ERROR -> {
+                Log.w(TAG, "Pi audio error: ${String(frame.payload, Charsets.UTF_8)}")
+                publishControlState(NovaVisibleState.ERROR)
+            }
+            else -> Unit
+        }
+    }
+
+    override fun onPlaybackChanged(playing: Boolean, turnId: String?) {
+        NovaRuntimeState.publish(stateCoordinator.onPlaybackChanged(playing))
+        if (playing) {
+            controlClient.sendPlayback(turnId, "started")
+        } else {
+            controlClient.sendPlayback(turnId, "ended")
+        }
+    }
+
+    private fun publishControlState(state: NovaVisibleState) {
+        NovaRuntimeState.publish(stateCoordinator.onControlState(state))
+    }
+
+    private fun publishWireState(value: String) {
+        val state = when (value.lowercase()) {
+            "idle" -> NovaVisibleState.IDLE
+            "listening" -> NovaVisibleState.LISTENING
+            "thinking", "processing" -> NovaVisibleState.PROCESSING
+            "executing" -> NovaVisibleState.EXECUTING
+            "success" -> NovaVisibleState.SUCCESS
+            "error" -> NovaVisibleState.ERROR
+            "speaking" -> NovaVisibleState.SPEAKING
+            "unavailable" -> NovaVisibleState.UNAVAILABLE
+            else -> return
+        }
+        publishControlState(state)
+    }
+
+    private fun JSONObject.optionalText(name: String): String? =
+        optString(name).trim().takeIf { it.isNotEmpty() }
+
+    private fun createNotificationChannel() {
+        getSystemService(NotificationManager::class.java).createNotificationChannel(
+            NotificationChannel(
+                NOTIFICATION_CHANNEL,
+                getString(R.string.runtime_notification_channel),
+                NotificationManager.IMPORTANCE_LOW,
+            ),
+        )
+    }
+
+    private fun createNotification() = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL)
+        .setSmallIcon(R.drawable.ic_nova)
+        .setContentTitle(getString(R.string.runtime_notification_title))
+        .setContentText(getString(R.string.runtime_notification_text))
+        .setOngoing(true)
+        .setContentIntent(PendingIntent.getActivity(
+            this,
+            0,
+            Intent(this, NovaActivity::class.java),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        ))
+        .build()
+
+    companion object {
+        const val ACTION_RECONNECT = "com.hypernova.ai.action.RECONNECT"
+        private const val TAG = "NovaRuntimeService"
+        private const val NOTIFICATION_CHANNEL = "nova_runtime"
+        private const val NOTIFICATION_ID = 1001
+    }
+}
