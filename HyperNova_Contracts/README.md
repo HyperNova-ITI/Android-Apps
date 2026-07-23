@@ -8,6 +8,11 @@ and HyperNova Climate.
 Any incompatible method, model, status, or semantic change requires API v2. Implementations may add
 internal behavior without changing this ABI.
 
+Implementation handoffs:
+
+- [Ayman — Navigation service generation and implementation guide](docs/AYMAN_NAVIGATION_SERVICE_GUIDE.md)
+- [Mahgoub — Climate service generation and TC397 implementation guide](docs/MAHGOUB_CLIMATE_SERVICE_GUIDE.md)
+
 ## Build
 
 Use any repository Gradle 9.4.1 wrapper. Configure the Android SDK through `ANDROID_HOME`,

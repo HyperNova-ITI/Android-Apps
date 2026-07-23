@@ -1329,6 +1329,9 @@ The NOVA command ABI is frozen in
 [HyperNova_Contracts](../HyperNova_Contracts/README.md). Climate must consume that module rather than
 keeping a private AIDL copy.
 
+Follow the exact
+[Climate AIDL generation and TC397 service implementation guide](../HyperNova_Contracts/docs/MAHGOUB_CLIMATE_SERVICE_GUIDE.md).
+
 Frozen Demo API v1:
 
 ```aidl

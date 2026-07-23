@@ -1400,6 +1400,9 @@ The NOVA command ABI is frozen in
 [HyperNova_Contracts](../HyperNova_Contracts/README.md). Navigation must consume that module rather
 than keeping a private AIDL copy.
 
+Follow the exact
+[Navigation AIDL generation and service implementation guide](../HyperNova_Contracts/docs/AYMAN_NAVIGATION_SERVICE_GUIDE.md).
+
 Frozen Demo API v1:
 
 ```aidl
