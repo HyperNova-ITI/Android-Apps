@@ -1,0 +1,226 @@
+[
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_check.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/ic_check.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_logo.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/ic_logo.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_bg_card_driver.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/drawable/bg_card_driver.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_max_defrost.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/ic_max_defrost.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/layout_fragment_climate.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/layout/fragment_climate.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_car_fan_mid_low_right_24px.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/car_fan_mid_low_right_24px.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_airflow_face.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/ic_airflow_face.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_plus.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/ic_plus.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_car_fan_low_right_24px.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/car_fan_low_right_24px.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_bg_control_toggle.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/drawable/bg_control_toggle.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_car_fan_low_left_24px.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/car_fan_low_left_24px.xml"
+    },
+    {
+        "merged": "com.hypernova.climate.app-debug-42:/layout_fragment_climate.xml.flat",
+        "source": "com.hypernova.climate.app-main-44:/layout/fragment_climate.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/layout_activity_climate.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/layout/activity_climate.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_defrost_rear.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/ic_defrost_rear.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_sync.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/ic_sync.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_car_fan_mid_right_24px.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/car_fan_mid_right_24px.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_eco.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/ic_eco.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_power.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/ic_power.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_bg_control_unselected.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/drawable/bg_control_unselected.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_car_fan_low_mid_left_24px.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/car_fan_low_mid_left_24px.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_bg_pill.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/drawable/bg_pill.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_car_fan_mid_left_24px.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/car_fan_mid_left_24px.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/mipmap-anydpi-v26/ic_launcher_round.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_vehicle_topdown.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/drawable/ic_vehicle_topdown.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_weather.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/ic_weather.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_defrost_front.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/ic_defrost_front.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_bg_health_badge.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/drawable/bg_health_badge.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_minus.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/ic_minus.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/drawable/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_airflow_face_feet.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/ic_airflow_face_feet.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_bg_screen.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/drawable/bg_screen.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_bg_control_selected_amber.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/drawable/bg_control_selected_amber.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_heat.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/ic_heat.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_fan.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/ic_fan.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_thermostat.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/ic_thermostat.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_bg_control_selected.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/drawable/bg_control_selected.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_bg_round_button.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/drawable/bg_round_button.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_bg_card.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/drawable/bg_card.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_bg_card_passenger.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/drawable/bg_card_passenger.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable-nodpi_vehicle_top_dark.png.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/drawable-nodpi/vehicle_top_dark.png"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_seat.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/ic_seat.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_bg_seg_off.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/drawable/bg_seg_off.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable-nodpi_vehicle_top_light.png.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/drawable-nodpi/vehicle_top_light.png"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_ac.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/ic_ac.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_bg_temp_button.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/drawable/bg_temp_button.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_auto.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/ic_auto.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_seat_heat.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/ic_seat_heat.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_launcher_background.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/drawable/ic_launcher_background.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_bg_status_dot.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/drawable/bg_status_dot.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_windshield.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/ic_windshield.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_airflow_feet.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/ic_airflow_feet.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_bg_seg_on.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/drawable/bg_seg_on.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_fresh_air.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/ic_fresh_air.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_recirculate.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/ic_recirculate.xml"
+    },
+    {
+        "merged": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-debug-42:/drawable_ic_back.xml.flat",
+        "source": "/home/mustafa/.gradle/daemon/9.4.1/com.hypernova.climate.app-main-44:/icons/drawable/ic_back.xml"
+    }
+]

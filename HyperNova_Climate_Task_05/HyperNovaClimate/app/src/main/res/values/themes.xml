@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <style name="Theme.HyperNovaClimate" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/hn_primary_cyan</item>
+        <item name="colorOnPrimary">@color/hn_background_primary</item>
+        <item name="colorSecondary">@color/hn_warning</item>
+        <item name="android:colorBackground">@color/hn_background_primary</item>
+        <item name="colorSurface">@color/hn_surface_primary</item>
+        <item name="colorOnSurface">@color/hn_text_primary</item>
+        <item name="android:windowBackground">@color/hn_background_primary</item>
+        <item name="android:statusBarColor">@color/hn_background_primary</item>
+        <item name="android:navigationBarColor">@color/hn_background_primary</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="fontFamily">sans-serif</item>
+        <item name="android:fontFamily">sans-serif</item>
+    </style>
+
+</resources>

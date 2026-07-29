@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Designed for Android Automotive OS. -->
+    <uses-feature
+        android:name="android.hardware.type.automotive"
+        android:required="true" />
+
+    <!--
+        Vehicle climate access. Exact permissions depend on the target AOSP
+        image and the active backend (VHAL vs direct gateway). Declared here
+        for the CarProperty/VHAL path; harmless when the Ethernet backend is
+        selected. INTERNET is required by the direct-Ethernet backend.
+    -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.car.permission.CONTROL_CAR_CLIMATE" />
+    <uses-permission android:name="android.car.permission.CAR_INFO" />
+
+    <!--
+        Signature-level permission protecting the NOVA command service.
+        (Service itself is added in the IPC phase; UI phase declares the
+        permission so the contract is visible.)
+    -->
+    <permission
+        android:name="com.hypernova.permission.CONTROL_COCKPIT_APPS"
+        android:protectionLevel="signature" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.HyperNovaClimate">
+
+        <activity
+            android:name=".ClimateActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:resizeableActivity="false"
+            android:screenOrientation="portrait">
+
+            <!-- Launcher entry for development / adb. -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- Cockpit open action used by the HyperNova Launcher. -->
+            <intent-filter>
+                <action android:name="com.hypernova.climate.action.OPEN" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!--
+            The NOVA command service (ClimateCommandService) and the read-only
+            ClimateStatusService are registered in the IPC integration phase.
+        -->
+
+    </application>
+
+</manifest>
