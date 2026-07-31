@@ -47,6 +47,8 @@ import com.hypernova.navigation.domain.model.GeoPoint
 import com.hypernova.navigation.domain.model.NavigationDataException
 import com.hypernova.navigation.domain.model.NavigationJson
 import com.hypernova.navigation.domain.model.NavigationScreen
+import com.hypernova.navigation.domain.model.NavigationSessionState
+import com.hypernova.navigation.domain.model.NavigationSessionStatus
 import com.hypernova.navigation.domain.model.NavigationUiState
 import com.hypernova.navigation.domain.model.NearbyCategory
 import com.hypernova.navigation.domain.model.Place
@@ -85,6 +87,15 @@ class MainActivity : AppCompatActivity() {
     private var overviewReturnScreen = NavigationScreen.ROUTE_PREVIEW
 
     private val mainHandler = Handler(Looper.getMainLooper())
+
+    private val repositoryStateListener:
+        (NavigationSessionState) -> Unit = { state ->
+        mainHandler.post {
+            if (!isFinishing && !isDestroyed) {
+                applyRepositoryState(state)
+            }
+        }
+    }
 
     private val timeUpdater =
         object : Runnable {
@@ -139,8 +150,12 @@ class MainActivity : AppCompatActivity() {
         )
         super.onCreate(savedInstanceState)
 
-        preferences = NavigationPreferences(this)
-        preferences.initializeDemoDefaultsAndRetireLocalTheme()
+        val navigationApplication =
+            application as HyperNovaNavigationApplication
+        preferences =
+            navigationApplication.navigationPreferences
+        repository =
+            navigationApplication.navigationRepository
 
         enableEdgeToEdge()
         MapLibre.getInstance(this)
@@ -162,13 +177,16 @@ class MainActivity : AppCompatActivity() {
         }
         mapView.onCreate(savedInstanceState)
 
-        repository = NavigationRepository()
         connectivityManager =
             getSystemService(ConnectivityManager::class.java)
         networkAvailable = isNetworkCurrentlyAvailable()
 
         restoreUiState(savedInstanceState)
+        synchronizeRestoredNavigationState()
         stateMachine = NavigationStateMachine(uiState.screen)
+        repository.addNavigationStateListener(
+            repositoryStateListener
+        )
 
         applySystemBarInsets()
         configurePersistentControls()
@@ -555,7 +573,7 @@ class MainActivity : AppCompatActivity() {
             uiState.savedDestinationTarget
     ) {
         debugForcedState = false
-        repository.cancelRoute()
+        repository.cancelNavigation()
 
         setState(
             uiState.copy(
@@ -1214,8 +1232,6 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        preferences.addRecent(destination)
-
         setState(
             uiState.copy(
                 screen = NavigationScreen.CALCULATING_ROUTE,
@@ -1285,7 +1301,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun cancelRouteCalculation() {
-        repository.cancelRoute()
+        repository.cancelNavigation()
         val returnScreen =
             if (uiState.searchResults.isNotEmpty()) {
                 NavigationScreen.RESULTS
@@ -1378,7 +1394,18 @@ class MainActivity : AppCompatActivity() {
         )
 
         panel.startRouteButton.setOnClickListener {
-            setScreen(NavigationScreen.ROUTE_ACTIVE)
+            if (!repository.activateCurrentRoute()) {
+                setState(
+                    uiState.copy(
+                        screen = NavigationScreen.ROUTE_ERROR,
+                        message =
+                            getString(
+                                R.string.route_error_default
+                            )
+                    ),
+                    debugOverride = true
+                )
+            }
         }
 
         panel.overviewButton.setOnClickListener {
@@ -1423,10 +1450,12 @@ class MainActivity : AppCompatActivity() {
         val routePlan = uiState.routePlan ?: return
         if (index !in routePlan.alternatives.indices) return
 
+        val selected =
+            routePlan.copy(selectedIndex = index)
+        repository.selectRouteAlternative(selected)
         setState(
             uiState.copy(
-                routePlan =
-                    routePlan.copy(selectedIndex = index)
+                routePlan = selected
             )
         )
     }
@@ -1659,7 +1688,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun clearRouteAndReturnHome() {
-        repository.cancelRoute()
+        repository.cancelNavigation()
         setState(
             NavigationUiState(
                 screen = NavigationScreen.HOME
@@ -2042,6 +2071,9 @@ class MainActivity : AppCompatActivity() {
         offlineTriggeredAutomatically = false
         hideKeyboard()
 
+        if (clearRoute) {
+            repository.cancelNavigation()
+        }
         setState(
             if (clearRoute) {
                 NavigationUiState(
@@ -2365,6 +2397,104 @@ class MainActivity : AppCompatActivity() {
         render()
     }
 
+    private fun synchronizeRestoredNavigationState() {
+        val backendState =
+            repository.currentNavigationState()
+
+        if (
+            backendState.status !=
+            NavigationSessionStatus.IDLE
+        ) {
+            uiState =
+                uiStateForRepositoryState(
+                    backendState,
+                    uiState
+                )
+            return
+        }
+
+        val destination = uiState.destination
+        val routePlan = uiState.routePlan
+        if (
+            destination != null &&
+            routePlan != null &&
+            uiState.screen in ROUTE_SESSION_SCREENS
+        ) {
+            repository.restoreNavigationState(
+                destination = destination,
+                routePlan = routePlan,
+                active =
+                    uiState.screen in
+                        ACTIVE_ROUTE_SESSION_SCREENS
+            )
+        }
+    }
+
+    private fun applyRepositoryState(
+        state: NavigationSessionState
+    ) {
+        val updated =
+            uiStateForRepositoryState(state, uiState)
+        if (updated != uiState) {
+            setState(
+                updated,
+                debugOverride = true
+            )
+        }
+    }
+
+    private fun uiStateForRepositoryState(
+        state: NavigationSessionState,
+        current: NavigationUiState
+    ): NavigationUiState =
+        when (state.status) {
+            NavigationSessionStatus.IDLE ->
+                if (current.screen in ROUTE_SESSION_SCREENS) {
+                    NavigationUiState(
+                        screen = NavigationScreen.HOME
+                    )
+                } else {
+                    current
+                }
+            NavigationSessionStatus.CALCULATING ->
+                current.copy(
+                    screen =
+                        NavigationScreen.CALCULATING_ROUTE,
+                    destination =
+                        state.destination?.place,
+                    routePlan = null,
+                    savedDestinationTarget = null,
+                    message = null
+                )
+            NavigationSessionStatus.ROUTE_PREVIEW ->
+                current.copy(
+                    screen = NavigationScreen.ROUTE_PREVIEW,
+                    destination =
+                        state.destination?.place,
+                    routePlan = state.routePlan,
+                    savedDestinationTarget = null,
+                    message = null
+                )
+            NavigationSessionStatus.ACTIVE ->
+                current.copy(
+                    screen = NavigationScreen.ROUTE_ACTIVE,
+                    destination =
+                        state.destination?.place,
+                    routePlan = state.routePlan,
+                    savedDestinationTarget = null,
+                    message = null
+                )
+            NavigationSessionStatus.ERROR ->
+                current.copy(
+                    screen = NavigationScreen.ROUTE_ERROR,
+                    destination =
+                        state.destination?.place
+                            ?: current.destination,
+                    routePlan = null,
+                    message = state.message
+                )
+        }
+
     private fun updateClock() {
         if (!::binding.isInitialized) return
 
@@ -2597,7 +2727,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        repository.close()
+        repository.removeNavigationStateListener(
+            repositoryStateListener
+        )
         mainHandler.removeCallbacksAndMessages(null)
 
         try {
@@ -2627,9 +2759,25 @@ class MainActivity : AppCompatActivity() {
         private const val METERS_PER_KILOMETER = 1_000
 
         val ITI_ORIGIN =
-            GeoPoint(
-                latitude = 30.07112,
-                longitude = 31.02075
+            NavigationRepository.DEFAULT_ORIGIN
+
+        private val ROUTE_SESSION_SCREENS =
+            setOf(
+                NavigationScreen.CALCULATING_ROUTE,
+                NavigationScreen.ROUTE_PREVIEW,
+                NavigationScreen.ROUTE_ACTIVE,
+                NavigationScreen.ROUTE_OVERVIEW,
+                NavigationScreen.REROUTING,
+                NavigationScreen.ARRIVED,
+                NavigationScreen.ROUTE_ERROR
+            )
+
+        private val ACTIVE_ROUTE_SESSION_SCREENS =
+            setOf(
+                NavigationScreen.ROUTE_ACTIVE,
+                NavigationScreen.ROUTE_OVERVIEW,
+                NavigationScreen.REROUTING,
+                NavigationScreen.ARRIVED
             )
 
     }

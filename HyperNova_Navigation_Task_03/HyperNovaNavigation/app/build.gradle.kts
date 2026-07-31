@@ -14,8 +14,8 @@ android {
     defaultConfig {
         applicationId = "com.hypernova.navigation"
 
-        // The app supports Android Automotive based on Android 12 or newer.
-        minSdk = 31
+        // Shared HyperNova Demo API v1 baseline.
+        minSdk = 35
 
         targetSdk = 36
 
@@ -45,6 +45,9 @@ android {
 }
 
 dependencies {
+    // Frozen cross-APK AIDL source of truth.
+    implementation(project(":hypernova-contracts"))
+
     // AndroidX
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.appcompat)

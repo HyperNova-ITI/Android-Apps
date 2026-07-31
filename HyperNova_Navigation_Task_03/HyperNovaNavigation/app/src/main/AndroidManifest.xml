@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <permission
+        android:name="com.hypernova.permission.CONTROL_COCKPIT_APPS"
+        android:protectionLevel="signature" />
+
     <!-- Load online map styles, tiles, fonts, icons, and place search results. -->
     <uses-permission android:name="android.permission.INTERNET" />
 
@@ -8,6 +12,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
+        android:name=".HyperNovaNavigationApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -40,6 +45,17 @@
             </intent-filter>
 
         </activity>
+
+        <service
+            android:name=".service.NavigationCommandService"
+            android:exported="true"
+            android:permission="com.hypernova.permission.CONTROL_COCKPIT_APPS">
+
+            <intent-filter>
+                <action android:name="com.hypernova.navigation.action.BIND_COMMAND" />
+            </intent-filter>
+
+        </service>
 
     </application>
 

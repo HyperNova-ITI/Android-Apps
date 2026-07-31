@@ -1,0 +1,3 @@
+94647499af2e0a0d94109e4c41400cd50bc096c97032b1c9cfbb805ccf9daf0d  HyperNovaMedia.apk
+934d84ce91f9508c71e685f169ce185a53f2347de56a918e6d717ae695edfc2d  Android.bp
+2416cc7ec20d8e9012e2cea455b258248617f91d106e63ba9ed41d9a02f64ae2  privapp-permissions-com.hypernova.media.xml

@@ -235,6 +235,7 @@ data class NavigationUiState(
 enum class FailureKind {
     NETWORK,
     TIMEOUT,
+    LOCATION_UNAVAILABLE,
     NO_ROUTE,
     MALFORMED_RESPONSE,
     PROVIDER,

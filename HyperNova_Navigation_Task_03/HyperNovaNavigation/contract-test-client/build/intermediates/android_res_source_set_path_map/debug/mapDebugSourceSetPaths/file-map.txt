@@ -1,0 +1,8 @@
+com.hypernova.navigation.contracttest.contract-test-client-pngs-0 /home/ayman/ITI/Android-Apps/HyperNova_Navigation_Task_03/HyperNovaNavigation/contract-test-client/build/generated/res/pngs/debug
+com.hypernova.navigation.contracttest.contract-test-client-updated_navigation_xml-1 /home/ayman/ITI/Android-Apps/HyperNova_Navigation_Task_03/HyperNovaNavigation/contract-test-client/build/generated/updated_navigation_xml/debug
+com.hypernova.navigation.contracttest.contract-test-client-packageDebugResources-2 /home/ayman/ITI/Android-Apps/HyperNova_Navigation_Task_03/HyperNovaNavigation/contract-test-client/build/intermediates/incremental/debug/packageDebugResources/merged.dir
+com.hypernova.navigation.contracttest.contract-test-client-packageDebugResources-3 /home/ayman/ITI/Android-Apps/HyperNova_Navigation_Task_03/HyperNovaNavigation/contract-test-client/build/intermediates/incremental/debug/packageDebugResources/stripped.dir
+com.hypernova.navigation.contracttest.contract-test-client-debug-4 /home/ayman/ITI/Android-Apps/HyperNova_Navigation_Task_03/HyperNovaNavigation/contract-test-client/build/intermediates/merged_res/debug/mergeDebugResources
+com.hypernova.navigation.contracttest.contract-test-client-debug-5 /home/ayman/ITI/Android-Apps/HyperNova_Navigation_Task_03/HyperNovaNavigation/contract-test-client/src/debug/res
+com.hypernova.navigation.contracttest.contract-test-client-main-6 /home/ayman/ITI/Android-Apps/HyperNova_Navigation_Task_03/HyperNovaNavigation/contract-test-client/src/main/res
+gradleHome-0 /home/ayman/.gradle
