@@ -2,43 +2,157 @@
 <resources>
 
     <string name="app_name">HyperNova Navigation</string>
+    <string name="navigation_title">NAVIGATION</string>
+    <string name="map_content_description">Interactive OpenStreetMap navigation map</string>
+    <string name="back_content_description">Go back</string>
+    <string name="map_zoom_in">Zoom map in</string>
+    <string name="map_zoom_out">Zoom map out</string>
+    <string name="map_zoom_in_symbol">+</string>
+    <string name="map_zoom_out_symbol">−</string>
+    <string name="map_center_origin">Center map on ITI Smart Village</string>
+    <string name="iti_start_status">ITI START</string>
+    <string name="online_label">ONLINE</string>
+    <string name="offline_label">OFFLINE</string>
+    <string name="map_loading_title">Loading map</string>
+    <string name="map_loading_message">Connecting to OpenFreeMap…</string>
+    <string name="map_error_title">Map unavailable</string>
+    <string name="map_error_message">The map style could not load. Check the network and try again.</string>
+    <string name="retry">Try Again</string>
 
-    <string name="navigation_title">HyperNova Navigation</string>
+    <string name="home_screen_title">NAVIGATION HOME</string>
+    <string name="search_screen_title">SEARCH DESTINATION</string>
+    <string name="results_screen_title">SEARCH RESULTS</string>
+    <string name="route_screen_title">ROUTE PREVIEW</string>
+    <string name="active_screen_title">ROUTE PREVIEW</string>
+    <string name="overview_screen_title">ROUTE OVERVIEW</string>
 
-    <string name="map_content_description">
-        Interactive navigation map
-    </string>
+    <string name="search_destination">Search Destination</string>
+    <string name="search_destination_hint">Where do you want to go?</string>
+    <string name="search_supporting_text">Place/address via Nominatim • nearby categories via Overpass</string>
+    <string name="search_action">Search</string>
+    <string name="search_again">Search Again</string>
+    <string name="clear_search">Clear search input</string>
+    <string name="cancel">Cancel</string>
+    <string name="recent_destinations">Recent destinations</string>
+    <string name="no_recent_destinations">No recent destinations yet</string>
+    <string name="actual_destinations_only">Places you select will appear here.</string>
+    <string name="categories">Categories</string>
+    <string name="parking">Parking</string>
+    <string name="fuel">Fuel</string>
+    <string name="food">Food</string>
+    <string name="hospital">Hospital</string>
+    <string name="shopping">Shopping</string>
+    <string name="home">Home</string>
+    <string name="work">Work</string>
+    <string name="recent">Recent</string>
+    <string name="set_location">Set location</string>
+    <string name="home_content_description">Use or configure Home destination</string>
+    <string name="work_content_description">Use or configure Work destination</string>
+    <string name="fuel_content_description">Search for real fuel stations</string>
+    <string name="recent_content_description">Open recent destinations</string>
 
-    <string name="online_label">Online</string>
+    <string name="iti_origin">ITI Smart Village</string>
+    <string name="iti_origin_detail">Start point • 30.07112, 31.02075</string>
+    <string name="route_status">Route status</string>
+    <string name="no_active_route">No active route</string>
+    <string name="no_active_route_detail">Search for a real destination to calculate a route.</string>
+    <string name="searching_places">Searching places</string>
+    <string name="searching_for_format">Looking for “%1$s” using OpenStreetMap data.</string>
+    <string name="searching_nearby_radius_format">Searching %1$s within %2$d km of ITI.</string>
+    <string name="expanding_nearby_radius_format">Expanding %1$s search to %2$d km.</string>
+    <string name="empty_query_error">Enter a destination first.</string>
+    <string name="no_results_title">No places found</string>
+    <string name="no_results_message_format">No OpenStreetMap place matched “%1$s”. Try a more specific name or address.</string>
+    <string name="no_nearby_results_format">No mapped %1$s POIs were found within %2$d km of ITI.</string>
+    <string name="category_provider_error_format">The OpenStreetMap map data provider is temporarily unavailable for %1$s. Try again.</string>
+    <string name="category_partial_results_format">%1$d real results are shown. A wider search was temporarily unavailable.</string>
+    <string name="category_search_cancelled">Nearby search cancelled. Choose a category to try again.</string>
+    <string name="category_search_interrupted">Nearby search paused after the display changed. Tap Try Again to continue.</string>
+    <string name="category_search_already_running_format">%1$s search is already running.</string>
+    <string name="search_error_title">Search unavailable</string>
+    <string name="search_error_default">The online place search could not be completed.</string>
+    <plurals name="results_count_format">
+        <item quantity="one">%1$d real result</item>
+        <item quantity="other">%1$d real results</item>
+    </plurals>
+    <string name="route_summary_format">%1$s • %2$s</string>
+    <string name="place_distance_summary_format">%1$s • %2$s</string>
+    <string name="nearby_results_title_format">%1$s near ITI</string>
+    <string name="straight_line_format">Straight-line • %1$s</string>
+    <string name="address_unavailable">Address unavailable in OpenStreetMap</string>
+    <string name="select_destination">Select Destination</string>
+    <string name="save_as_home">Save as Home</string>
+    <string name="save_as_work">Save as Work</string>
+    <string name="destination_not_selected">Select one real result to continue.</string>
+    <string name="saved_destination_format">%1$s saved</string>
 
-    <string name="map_status_loading">
-        Connecting to map service…
-    </string>
+    <string name="calculating_route">Calculating route</string>
+    <string name="finding_best_route">Finding the best available driving route…</string>
+    <string name="from_label">FROM</string>
+    <string name="to_label">TO</string>
+    <string name="calculation_cancelled">Route calculation cancelled</string>
+    <string name="fastest_route">FASTEST ROUTE</string>
+    <string name="alternative_route">REAL ALTERNATIVE</string>
+    <string name="distance">Distance</string>
+    <string name="duration">Duration</string>
+    <string name="arrival">Arrival</string>
+    <string name="start_route">Start Route</string>
+    <string name="route_overview">Route Overview</string>
+    <string name="change_destination">Change Destination</string>
+    <string name="clear_route">Clear Route</string>
+    <string name="route_active">ROUTE ACTIVE</string>
+    <string name="route_preview_mode">Preview mode • no live movement</string>
+    <string name="first_maneuver">FIRST MANEUVER</string>
+    <string name="route_total">Route total</string>
+    <string name="end_route">End Route</string>
+    <string name="return_to_route">Return to Route</string>
+    <string name="mute_guidance_ui">Mute indicator</string>
+    <string name="unmute_guidance_ui">Unmute indicator</string>
+    <string name="mute_disclaimer">UI preference only • spoken guidance is not implemented</string>
+    <string name="maneuvers">Maneuvers</string>
+    <string name="no_maneuvers">No detailed maneuvers were returned.</string>
+    <string name="road_name_unavailable">Road name unavailable</string>
 
-    <string name="map_status_ready">
-        Real world map • Cairo
-    </string>
+    <string name="end_route_title">End route preview?</string>
+    <string name="end_route_message_format">The route to %1$s will be cleared.</string>
+    <string name="continue_route">Continue Route</string>
 
-    <string name="map_status_error">
-        Map service unavailable
-    </string>
+    <string name="rerouting_status">REROUTING</string>
+    <string name="rerouting_title">Recalculating route…</string>
+    <string name="rerouting_message">Reusable future guidance state. Automatic rerouting is disabled in this ITI start-point demo.</string>
+    <string name="return_active_route">Return to Active Route</string>
+    <string name="arrived_status">ARRIVED</string>
+    <string name="arrived_title">You have arrived</string>
+    <string name="arrived_message">Arrival is not triggered automatically without real movement.</string>
+    <string name="finish_navigation">Finish Navigation</string>
+    <string name="save_location">Save Location</string>
+    <string name="location_status">ORIGIN UNAVAILABLE</string>
+    <string name="location_unavailable_title">Location unavailable</string>
+    <string name="location_unavailable_message">The configured ITI Smart Village start point could not be resolved. This should not normally occur in the ITI build.</string>
+    <string name="open_location_settings">Open Location Settings</string>
+    <string name="offline_status">OFFLINE</string>
+    <string name="offline_title">Network unavailable</string>
+    <string name="offline_message">Online place search and route calculation are unavailable. Cached map tiles may remain visible.</string>
+    <string name="offline_limitations">No downloadable offline map or offline routing engine is included.</string>
+    <string name="continue_to_home">Continue to Home</string>
+    <string name="route_error_status">ROUTE ERROR</string>
+    <string name="route_error_title">Unable to calculate route</string>
+    <string name="route_error_default">The routing service did not return a usable route. No navigation has started.</string>
 
-    <string name="map_loading_title">
-        Loading real map
-    </string>
-
-    <string name="map_loading_message">
-        Downloading roads, buildings and place names for Cairo.
-    </string>
-
-    <string name="map_error_title">
-        Map unavailable
-    </string>
-
-    <string name="map_error_message">
-        Check the Cuttlefish internet connection, then try again.
-    </string>
-
-    <string name="retry">Try again</string>
+    <string name="debug_states_title">Debug state selector</string>
+    <string name="debug_states_message">Debug build only. Select a visual state without changing production behavior.</string>
+    <string name="debug_home">1. Navigation Home</string>
+    <string name="debug_search">2. Search Destination</string>
+    <string name="debug_results">3. Search Results</string>
+    <string name="debug_calculating">4. Calculating Route</string>
+    <string name="debug_preview">5. Route Preview</string>
+    <string name="debug_active">6. Active Navigation Preview</string>
+    <string name="debug_overview">7. Route Overview</string>
+    <string name="debug_rerouting">8. Rerouting</string>
+    <string name="debug_arrived">9. Arrived</string>
+    <string name="debug_location">10. Location Unavailable</string>
+    <string name="debug_offline">11. Offline / Network Unavailable</string>
+    <string name="debug_error">12. Route Error</string>
+    <string name="debug_requires_real_data">Calculate a real route first to preview this state.</string>
 
 </resources>
