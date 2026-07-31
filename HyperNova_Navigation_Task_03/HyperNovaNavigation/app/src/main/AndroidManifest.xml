@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Load online map styles, tiles, fonts, and icons. -->
+    <!-- Load online map styles, tiles, fonts, icons, and place search results. -->
     <uses-permission android:name="android.permission.INTERNET" />
 
     <!-- Check whether the device has an active network connection. -->
@@ -21,6 +21,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize">
 

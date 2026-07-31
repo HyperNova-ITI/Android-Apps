@@ -8,454 +8,180 @@
     android:background="@color/hypernova_background"
     tools:context=".MainActivity">
 
-    <!-- Real interactive world map. -->
-    <org.maplibre.android.maps.MapView
-        android:id="@+id/mapView"
+    <!--
+        MapLibre requires native/runtime assets and cannot be created by the
+        Android Studio Layout Editor. MainActivity inserts the real MapView
+        into this container at runtime; the ImageView is design-time only.
+    -->
+    <FrameLayout
+        android:id="@+id/mapContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ImageView
+            android:id="@+id/mapDesignPreview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@null"
+            android:importantForAccessibility="no"
+            android:scaleType="centerCrop"
+            android:visibility="gone"
+            tools:src="@drawable/navigation_map_preview"
+            tools:visibility="visible" />
+
+    </FrameLayout>
+
+    <View
+        android:id="@+id/mapScrim"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:contentDescription="@string/map_content_description" />
+        android:background="@color/hypernova_map_scrim"
+        android:visibility="gone" />
 
-    <!-- Top navigation interface. -->
     <LinearLayout
-        android:id="@+id/topNavigationContainer"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="20dp"
-        android:layout_marginEnd="24dp"
+        android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- Application status header. -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/statusCard"
+        <include
+            android:id="@+id/topBar"
+            layout="@layout/view_top_bar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:cardBackgroundColor="@color/hypernova_card"
-            app:cardCornerRadius="22dp"
-            app:cardElevation="6dp"
-            app:strokeColor="@color/hypernova_border"
-            app:strokeWidth="1dp">
+            android:layout_height="60dp"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="12dp" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingStart="20dp"
-                android:paddingTop="16dp"
-                android:paddingEnd="20dp"
-                android:paddingBottom="16dp">
-
-                <TextView
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
-                    android:gravity="center"
-                    android:text="➤"
-                    android:textColor="@color/hypernova_cyan"
-                    android:textSize="28sp"
-                    android:textStyle="bold" />
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/navigation_title"
-                        android:textColor="@color/hypernova_text_primary"
-                        android:textSize="20sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/statusText"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="@string/map_status_loading"
-                        android:textColor="@color/hypernova_text_secondary"
-                        android:textSize="14sp" />
-
-                </LinearLayout>
-
-                <TextView
-                    android:id="@+id/onlineIndicator"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:letterSpacing="0.08"
-                    android:text="@string/online_label"
-                    android:textAllCaps="true"
-                    android:textColor="@color/hypernova_success"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
-
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Destination search entry point. -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/searchDestinationCard"
+        <FrameLayout
+            android:id="@+id/stateHost"
             android:layout_width="match_parent"
-            android:layout_height="64dp"
-            android:layout_marginTop="12dp"
-            android:clickable="true"
-            android:focusable="true"
-            app:cardBackgroundColor="@color/hypernova_card"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="5dp"
-            app:strokeColor="@color/hypernova_border"
-            app:strokeWidth="1dp">
+            android:layout_height="0dp"
+            android:layout_weight="1">
 
-            <LinearLayout
+            <!-- Removed by MainActivity before it renders the real state. -->
+            <include
+                android:id="@+id/designPreviewHome"
+                layout="@layout/panel_home"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingStart="20dp"
-                android:paddingEnd="20dp">
+                android:visibility="gone"
+                tools:visibility="visible" />
 
-                <View
-                    android:layout_width="4dp"
-                    android:layout_height="32dp"
-                    android:background="@color/hypernova_cyan" />
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/searchDestinationText"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Search destination"
-                        android:textColor="@color/hypernova_text_primary"
-                        android:textSize="17sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="Find a place, address or category"
-                        android:textColor="@color/hypernova_text_secondary"
-                        android:textSize="12sp" />
-
-                </LinearLayout>
-
-                <TextView
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:gravity="center"
-                    android:text="›"
-                    android:textColor="@color/hypernova_cyan"
-                    android:textSize="32sp"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
-
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Quick destination shortcuts. -->
-        <LinearLayout
-            android:id="@+id/quickDestinationsContainer"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="10dp"
-            android:gravity="center"
-            android:orientation="horizontal">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/homeDestinationButton"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_marginEnd="5dp"
-                android:layout_weight="1"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:minWidth="0dp"
-                android:minHeight="0dp"
-                android:paddingStart="6dp"
-                android:paddingEnd="6dp"
-                android:text="Home"
-                android:textAllCaps="false"
-                android:textColor="@color/hypernova_text_primary"
-                android:textSize="12sp"
-                app:backgroundTint="@color/hypernova_card"
-                app:cornerRadius="18dp"
-                app:strokeColor="@color/hypernova_border"
-                app:strokeWidth="1dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/workDestinationButton"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_marginStart="5dp"
-                android:layout_marginEnd="5dp"
-                android:layout_weight="1"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:minWidth="0dp"
-                android:minHeight="0dp"
-                android:paddingStart="6dp"
-                android:paddingEnd="6dp"
-                android:text="Work"
-                android:textAllCaps="false"
-                android:textColor="@color/hypernova_text_primary"
-                android:textSize="12sp"
-                app:backgroundTint="@color/hypernova_card"
-                app:cornerRadius="18dp"
-                app:strokeColor="@color/hypernova_border"
-                app:strokeWidth="1dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/chargingDestinationButton"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_marginStart="5dp"
-                android:layout_marginEnd="5dp"
-                android:layout_weight="1"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:minWidth="0dp"
-                android:minHeight="0dp"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
-                android:text="Charging"
-                android:textAllCaps="false"
-                android:textColor="@color/hypernova_text_primary"
-                android:textSize="11sp"
-                app:backgroundTint="@color/hypernova_card"
-                app:cornerRadius="18dp"
-                app:strokeColor="@color/hypernova_border"
-                app:strokeWidth="1dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/recentDestinationButton"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_marginStart="5dp"
-                android:layout_weight="1"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:minWidth="0dp"
-                android:minHeight="0dp"
-                android:paddingStart="6dp"
-                android:paddingEnd="6dp"
-                android:text="Recent"
-                android:textAllCaps="false"
-                android:textColor="@color/hypernova_text_primary"
-                android:textSize="12sp"
-                app:backgroundTint="@color/hypernova_card"
-                app:cornerRadius="18dp"
-                app:strokeColor="@color/hypernova_border"
-                app:strokeWidth="1dp" />
-
-        </LinearLayout>
+        </FrameLayout>
 
     </LinearLayout>
 
-    <!-- Map loading and error state. -->
+    <LinearLayout
+        android:id="@+id/mapControls"
+        android:layout_width="56dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|center_vertical"
+        android:layout_marginEnd="14dp"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/zoomInButton"
+            style="@style/Widget.HyperNova.Button.Secondary"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:contentDescription="@string/map_zoom_in"
+            android:minWidth="56dp"
+            android:padding="0dp"
+            android:text="@string/map_zoom_in_symbol"
+            android:textSize="26sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/zoomOutButton"
+            style="@style/Widget.HyperNova.Button.Secondary"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_marginTop="8dp"
+            android:contentDescription="@string/map_zoom_out"
+            android:minWidth="56dp"
+            android:padding="0dp"
+            android:text="@string/map_zoom_out_symbol"
+            android:textSize="26sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/centerOriginButton"
+            style="@style/Widget.HyperNova.Button.Secondary"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_marginTop="8dp"
+            android:contentDescription="@string/map_center_origin"
+            android:minWidth="56dp"
+            android:padding="0dp"
+            android:text=""
+            app:icon="@drawable/ic_navigation"
+            app:iconGravity="textStart"
+            app:iconPadding="0dp"
+            app:iconTint="@color/hypernova_cyan" />
+
+    </LinearLayout>
+
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/mapStateCard"
+        style="@style/Widget.HyperNova.Card"
         android:layout_width="320dp"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:layout_margin="24dp"
-        app:cardBackgroundColor="@color/hypernova_card"
-        app:cardCornerRadius="28dp"
-        app:cardElevation="10dp"
-        app:strokeColor="@color/hypernova_border"
-        app:strokeWidth="1dp">
+        tools:visibility="gone">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
             android:orientation="vertical"
-            android:padding="28dp">
+            android:padding="24dp">
 
             <ProgressBar
-                android:id="@+id/loadingIndicator"
+                android:id="@+id/mapLoadingIndicator"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:indeterminateTint="@color/hypernova_cyan" />
+
+            <ImageView
+                android:id="@+id/mapErrorIcon"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:indeterminate="true"
-                android:indeterminateTint="@color/hypernova_cyan" />
+                android:contentDescription="@null"
+                android:src="@drawable/ic_error"
+                android:visibility="gone"
+                app:tint="@color/hypernova_error" />
 
             <TextView
                 android:id="@+id/mapStateTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
+                android:layout_marginTop="14dp"
                 android:gravity="center"
                 android:text="@string/map_loading_title"
                 android:textColor="@color/hypernova_text_primary"
-                android:textSize="20sp"
+                android:textSize="19sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/mapStateMessage"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="6dp"
                 android:gravity="center"
-                android:lineSpacingExtra="3dp"
+                android:lineSpacingExtra="2dp"
                 android:text="@string/map_loading_message"
                 android:textColor="@color/hypernova_text_secondary"
-                android:textSize="14sp" />
+                android:textSize="13sp" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/retryButton"
+                android:id="@+id/mapRetryButton"
+                style="@style/Widget.HyperNova.Button.Primary"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="22dp"
+                android:layout_height="52dp"
+                android:layout_marginTop="18dp"
                 android:text="@string/retry"
-                android:textAllCaps="false"
-                android:textColor="@color/hypernova_background"
-                android:textSize="16sp"
                 android:visibility="gone"
-                app:backgroundTint="@color/hypernova_cyan"
-                app:cornerRadius="18dp"
                 tools:visibility="visible" />
-
-        </LinearLayout>
-
-    </com.google.android.material.card.MaterialCardView>
-
-    <!-- Map camera controls. -->
-    <LinearLayout
-        android:id="@+id/mapControls"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="end|bottom"
-        android:layout_marginEnd="24dp"
-        android:layout_marginBottom="168dp"
-        android:gravity="center"
-        android:orientation="vertical">
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/zoomInButton"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:minWidth="64dp"
-            android:minHeight="64dp"
-            android:text="+"
-            android:textColor="@color/hypernova_text_primary"
-            android:textSize="28sp"
-            app:backgroundTint="@color/hypernova_card"
-            app:cornerRadius="20dp"
-            app:strokeColor="@color/hypernova_border"
-            app:strokeWidth="1dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/zoomOutButton"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:layout_marginTop="10dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:minWidth="64dp"
-            android:minHeight="64dp"
-            android:text="−"
-            android:textColor="@color/hypernova_text_primary"
-            android:textSize="28sp"
-            app:backgroundTint="@color/hypernova_card"
-            app:cornerRadius="20dp"
-            app:strokeColor="@color/hypernova_border"
-            app:strokeWidth="1dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/resetCameraButton"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:layout_marginTop="10dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:minWidth="64dp"
-            android:minHeight="64dp"
-            android:text="◎"
-            android:textColor="@color/hypernova_cyan"
-            android:textSize="24sp"
-            app:backgroundTint="@color/hypernova_card"
-            app:cornerRadius="20dp"
-            app:strokeColor="@color/hypernova_border"
-            app:strokeWidth="1dp" />
-
-    </LinearLayout>
-
-    <!-- Current route state. -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/routeStatusCard"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:layout_marginStart="24dp"
-        android:layout_marginEnd="24dp"
-        android:layout_marginBottom="24dp"
-        app:cardBackgroundColor="@color/hypernova_card"
-        app:cardCornerRadius="24dp"
-        app:cardElevation="8dp"
-        app:strokeColor="@color/hypernova_border"
-        app:strokeWidth="1dp">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingStart="20dp"
-            android:paddingTop="18dp"
-            android:paddingEnd="20dp"
-            android:paddingBottom="18dp">
-
-            <View
-                android:layout_width="4dp"
-                android:layout_height="48dp"
-                android:background="@color/hypernova_cyan" />
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/routeStatusTitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="No active route"
-                    android:textColor="@color/hypernova_text_primary"
-                    android:textSize="17sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/routeStatusMessage"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="Search for a destination to begin navigation"
-                    android:textColor="@color/hypernova_text_secondary"
-                    android:textSize="13sp" />
-
-            </LinearLayout>
-
-            <TextView
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:gravity="center"
-                android:text="○"
-                android:textColor="@color/hypernova_cyan"
-                android:textSize="24sp" />
 
         </LinearLayout>
 
