@@ -2,7 +2,6 @@ package com.hypernova.climate.ui
 
 import android.content.res.ColorStateList
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -117,27 +116,27 @@ class ClimateFragment : Fragment() {
         val active = confirmed?.powerEnabled == true && fan > 0
         airflowView.setAirflow(
             driver = CabinAirflowView.ZoneAirflow(
-                mode = confirmed?.airflowMode,
+                mode = confirmed?.driverAirflowMode,
                 fanLevel = fan,
                 accentColor = color(if (heating) R.color.hn_warning else R.color.hn_primary_cyan),
                 active = active
             ),
             passenger = CabinAirflowView.ZoneAirflow(
-                mode = confirmed?.airflowMode,
+                mode = confirmed?.passengerAirflowMode,
                 fanLevel = fan,
                 accentColor = color(R.color.hn_warning),
                 active = active
             )
         )
 
-        // Per-zone airflow selection (opt1=face, opt2=face+feet, opt3=feet).
+        // Per-zone airflow selection (independent unless synced).
         renderZoneAirflow(
-            confirmed?.airflowMode,
+            confirmed?.driverAirflowMode,
             driverAirflowOption1, driverAirflowOption2, driverAirflowOption3,
             R.color.hn_primary_cyan
         )
         renderZoneAirflow(
-            confirmed?.airflowMode,
+            confirmed?.passengerAirflowMode,
             passengerAirflowOption1, passengerAirflowOption2, passengerAirflowOption3,
             R.color.hn_warning
         )
@@ -152,8 +151,10 @@ class ClimateFragment : Fragment() {
         renderAcMode(confirmed?.acMode ?: AcMode.OFF)
         renderToggle(btnClimateSync, confirmed?.zonesSynchronized == true)
 
-        // Airflow selection.
-        renderAirflow(confirmed?.airflowMode)
+        // General airflow bar: highlight only when both zones share a mode.
+        val commonAirflow = confirmed?.driverAirflowMode
+            ?.takeIf { it == confirmed.passengerAirflowMode }
+        renderAirflow(commonAirflow)
 
         // Air source.
         renderToggle(btnFreshAir, confirmed?.freshAirEnabled == true)
@@ -231,15 +232,9 @@ class ClimateFragment : Fragment() {
     }
 
     private fun renderAirflow(mode: AirflowMode?) = with(binding) {
-        val map = listOf(
-            btnAirflowFace to AirflowMode.FACE,
-            btnAirflowFaceFeet to AirflowMode.FACE_AND_FEET,
-            btnAirflowFeet to AirflowMode.FEET,
-            btnAirflowWindshield to AirflowMode.WINDSHIELD
-        )
-        for ((button, buttonMode) in map) {
-            renderToggle(button, active = mode == buttonMode)
-        }
+        renderToggle(btnAirflowFace, active = mode == AirflowMode.FACE)
+        renderToggle(btnAirflowFeet, active = mode == AirflowMode.FEET)
+        renderToggle(btnAirflowFaceFeet, active = mode == AirflowMode.FACE_AND_FEET)
     }
 
     /** A/C control: OFF (gray snowflake), COOL (cyan snowflake), HEAT (amber flame). */
@@ -322,42 +317,41 @@ class ClimateFragment : Fragment() {
     private fun wireControls() = with(binding) {
         btnBack.setOnClickListener { requireActivity().onBackPressedDispatcher.onBackPressed() }
 
-        val log: (String) -> Unit = { Log.d(TAG, "control pressed: $it") }
-
         btnClimatePower.setOnClickListener { viewModel.togglePower() }
         btnClimateAuto.setOnClickListener { viewModel.toggleAuto() }
         btnClimateAc.setOnClickListener { viewModel.cycleAcMode() }
         btnClimateSync.setOnClickListener { viewModel.toggleSync() }
 
-        btnDriverTemperatureMinus.setOnClickListener { log("driver_temp_minus") }
-        btnDriverTemperaturePlus.setOnClickListener { log("driver_temp_plus") }
-        btnPassengerTemperatureMinus.setOnClickListener { log("passenger_temp_minus") }
-        btnPassengerTemperaturePlus.setOnClickListener { log("passenger_temp_plus") }
+        btnDriverTemperatureMinus.setOnClickListener { viewModel.driverTempDown() }
+        btnDriverTemperaturePlus.setOnClickListener { viewModel.driverTempUp() }
+        btnPassengerTemperatureMinus.setOnClickListener { viewModel.passengerTempDown() }
+        btnPassengerTemperaturePlus.setOnClickListener { viewModel.passengerTempUp() }
 
-        btnFanMinus.setOnClickListener { log("fan_minus") }
-        btnFanPlus.setOnClickListener { log("fan_plus") }
+        btnFanMinus.setOnClickListener { viewModel.fanDown() }
+        btnFanPlus.setOnClickListener { viewModel.fanUp() }
 
-        btnAirflowFace.setOnClickListener { log("airflow_face") }
-        btnAirflowFaceFeet.setOnClickListener { log("airflow_face_feet") }
-        btnAirflowFeet.setOnClickListener { log("airflow_feet") }
-        btnAirflowWindshield.setOnClickListener { log("airflow_windshield") }
+        // General airflow direction sets both zones.
+        btnAirflowFace.setOnClickListener { viewModel.setBothAirflow(AirflowMode.FACE) }
+        btnAirflowFeet.setOnClickListener { viewModel.setBothAirflow(AirflowMode.FEET) }
+        btnAirflowFaceFeet.setOnClickListener { viewModel.setBothAirflow(AirflowMode.FACE_AND_FEET) }
 
-        driverAirflowOption1.setOnClickListener { log("driver_airflow_face") }
-        driverAirflowOption2.setOnClickListener { log("driver_airflow_face_feet") }
-        driverAirflowOption3.setOnClickListener { log("driver_airflow_feet") }
-        passengerAirflowOption1.setOnClickListener { log("passenger_airflow_face") }
-        passengerAirflowOption2.setOnClickListener { log("passenger_airflow_face_feet") }
-        passengerAirflowOption3.setOnClickListener { log("passenger_airflow_feet") }
+        // Per-zone airflow selectors (independent unless SYNC is on).
+        driverAirflowOption1.setOnClickListener { viewModel.setDriverAirflow(AirflowMode.FACE) }
+        driverAirflowOption2.setOnClickListener { viewModel.setDriverAirflow(AirflowMode.FEET) }
+        driverAirflowOption3.setOnClickListener { viewModel.setDriverAirflow(AirflowMode.FACE_AND_FEET) }
+        passengerAirflowOption1.setOnClickListener { viewModel.setPassengerAirflow(AirflowMode.FACE) }
+        passengerAirflowOption2.setOnClickListener { viewModel.setPassengerAirflow(AirflowMode.FEET) }
+        passengerAirflowOption3.setOnClickListener { viewModel.setPassengerAirflow(AirflowMode.FACE_AND_FEET) }
 
-        btnFreshAir.setOnClickListener { log("fresh_air") }
-        btnRecirculation.setOnClickListener { log("recirculation") }
+        btnFreshAir.setOnClickListener { viewModel.toggleFreshAir() }
+        btnRecirculation.setOnClickListener { viewModel.toggleRecirculation() }
 
-        btnFrontDefrost.setOnClickListener { log("front_defrost") }
-        btnRearDefrost.setOnClickListener { log("rear_defrost") }
-        btnMaxDefrost.setOnClickListener { log("max_defrost") }
+        btnFrontDefrost.setOnClickListener { viewModel.toggleFrontDefrost() }
+        btnRearDefrost.setOnClickListener { viewModel.toggleRearDefrost() }
+        btnMaxDefrost.setOnClickListener { viewModel.toggleMaxDefrost() }
 
-        btnDriverSeatHeating.setOnClickListener { log("driver_seat_heating") }
-        btnPassengerSeatHeating.setOnClickListener { log("passenger_seat_heating") }
+        btnDriverSeatHeating.setOnClickListener { viewModel.cycleDriverSeatHeat() }
+        btnPassengerSeatHeating.setOnClickListener { viewModel.cyclePassengerSeatHeat() }
     }
 
     override fun onStart() {
@@ -375,9 +369,5 @@ class ClimateFragment : Fragment() {
     override fun onDestroyView() {
         _binding = null
         super.onDestroyView()
-    }
-
-    private companion object {
-        const val TAG = "HN-ClimateUi"
     }
 }

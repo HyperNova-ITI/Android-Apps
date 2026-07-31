@@ -4095,7 +4095,6 @@ int id bounceStart 0x7f080068
 int id btnAirflowFace 0x7f080069
 int id btnAirflowFaceFeet 0x7f08006a
 int id btnAirflowFeet 0x7f08006b
-int id btnAirflowWindshield 0x7f08006c
 int id btnBack 0x7f08006d
 int id btnClimateAc 0x7f08006e
 int id btnClimateAuto 0x7f08006f

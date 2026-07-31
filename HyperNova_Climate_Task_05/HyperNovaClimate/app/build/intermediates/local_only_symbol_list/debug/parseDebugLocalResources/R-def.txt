@@ -119,7 +119,6 @@ id airflowView
 id btnAirflowFace
 id btnAirflowFaceFeet
 id btnAirflowFeet
-id btnAirflowWindshield
 id btnBack
 id btnClimateAc
 id btnClimateAuto

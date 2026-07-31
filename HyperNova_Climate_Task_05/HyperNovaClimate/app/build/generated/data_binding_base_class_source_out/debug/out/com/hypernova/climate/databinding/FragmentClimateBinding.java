@@ -36,9 +36,6 @@ public final class FragmentClimateBinding implements ViewBinding {
   public final ImageButton btnAirflowFeet;
 
   @NonNull
-  public final ImageButton btnAirflowWindshield;
-
-  @NonNull
   public final ImageButton btnBack;
 
   @NonNull
@@ -69,7 +66,7 @@ public final class FragmentClimateBinding implements ViewBinding {
   public final ImageButton btnFanPlus;
 
   @NonNull
-  public final LinearLayout btnFreshAir;
+  public final ImageButton btnFreshAir;
 
   @NonNull
   public final LinearLayout btnFrontDefrost;
@@ -90,7 +87,7 @@ public final class FragmentClimateBinding implements ViewBinding {
   public final LinearLayout btnRearDefrost;
 
   @NonNull
-  public final LinearLayout btnRecirculation;
+  public final ImageButton btnRecirculation;
 
   @NonNull
   public final LinearLayout cardDriverZone;
@@ -182,17 +179,16 @@ public final class FragmentClimateBinding implements ViewBinding {
   private FragmentClimateBinding(@NonNull LinearLayout rootView,
       @NonNull CabinAirflowView airflowView, @NonNull ImageButton btnAirflowFace,
       @NonNull ImageButton btnAirflowFaceFeet, @NonNull ImageButton btnAirflowFeet,
-      @NonNull ImageButton btnAirflowWindshield, @NonNull ImageButton btnBack,
-      @NonNull ImageButton btnClimateAc, @NonNull ImageButton btnClimateAuto,
-      @NonNull ImageButton btnClimatePower, @NonNull ImageButton btnClimateSync,
-      @NonNull LinearLayout btnDriverSeatHeating, @NonNull ImageButton btnDriverTemperatureMinus,
-      @NonNull ImageButton btnDriverTemperaturePlus, @NonNull ImageButton btnFanMinus,
-      @NonNull ImageButton btnFanPlus, @NonNull LinearLayout btnFreshAir,
-      @NonNull LinearLayout btnFrontDefrost, @NonNull LinearLayout btnMaxDefrost,
-      @NonNull LinearLayout btnPassengerSeatHeating,
+      @NonNull ImageButton btnBack, @NonNull ImageButton btnClimateAc,
+      @NonNull ImageButton btnClimateAuto, @NonNull ImageButton btnClimatePower,
+      @NonNull ImageButton btnClimateSync, @NonNull LinearLayout btnDriverSeatHeating,
+      @NonNull ImageButton btnDriverTemperatureMinus, @NonNull ImageButton btnDriverTemperaturePlus,
+      @NonNull ImageButton btnFanMinus, @NonNull ImageButton btnFanPlus,
+      @NonNull ImageButton btnFreshAir, @NonNull LinearLayout btnFrontDefrost,
+      @NonNull LinearLayout btnMaxDefrost, @NonNull LinearLayout btnPassengerSeatHeating,
       @NonNull ImageButton btnPassengerTemperatureMinus,
       @NonNull ImageButton btnPassengerTemperaturePlus, @NonNull LinearLayout btnRearDefrost,
-      @NonNull LinearLayout btnRecirculation, @NonNull LinearLayout cardDriverZone,
+      @NonNull ImageButton btnRecirculation, @NonNull LinearLayout cardDriverZone,
       @NonNull LinearLayout cardEnvironment, @NonNull LinearLayout cardPassengerZone,
       @NonNull ImageButton driverAirflowOption1, @NonNull ImageButton driverAirflowOption2,
       @NonNull ImageButton driverAirflowOption3, @NonNull LinearLayout driverSeatHeatingLevel,
@@ -212,7 +208,6 @@ public final class FragmentClimateBinding implements ViewBinding {
     this.btnAirflowFace = btnAirflowFace;
     this.btnAirflowFaceFeet = btnAirflowFaceFeet;
     this.btnAirflowFeet = btnAirflowFeet;
-    this.btnAirflowWindshield = btnAirflowWindshield;
     this.btnBack = btnBack;
     this.btnClimateAc = btnClimateAc;
     this.btnClimateAuto = btnClimateAuto;
@@ -313,12 +308,6 @@ public final class FragmentClimateBinding implements ViewBinding {
         break missingId;
       }
 
-      id = R.id.btnAirflowWindshield;
-      ImageButton btnAirflowWindshield = ViewBindings.findChildViewById(rootView, id);
-      if (btnAirflowWindshield == null) {
-        break missingId;
-      }
-
       id = R.id.btnBack;
       ImageButton btnBack = ViewBindings.findChildViewById(rootView, id);
       if (btnBack == null) {
@@ -380,7 +369,7 @@ public final class FragmentClimateBinding implements ViewBinding {
       }
 
       id = R.id.btnFreshAir;
-      LinearLayout btnFreshAir = ViewBindings.findChildViewById(rootView, id);
+      ImageButton btnFreshAir = ViewBindings.findChildViewById(rootView, id);
       if (btnFreshAir == null) {
         break missingId;
       }
@@ -422,7 +411,7 @@ public final class FragmentClimateBinding implements ViewBinding {
       }
 
       id = R.id.btnRecirculation;
-      LinearLayout btnRecirculation = ViewBindings.findChildViewById(rootView, id);
+      ImageButton btnRecirculation = ViewBindings.findChildViewById(rootView, id);
       if (btnRecirculation == null) {
         break missingId;
       }
@@ -602,10 +591,10 @@ public final class FragmentClimateBinding implements ViewBinding {
       }
 
       return new FragmentClimateBinding((LinearLayout) rootView, airflowView, btnAirflowFace,
-          btnAirflowFaceFeet, btnAirflowFeet, btnAirflowWindshield, btnBack, btnClimateAc,
-          btnClimateAuto, btnClimatePower, btnClimateSync, btnDriverSeatHeating,
-          btnDriverTemperatureMinus, btnDriverTemperaturePlus, btnFanMinus, btnFanPlus, btnFreshAir,
-          btnFrontDefrost, btnMaxDefrost, btnPassengerSeatHeating, btnPassengerTemperatureMinus,
+          btnAirflowFaceFeet, btnAirflowFeet, btnBack, btnClimateAc, btnClimateAuto,
+          btnClimatePower, btnClimateSync, btnDriverSeatHeating, btnDriverTemperatureMinus,
+          btnDriverTemperaturePlus, btnFanMinus, btnFanPlus, btnFreshAir, btnFrontDefrost,
+          btnMaxDefrost, btnPassengerSeatHeating, btnPassengerTemperatureMinus,
           btnPassengerTemperaturePlus, btnRearDefrost, btnRecirculation, cardDriverZone,
           cardEnvironment, cardPassengerZone, driverAirflowOption1, driverAirflowOption2,
           driverAirflowOption3, driverSeatHeatingLevel, driverTemperatureArc, fanLevelIndicator,
