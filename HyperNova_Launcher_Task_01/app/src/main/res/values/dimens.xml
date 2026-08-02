@@ -11,13 +11,12 @@
     <!-- Status bar -->
     <dimen name="status_bar_height">31dp</dimen>
     <dimen name="status_icon_size">15dp</dimen>
-    <dimen name="profile_avatar_size">24dp</dimen>
 
     <!-- NOVA hero -->
     <dimen name="nova_brand_icon_width">36dp</dimen>
     <dimen name="nova_brand_icon_height">22dp</dimen>
     <dimen name="nova_orb_width">500dp</dimen>
-    <dimen name="nova_orb_height">150dp</dimen>
+    <dimen name="nova_orb_height">82dp</dimen>
 
     <!-- Main action buttons -->
     <dimen name="action_button_height">30dp</dimen>
@@ -26,10 +25,13 @@
     <!-- Dashboard cards -->
     <dimen name="dashboard_card_corner_radius">12dp</dimen>
     <dimen name="dashboard_row_height">188dp</dimen>
+    <dimen name="dashboard_compact_row_height">170dp</dimen>
+    <dimen name="dashboard_utility_row_height">150dp</dimen>
+    <dimen name="navigation_dashboard_min_height">220dp</dimen>
     <dimen name="route_info_height">64dp</dimen>
 
     <!-- Media -->
-    <dimen name="media_album_size">78dp</dimen>
+    <dimen name="media_album_size">50dp</dimen>
     <dimen name="media_progress_height">4dp</dimen>
     <dimen name="media_play_button_size">34dp</dimen>
     <dimen name="media_control_icon_size">23dp</dimen>

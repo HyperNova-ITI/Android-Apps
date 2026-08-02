@@ -7,8 +7,10 @@ import com.hypernova.navigation.domain.model.Place
 import com.hypernova.navigation.domain.model.ResolvedDestination
 import com.hypernova.navigation.domain.model.RouteAlternative
 import com.hypernova.navigation.domain.model.RoutePlan
+import com.hypernova.navigation.domain.model.VehiclePosition
 import com.hypernova.navigation.domain.repository.NavigationSession
 import com.hypernova.navigation.service.RouteConfirmationPolicy
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -67,6 +69,39 @@ class NavigationSessionTest {
         assertTrue(
             session.current().status ==
                 NavigationSessionStatus.IDLE
+        )
+    }
+
+    @Test
+    fun arrival_transitionsActiveSessionToAuthoritativeArrivedState() {
+        val session = NavigationSession()
+        val destination = destination()
+        session.showRoutePreview(destination, route())
+        session.activate()
+
+        val finalPoint = route().selected.points.last()
+        val arrived =
+            VehiclePosition(
+                point = finalPoint,
+                bearingDegrees = 45.0,
+                speedKph = 0.0,
+                traveledMeters = 2_000.0,
+                remainingDistanceMeters = 0.0,
+                progressFraction = 1.0,
+                routeSegmentIndex = 0,
+                arrived = true
+            )
+
+        assertTrue(session.arrive(arrived))
+        assertEquals(
+            NavigationSessionStatus.ARRIVED,
+            session.current().status
+        )
+        assertEquals(arrived, session.current().vehiclePosition)
+        assertTrue(session.cancel())
+        assertEquals(
+            NavigationSessionStatus.IDLE,
+            session.current().status
         )
     }
 

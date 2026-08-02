@@ -6,11 +6,14 @@ import android.os.IBinder
 import com.hypernova.contracts.HyperNovaContract
 import com.hypernova.contracts.navigation.INavigationCommandCallback
 import com.hypernova.contracts.navigation.INavigationCommandService
+import com.hypernova.contracts.navigation.INavigationRoutePreviewCallback
+import com.hypernova.contracts.navigation.INavigationStatusCallback
 import com.hypernova.contracts.navigation.NavigationContract
 import com.hypernova.navigation.HyperNovaNavigationApplication
 
 class NavigationCommandService : Service() {
     private lateinit var controller: NavigationCommandController
+    private lateinit var statusPublisher: NavigationStatusPublisher
 
     private val binder =
         object : INavigationCommandService.Stub() {
@@ -60,6 +63,38 @@ class NavigationCommandService : Service() {
                     callback
                 )
             }
+
+            override fun getCurrentNavigationState(
+                requestId: String?,
+                callback: INavigationCommandCallback?
+            ) {
+                controller.getCurrentNavigationState(
+                    requestId,
+                    callback
+                )
+            }
+
+            override fun getCurrentNavigationRoutePreview(
+                requestId: String?,
+                callback: INavigationRoutePreviewCallback?
+            ) {
+                controller.getCurrentNavigationRoutePreview(
+                    requestId,
+                    callback
+                )
+            }
+
+            override fun registerNavigationStatusCallback(
+                callback: INavigationStatusCallback?
+            ) {
+                statusPublisher.register(callback)
+            }
+
+            override fun unregisterNavigationStatusCallback(
+                callback: INavigationStatusCallback?
+            ) {
+                statusPublisher.unregister(callback)
+            }
         }
 
     override fun onCreate() {
@@ -68,6 +103,10 @@ class NavigationCommandService : Service() {
             application as HyperNovaNavigationApplication
         controller =
             NavigationCommandController(
+                navigationApplication.navigationRepository
+            )
+        statusPublisher =
+            NavigationStatusPublisher(
                 navigationApplication.navigationRepository
             )
     }
@@ -83,6 +122,7 @@ class NavigationCommandService : Service() {
         }
 
     override fun onDestroy() {
+        statusPublisher.shutdown()
         controller.shutdown()
         super.onDestroy()
     }

@@ -2,6 +2,7 @@ package com.hypernova.launcher.core.media
 
 import android.content.ComponentName
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Handler
 import android.os.Looper
 import androidx.core.content.ContextCompat
@@ -92,6 +93,14 @@ class MediaSessionClient(
             return
         }
 
+        if (availability == AppAvailability.ERROR) {
+            publishState(
+                AppConnectionState.ERROR,
+                "Media availability unavailable",
+            )
+            return
+        }
+
         val serviceClassName = mediaSpec.serviceClassName
 
         if (serviceClassName.isNullOrBlank()) {
@@ -111,6 +120,23 @@ class MediaSessionClient(
             mediaSpec.packageName,
             serviceClassName
         )
+
+        val serviceExists = try {
+            applicationContext.packageManager.getServiceInfo(
+                serviceComponent,
+                PackageManager.ComponentInfoFlags.of(0L),
+            )
+            true
+        } catch (_: PackageManager.NameNotFoundException) {
+            false
+        } catch (_: SecurityException) {
+            false
+        }
+
+        if (!serviceExists) {
+            publishState(AppConnectionState.DISCONNECTED)
+            return
+        }
 
         val sessionToken = SessionToken(
             applicationContext,
@@ -299,8 +325,14 @@ class MediaSessionClient(
                 rawPositionMs
             }
 
+        val playerError = controller.playerError
         val snapshot = MediaSessionSnapshot(
-            connectionState = AppConnectionState.READY,
+            connectionState = if (playerError == null) {
+                AppConnectionState.READY
+            } else {
+                AppConnectionState.ERROR
+            },
+            playbackState = controller.toPlaybackState(),
             hasActiveSession = true,
             hasActiveMediaItem = currentMediaItem != null,
             title = metadata
@@ -323,12 +355,34 @@ class MediaSessionClient(
             ),
             canSkipNext = controller.isCommandAvailable(
                 Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM
-            )
+            ),
+            errorMessage = playerError?.message,
         )
 
         onSnapshotChanged(snapshot)
 
         scheduleProgressUpdates(controller.isPlaying)
+    }
+
+    private fun MediaController.toPlaybackState(): MediaPlaybackState {
+        if (playerError != null) return MediaPlaybackState.ERROR
+        return when (playbackState) {
+            Player.STATE_BUFFERING -> MediaPlaybackState.BUFFERING
+            Player.STATE_READY -> if (isPlaying) {
+                MediaPlaybackState.PLAYING
+            } else if (currentMediaItem != null) {
+                MediaPlaybackState.PAUSED
+            } else {
+                MediaPlaybackState.IDLE
+            }
+            Player.STATE_ENDED -> MediaPlaybackState.ENDED
+            Player.STATE_IDLE -> if (currentMediaItem != null) {
+                MediaPlaybackState.STOPPED
+            } else {
+                MediaPlaybackState.IDLE
+            }
+            else -> MediaPlaybackState.IDLE
+        }
     }
 
     private fun publishState(

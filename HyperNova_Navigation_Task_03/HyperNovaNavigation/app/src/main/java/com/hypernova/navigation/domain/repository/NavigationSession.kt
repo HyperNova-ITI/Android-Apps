@@ -4,6 +4,7 @@ import com.hypernova.navigation.domain.model.NavigationSessionState
 import com.hypernova.navigation.domain.model.NavigationSessionStatus
 import com.hypernova.navigation.domain.model.ResolvedDestination
 import com.hypernova.navigation.domain.model.RoutePlan
+import com.hypernova.navigation.domain.model.VehiclePosition
 import java.util.concurrent.CopyOnWriteArraySet
 
 class NavigationSession {
@@ -69,6 +70,36 @@ class NavigationSession {
             )
         )
         return state.status == NavigationSessionStatus.ACTIVE
+    }
+
+    @Synchronized
+    fun updateVehiclePosition(position: VehiclePosition): Boolean {
+        val current = state
+        if (current.status != NavigationSessionStatus.ACTIVE) {
+            return false
+        }
+
+        update(current.copy(vehiclePosition = position))
+        return true
+    }
+
+    @Synchronized
+    fun arrive(position: VehiclePosition): Boolean {
+        val current = state
+        if (
+            current.status != NavigationSessionStatus.ACTIVE ||
+            !position.arrived
+        ) {
+            return false
+        }
+
+        update(
+            current.copy(
+                status = NavigationSessionStatus.ARRIVED,
+                vehiclePosition = position
+            )
+        )
+        return state.status == NavigationSessionStatus.ARRIVED
     }
 
     @Synchronized

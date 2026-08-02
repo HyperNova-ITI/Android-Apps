@@ -5,6 +5,8 @@ import com.hypernova.contracts.HyperNovaContract
 import com.hypernova.contracts.navigation.NavigationContract
 import com.hypernova.contracts.navigation.NavigationDestination
 import com.hypernova.contracts.navigation.NavigationResult
+import com.hypernova.contracts.navigation.NavigationRoutePreview
+import com.hypernova.contracts.navigation.NavigationRoutePreviewResult
 import com.hypernova.navigation.domain.model.DestinationSource
 import com.hypernova.navigation.domain.model.FailureKind
 import com.hypernova.navigation.domain.model.NavigationDataException
@@ -269,8 +271,111 @@ class NavigationResultFactory(
             UNAVAILABLE
         )
 
+    /** Build a read-only snapshot of the shared Navigation session. */
+    fun currentStateResult(
+        requestId: String,
+        state: NavigationSessionState = stateProvider()
+    ): NavigationResult {
+        val route =
+            if (
+                state.status == NavigationSessionStatus.ACTIVE ||
+                state.status == NavigationSessionStatus.ARRIVED
+            ) {
+                state.routePlan?.let { plan ->
+                    if (plan.alternatives.isEmpty()) null else plan.selected
+                }
+            } else {
+                null
+            }
+        val etaSeconds =
+            route?.durationSeconds
+                ?.takeIf { it.isFinite() && it >= 0.0 }
+                ?.roundToLong()
+                ?: UNAVAILABLE
+        val distanceMeters =
+            route?.distanceMeters
+                ?.takeIf { it.isFinite() && it >= 0.0 }
+                ?.roundToLong()
+                ?: UNAVAILABLE
+
+        return NavigationResult(
+            requestId,
+            NavigationContract.OP_GET_CURRENT_STATE,
+            HyperNovaContract.STATUS_CONFIRMED,
+            state.currentStateMessage(),
+            HyperNovaContract.ERROR_NONE,
+            emptyList(),
+            state.destination?.toContract(),
+            state.toContractState(),
+            etaSeconds,
+            distanceMeters
+        )
+    }
+
+    /** Build the separate additive route-preview response without changing NavigationResult ABI. */
+    fun currentRoutePreviewResult(
+        requestId: String,
+        state: NavigationSessionState = stateProvider()
+    ): NavigationRoutePreviewResult {
+        val preview = NavigationRoutePreviewMapper.fromState(state)
+        return NavigationRoutePreviewResult(
+            requestId,
+            HyperNovaContract.STATUS_CONFIRMED,
+            if (preview.routePoints.isEmpty()) {
+                "Route preview is unavailable."
+            } else {
+                "Route preview is available."
+            },
+            HyperNovaContract.ERROR_NONE,
+            state.toContractState(),
+            preview
+        )
+    }
+
+    fun invalidRoutePreviewArgument(requestId: String): NavigationRoutePreviewResult =
+        NavigationRoutePreviewResult(
+            requestId,
+            HyperNovaContract.STATUS_REJECTED,
+            "requestId must not be blank.",
+            HyperNovaContract.ERROR_INVALID_ARGUMENT,
+            currentContractState(),
+            NavigationRoutePreview.empty()
+        )
+
+    fun routePreviewFailure(
+        requestId: String,
+        failure: Throwable
+    ): NavigationRoutePreviewResult {
+        Log.e(TAG, "Navigation route preview failed", failure)
+        return NavigationRoutePreviewResult(
+            requestId,
+            HyperNovaContract.STATUS_UNAVAILABLE,
+            "The navigation route preview is unavailable.",
+            HyperNovaContract.ERROR_INTERNAL,
+            currentContractState(),
+            NavigationRoutePreview.empty()
+        )
+    }
+
     fun currentContractState(): Int =
         stateProvider().toContractState()
+
+    private fun NavigationSessionState.currentStateMessage(): String =
+        when (status) {
+            NavigationSessionStatus.IDLE ->
+                "Navigation is idle."
+            NavigationSessionStatus.CALCULATING ->
+                "Route calculation is in progress."
+            NavigationSessionStatus.ROUTE_PREVIEW ->
+                "A route is ready to start."
+            NavigationSessionStatus.ACTIVE ->
+                "Navigation is active."
+            NavigationSessionStatus.ARRIVED ->
+                "The destination has been reached."
+            NavigationSessionStatus.ERROR ->
+                message?.takeIf { it.isNotBlank() }
+                    ?: "Navigation is in an error state."
+        }
 
     private fun NavigationSessionState.toContractState(): Int =
         when (status) {
@@ -281,6 +386,8 @@ class NavigationResultFactory(
                 NavigationContract.STATE_CALCULATING
             NavigationSessionStatus.ACTIVE ->
                 NavigationContract.STATE_ACTIVE
+            NavigationSessionStatus.ARRIVED ->
+                NavigationContract.STATE_ARRIVED
             NavigationSessionStatus.ERROR ->
                 NavigationContract.STATE_ERROR
         }
