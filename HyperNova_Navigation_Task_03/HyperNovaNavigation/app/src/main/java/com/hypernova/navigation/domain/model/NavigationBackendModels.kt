@@ -29,6 +29,7 @@ enum class NavigationSessionStatus {
     CALCULATING,
     ROUTE_PREVIEW,
     ACTIVE,
+    ARRIVED,
     ERROR
 }
 
@@ -37,5 +38,6 @@ data class NavigationSessionState(
         NavigationSessionStatus.IDLE,
     val destination: ResolvedDestination? = null,
     val routePlan: RoutePlan? = null,
+    val vehiclePosition: VehiclePosition? = null,
     val message: String? = null
 )

@@ -228,6 +228,7 @@ data class NavigationUiState(
     val selectedResultId: String? = null,
     val destination: Place? = null,
     val routePlan: RoutePlan? = null,
+    val vehiclePosition: VehiclePosition? = null,
     val savedDestinationTarget: SavedDestinationTarget? = null,
     val message: String? = null
 )

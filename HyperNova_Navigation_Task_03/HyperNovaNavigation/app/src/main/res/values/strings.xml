@@ -101,7 +101,7 @@
     <string name="change_destination">Change Destination</string>
     <string name="clear_route">Clear Route</string>
     <string name="route_active">ROUTE ACTIVE</string>
-    <string name="route_preview_mode">Preview mode • no live movement</string>
+    <string name="route_preview_mode">Simulation active • following route</string>
     <string name="first_maneuver">FIRST MANEUVER</string>
     <string name="route_total">Route total</string>
     <string name="end_route">End Route</string>

@@ -15,11 +15,15 @@ import com.hypernova.navigation.domain.model.GeoDistance
 import com.hypernova.navigation.domain.model.GeoPoint
 import com.hypernova.navigation.domain.model.NavigationDataException
 import com.hypernova.navigation.domain.model.NavigationSessionState
+import com.hypernova.navigation.domain.model.NavigationSessionStatus
 import com.hypernova.navigation.domain.model.NearbyCategory
 import com.hypernova.navigation.domain.model.Place
 import com.hypernova.navigation.domain.model.ResolvedDestination
 import com.hypernova.navigation.domain.model.RoutePlan
+import com.hypernova.navigation.domain.model.VehiclePosition
 import com.hypernova.navigation.domain.model.VerifiedDemoPlaces
+import com.hypernova.navigation.domain.simulation.LocationSource
+import com.hypernova.navigation.domain.simulation.SimulatedLocationSource
 import java.util.LinkedHashMap
 import java.util.Locale
 import java.util.concurrent.ExecutorService
@@ -35,6 +39,8 @@ class NavigationRepository(
         DestinationStore(),
     private val navigationSession: NavigationSession =
         NavigationSession(),
+    private val locationSource: LocationSource =
+        SimulatedLocationSource(),
     private val originProvider: () -> GeoPoint? = {
         DEFAULT_ORIGIN
     }
@@ -44,6 +50,26 @@ class NavigationRepository(
 
     private val mainHandler =
         Handler(Looper.getMainLooper())
+
+    private val vehiclePositionListener:
+        (VehiclePosition?) -> Unit = { position ->
+        if (position != null) {
+            mainHandler.post {
+                if (locationSource.currentPosition() != position) {
+                    return@post
+                }
+                if (position.arrived) {
+                    navigationSession.arrive(position)
+                } else {
+                    navigationSession.updateVehiclePosition(position)
+                }
+            }
+        }
+    }
+
+    init {
+        locationSource.addListener(vehiclePositionListener)
+    }
 
     private val textSearchGeneration =
         RequestGenerationGate()
@@ -278,15 +304,26 @@ class NavigationRepository(
         )
     }
 
-    fun activateCurrentRoute(): Boolean =
-        navigationSession.activate()
+    fun activateCurrentRoute(): Boolean {
+        val activated = navigationSession.activate()
+        if (activated) {
+            startLocationSourceForCurrentRoute()
+        }
+        return activated
+    }
 
     fun selectRouteAlternative(
         routePlan: RoutePlan
-    ): Boolean =
-        navigationSession.selectRoute(
-            routePlan
-        )
+    ): Boolean {
+        val wasActive =
+            navigationSession.current().status ==
+                NavigationSessionStatus.ACTIVE
+        val selected = navigationSession.selectRoute(routePlan)
+        if (selected && wasActive) {
+            startLocationSourceForCurrentRoute()
+        }
+        return selected
+    }
 
     fun restoreNavigationState(
         destination: Place,
@@ -306,6 +343,10 @@ class NavigationRepository(
             routePlan = routePlan,
             active = active
         )
+
+        if (active) {
+            startLocationSourceForCurrentRoute()
+        }
     }
 
     fun startNavigation(
@@ -373,6 +414,7 @@ class NavigationRepository(
     }
 
     fun cancelNavigation(): Boolean {
+        locationSource.setRoute(null)
         cancelRoute()
 
         return navigationSession.cancel()
@@ -1055,6 +1097,8 @@ class NavigationRepository(
         callback:
             (Result<RoutePlan>) -> Unit
     ): Int {
+        locationSource.setRoute(null)
+
         val generation: Int
 
         synchronized(routeLock) {
@@ -1086,13 +1130,16 @@ class NavigationRepository(
                             if (
                                 activateWhenReady
                             ) {
-                                navigationSession
-                                    .activate(
+                                val activated =
+                                    navigationSession.activate(
                                         destination =
                                             destination,
                                         routePlan =
                                             route
                                     )
+                                if (activated) {
+                                    startLocationSourceForCurrentRoute()
+                                }
                             } else {
                                 navigationSession
                                     .showRoutePreview(
@@ -1263,13 +1310,26 @@ class NavigationRepository(
         }
 
         navigationSession.cancel()
+        locationSource.setRoute(null)
 
         return true
+    }
+
+    private fun startLocationSourceForCurrentRoute() {
+        val route =
+            navigationSession.current()
+                .routePlan
+                ?.selected
+                ?: return
+        locationSource.setRoute(route)
     }
 
     fun close() {
         cancelSearch()
         cancelRoute()
+
+        locationSource.removeListener(vehiclePositionListener)
+        locationSource.close()
 
         executor.shutdownNow()
 

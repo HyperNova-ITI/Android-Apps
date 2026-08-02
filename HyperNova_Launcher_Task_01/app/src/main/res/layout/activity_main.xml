@@ -74,7 +74,7 @@
             app:layout_constraintTop_toTopOf="parent" />
 
         <LinearLayout
-            android:id="@+id/profileGroup"
+            android:id="@+id/statusActionsGroup"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:gravity="center_vertical"
@@ -123,28 +123,6 @@
                 android:contentDescription="@null"
                 android:src="@drawable/ic_location" />
 
-            <TextView
-                android:id="@+id/textDriverName"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="7dp"
-                android:text="@string/driver_default_name"
-                android:textColor="@color/hypernova_text_primary"
-                android:textSize="11sp" />
-
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/imageDriverAvatar"
-                android:layout_width="@dimen/profile_avatar_size"
-                android:layout_height="@dimen/profile_avatar_size"
-                android:layout_marginStart="6dp"
-                android:contentDescription="@string/driver_default_name"
-                android:scaleType="centerCrop"
-                android:src="@drawable/avatar_ayman"
-                android:visibility="gone"
-                app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.HyperNova.Circle"
-                app:strokeColor="@color/hypernova_text_primary"
-                app:strokeWidth="1dp" />
-
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
@@ -176,7 +154,7 @@
         <LinearLayout
             android:id="@+id/launcherContent"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:orientation="vertical"
             android:paddingStart="@dimen/screen_padding"
             android:paddingTop="6dp"
@@ -188,7 +166,7 @@
             <!-- ================================================== -->
 
             <!-- ================================================== -->
-            <!-- Navigation and Media                               -->
+            <!-- NOVA AI hero and capability actions               -->
             <!-- ================================================== -->
 
             <LinearLayout
@@ -403,9 +381,9 @@
             </LinearLayout>
 
             <LinearLayout
-                android:id="@+id/navigationMediaRow"
+                android:id="@+id/climateMediaRow"
                 android:layout_width="match_parent"
-                android:layout_height="@dimen/dashboard_row_height"
+                android:layout_height="@dimen/dashboard_compact_row_height"
                 android:layout_marginTop="@dimen/section_spacing"
                 android:baselineAligned="false"
                 android:orientation="horizontal">
@@ -423,17 +401,22 @@
                     android:clipToOutline="true"
                     android:focusable="true">
 
-                    <!-- Hidden until a real route preview is received -->
-
-                    <ImageView
-                        android:id="@+id/imageNavigationMap"
+                    <FrameLayout
+                        android:id="@+id/navigationMapContainer"
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:alpha="0.82"
-                        android:contentDescription="@string/navigation_map_description"
-                        android:scaleType="centerCrop"
-                        android:src="@drawable/navigation_map_bg"
-                        android:visibility="invisible" />
+                        android:layout_height="match_parent">
+
+                        <com.hypernova.launcher.ui.NavigationRoutePreviewView
+                            android:id="@+id/navigationRoutePreview"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:contentDescription="@string/navigation_map_description"
+                            android:paddingStart="20dp"
+                            android:paddingTop="34dp"
+                            android:paddingEnd="20dp"
+                            android:paddingBottom="78dp" />
+
+                    </FrameLayout>
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -445,19 +428,6 @@
                         android:textColor="@color/hypernova_text_primary"
                         android:textSize="12sp"
                         android:textStyle="bold" />
-
-                    <!-- Hidden until a real vehicle position is received -->
-
-                    <ImageView
-                        android:id="@+id/imageVehicleMarker"
-                        android:layout_width="30dp"
-                        android:layout_height="30dp"
-                        android:layout_gravity="bottom|start"
-                        android:layout_marginStart="92dp"
-                        android:layout_marginBottom="59dp"
-                        android:contentDescription="@string/route_position_description"
-                        android:src="@drawable/ic_route_arrow"
-                        android:visibility="gone" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -718,13 +688,13 @@
             </LinearLayout>
 
             <!-- ================================================== -->
-            <!-- Phone and Climate                                  -->
+            <!-- Settings and Phone                                 -->
             <!-- ================================================== -->
 
             <LinearLayout
-                android:id="@+id/phoneClimateRow"
+                android:id="@+id/settingsPhoneRow"
                 android:layout_width="match_parent"
-                android:layout_height="@dimen/phone_climate_row_height"
+                android:layout_height="@dimen/dashboard_utility_row_height"
                 android:layout_marginTop="@dimen/section_spacing"
                 android:baselineAligned="false"
                 android:orientation="horizontal">
@@ -786,18 +756,6 @@
                             android:layout_height="58dp"
                             android:layout_marginEnd="12dp">
 
-                            <com.google.android.material.imageview.ShapeableImageView
-                                android:id="@+id/imagePhoneContactAvatar"
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:contentDescription="@string/phone_icon_description"
-                                android:scaleType="centerCrop"
-                                android:src="@drawable/avatar_ayman"
-                                android:visibility="invisible"
-                                app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.HyperNova.Circle"
-                                app:strokeColor="@color/hypernova_cyan"
-                                app:strokeWidth="1dp" />
-
                             <ImageView
                                 android:id="@+id/imagePhonePlaceholder"
                                 android:layout_width="match_parent"
@@ -815,17 +773,6 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:orientation="vertical">
-
-                            <TextView
-                                android:id="@+id/textPhonePreviewLabel"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:ellipsize="end"
-                                android:maxLines="1"
-                                android:text="@string/phone_recent_contact"
-                                android:textColor="@color/hypernova_text_secondary"
-                                android:textSize="9sp"
-                                android:visibility="gone" />
 
                             <TextView
                                 android:id="@+id/textPhoneTitle"
@@ -846,7 +793,7 @@
                                 android:layout_marginTop="3dp"
                                 android:ellipsize="end"
                                 android:maxLines="2"
-                                android:text="@string/phone_service_not_connected"
+                                android:text="@string/phone_available"
                                 android:textColor="@color/hypernova_text_secondary"
                                 android:textSize="10sp" />
 
@@ -1098,185 +1045,25 @@
 
 
             <!-- ================================================== -->
-            <!-- Weather, Driver and Settings quick cards           -->
+            <!-- Full-width responsive Navigation card             -->
             <!-- ================================================== -->
 
             <LinearLayout
-                android:id="@+id/quickCardsRow"
+                android:id="@+id/navigationDashboardRow"
                 android:layout_width="match_parent"
-                android:layout_height="96dp"
+                android:layout_height="0dp"
                 android:layout_marginTop="@dimen/section_spacing"
+                android:layout_weight="1"
                 android:baselineAligned="false"
+                android:minHeight="@dimen/navigation_dashboard_min_height"
                 android:orientation="horizontal">
-
-                <!-- Weather quick card -->
-
-                <LinearLayout
-                    android:id="@+id/weatherCard"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_marginEnd="4dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_dashboard_card"
-                    android:clickable="true"
-                    android:clipToOutline="true"
-                    android:focusable="true"
-                    android:foreground="?attr/selectableItemBackground"
-                    android:orientation="vertical"
-                    android:paddingStart="12dp"
-                    android:paddingTop="8dp"
-                    android:paddingEnd="12dp"
-                    android:paddingBottom="8dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/weather_title"
-                        android:textColor="@color/hypernova_text_primary"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="0dp"
-                        android:layout_marginTop="4dp"
-                        android:layout_weight="1"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <ImageView
-                            android:layout_width="42dp"
-                            android:layout_height="42dp"
-                            android:layout_marginStart="2dp"
-                            android:layout_marginEnd="8dp"
-                            android:contentDescription="@string/weather_icon_description"
-                            android:padding="3dp"
-                            android:src="@drawable/ic_thermometer"
-                            app:tint="@color/hypernova_cyan" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:id="@+id/textWeatherTemperature"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:ellipsize="end"
-                                android:maxLines="1"
-                                android:text="@string/temperature_value_unavailable"
-                                android:textColor="@color/hypernova_text_primary"
-                                android:textSize="14sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:id="@+id/textWeatherLocation"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="1dp"
-                                android:ellipsize="end"
-                                android:maxLines="1"
-                                android:text="@string/weather_location_unavailable"
-                                android:textColor="@color/hypernova_text_secondary"
-                                android:textSize="10sp" />
-
-                        </LinearLayout>
-
-                    </LinearLayout>
-
-                </LinearLayout>
-
-                <!-- Driver quick card -->
-
-                <LinearLayout
-                    android:id="@+id/driverCard"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_marginStart="4dp"
-                    android:layout_marginEnd="4dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_dashboard_card"
-                    android:clickable="true"
-                    android:clipToOutline="true"
-                    android:focusable="true"
-                    android:foreground="?attr/selectableItemBackground"
-                    android:orientation="vertical"
-                    android:paddingStart="12dp"
-                    android:paddingTop="8dp"
-                    android:paddingEnd="12dp"
-                    android:paddingBottom="8dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/driver_title"
-                        android:textColor="@color/hypernova_text_primary"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="0dp"
-                        android:layout_marginTop="4dp"
-                        android:layout_weight="1"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <com.google.android.material.imageview.ShapeableImageView
-                            android:id="@+id/imageDriverQuickAvatar"
-                            android:layout_width="42dp"
-                            android:layout_height="42dp"
-                            android:layout_marginStart="2dp"
-                            android:layout_marginEnd="8dp"
-                            android:contentDescription="@string/driver_default_name"
-                            android:scaleType="centerCrop"
-                            android:src="@drawable/avatar_ayman"
-                            android:visibility="invisible"
-                            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.HyperNova.Circle"
-                            app:strokeColor="@color/hypernova_border"
-                            app:strokeWidth="1dp" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:id="@+id/textDriverQuickName"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:ellipsize="end"
-                                android:maxLines="1"
-                                android:text="@string/driver_default_name"
-                                android:textColor="@color/hypernova_text_primary"
-                                android:textSize="14sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="1dp"
-                                android:text="@string/driver_profile_label"
-                                android:textColor="@color/hypernova_text_secondary"
-                                android:textSize="10sp" />
-
-                        </LinearLayout>
-
-                    </LinearLayout>
-
-                </LinearLayout>
 
                 <!-- Settings quick card -->
 
                 <LinearLayout
                     android:id="@+id/settingsCard"
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:layout_marginStart="4dp"
-                    android:layout_weight="1"
                     android:background="@drawable/bg_dashboard_card"
                     android:clickable="true"
                     android:clipToOutline="true"

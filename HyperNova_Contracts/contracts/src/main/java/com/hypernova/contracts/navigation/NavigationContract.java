@@ -1,6 +1,6 @@
 package com.hypernova.contracts.navigation;
 
-/** Frozen Navigation demo contract, API version 1. */
+/** Navigation demo API v1 with an additive read-only status extension. */
 public final class NavigationContract {
     public static final String PACKAGE_NAME = "com.hypernova.navigation";
     public static final String OPEN_ACTION = "com.hypernova.navigation.action.OPEN";
@@ -13,11 +13,16 @@ public final class NavigationContract {
     public static final String OP_GET_SAVED_DESTINATIONS = "get_saved_destinations";
     public static final String OP_SET_DESTINATION = "set_destination";
     public static final String OP_CANCEL_NAVIGATION = "cancel_navigation";
+    public static final String OP_GET_CURRENT_STATE = "get_current_state";
+    public static final String OP_GET_ROUTE_PREVIEW = "get_route_preview";
 
     public static final int MAX_DESTINATION_RESULTS = 4;
     public static final long SEARCH_RESULT_TTL_MILLIS = 10 * 60 * 1000L;
     public static final long SEARCH_TIMEOUT_MILLIS = 10 * 1000L;
     public static final long ROUTE_TIMEOUT_MILLIS = 20 * 1000L;
+    public static final int MAX_ROUTE_PREVIEW_POINTS = 128;
+    /** Maximum frequency for lightweight cross-process progress updates. */
+    public static final long MIN_PROGRESS_UPDATE_INTERVAL_MILLIS = 1_000L;
 
     public static final int SOURCE_SEARCH = 1;
     public static final int SOURCE_SAVED_HOME = 2;

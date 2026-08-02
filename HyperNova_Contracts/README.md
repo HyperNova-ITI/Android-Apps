@@ -1,6 +1,6 @@
 # HyperNova cross-app contracts
 
-Status: **FROZEN — Demo API v1**
+Status: **Demo API v1 with additive read-only Navigation status and route-preview extensions**
 
 This Android library is the source of truth for NOVA command integration with HyperNova Navigation
 and HyperNova Climate.
@@ -100,7 +100,26 @@ void setDestination(
     INavigationCommandCallback callback
 );
 void cancelNavigation(String requestId, INavigationCommandCallback callback);
+void getCurrentNavigationState(String requestId, INavigationCommandCallback callback);
+void getCurrentNavigationRoutePreview(
+    String requestId,
+    INavigationRoutePreviewCallback callback
+);
 ```
+
+`getCurrentNavigationState` is read-only. It returns a single current
+`NavigationResult` snapshot and never searches, calculates, activates, changes,
+or cancels a route. `getCurrentNavigationRoutePreview` is a second read-only
+query that returns a dedicated `NavigationRoutePreviewResult` through
+`INavigationRoutePreviewCallback`. Its preview contains up to
+`MAX_ROUTE_PREVIEW_POINTS` (128) authoritative OSRM route points and an optional
+current session position.
+
+Both methods are appended to the AIDL interface. The original
+`NavigationResult` constructor and Parcel wire format are unchanged, preserving
+existing NOVA command-client compatibility. The shared API version remains 1;
+clients that use the new method still require a Navigation service that
+implements the additive transaction.
 
 ### Demo journey A: voice search and selection
 

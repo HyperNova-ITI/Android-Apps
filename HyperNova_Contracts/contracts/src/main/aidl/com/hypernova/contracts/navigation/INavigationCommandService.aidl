@@ -1,6 +1,8 @@
 package com.hypernova.contracts.navigation;
 
 import com.hypernova.contracts.navigation.INavigationCommandCallback;
+import com.hypernova.contracts.navigation.INavigationRoutePreviewCallback;
+import com.hypernova.contracts.navigation.INavigationStatusCallback;
 
 interface INavigationCommandService {
     int getApiVersion();
@@ -26,4 +28,20 @@ interface INavigationCommandService {
         String requestId,
         INavigationCommandCallback callback
     );
+
+    void getCurrentNavigationState(
+        String requestId,
+        INavigationCommandCallback callback
+    );
+
+    void getCurrentNavigationRoutePreview(
+        String requestId,
+        INavigationRoutePreviewCallback callback
+    );
+
+    /** Registers a read-only observer and immediately publishes current snapshots. */
+    void registerNavigationStatusCallback(INavigationStatusCallback callback);
+
+    /** Stops status delivery for a previously registered observer. */
+    void unregisterNavigationStatusCallback(INavigationStatusCallback callback);
 }

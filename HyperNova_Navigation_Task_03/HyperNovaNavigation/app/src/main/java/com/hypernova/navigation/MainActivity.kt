@@ -2322,6 +2322,20 @@ class MainActivity : AppCompatActivity() {
             selectedResultId = uiState.selectedResultId,
             destination = destination,
             routePlan = routePlan,
+            vehiclePosition =
+                if (
+                    uiState.screen in setOf(
+                        NavigationScreen.ROUTE_ACTIVE,
+                        NavigationScreen.ROUTE_OVERVIEW,
+                        NavigationScreen.ARRIVED
+                    )
+                ) {
+                    uiState.vehiclePosition
+                } else {
+                    null
+                },
+            followVehicle =
+                uiState.screen == NavigationScreen.ROUTE_ACTIVE,
             calculating =
                 uiState.screen ==
                     NavigationScreen.CALCULATING_ROUTE ||
@@ -2338,13 +2352,13 @@ class MainActivity : AppCompatActivity() {
                 NavigationScreen.RESULTS ->
                     mapController.fitSearchResults()
                 NavigationScreen.CALCULATING_ROUTE,
-                NavigationScreen.ROUTE_PREVIEW,
-                NavigationScreen.ROUTE_ACTIVE ->
+                NavigationScreen.ROUTE_PREVIEW ->
                     mapController.fitRoute()
+                NavigationScreen.ROUTE_ACTIVE,
+                NavigationScreen.ARRIVED -> Unit
                 NavigationScreen.ROUTE_OVERVIEW ->
                     mapController.fitRoute(overview = true)
                 NavigationScreen.REROUTING,
-                NavigationScreen.ARRIVED,
                 NavigationScreen.ROUTE_ERROR ->
                     if (uiState.routePlan != null) {
                         mapController.fitRoute()
@@ -2436,6 +2450,23 @@ class MainActivity : AppCompatActivity() {
         val updated =
             uiStateForRepositoryState(state, uiState)
         if (updated != uiState) {
+            val positionOnlyUpdate =
+                updated.copy(
+                    vehiclePosition = uiState.vehiclePosition
+                ) == uiState
+            if (positionOnlyUpdate) {
+                uiState = updated
+                if (::mapController.isInitialized) {
+                    mapController.updateVehiclePosition(
+                        position = updated.vehiclePosition,
+                        followCamera =
+                            updated.screen ==
+                                NavigationScreen.ROUTE_ACTIVE
+                    )
+                }
+                return
+            }
+
             setState(
                 updated,
                 debugOverride = true
@@ -2463,6 +2494,7 @@ class MainActivity : AppCompatActivity() {
                     destination =
                         state.destination?.place,
                     routePlan = null,
+                    vehiclePosition = null,
                     savedDestinationTarget = null,
                     message = null
                 )
@@ -2472,15 +2504,34 @@ class MainActivity : AppCompatActivity() {
                     destination =
                         state.destination?.place,
                     routePlan = state.routePlan,
+                    vehiclePosition = null,
                     savedDestinationTarget = null,
                     message = null
                 )
             NavigationSessionStatus.ACTIVE ->
                 current.copy(
-                    screen = NavigationScreen.ROUTE_ACTIVE,
+                    screen =
+                        if (
+                            current.screen ==
+                            NavigationScreen.ROUTE_OVERVIEW
+                        ) {
+                            NavigationScreen.ROUTE_OVERVIEW
+                        } else {
+                            NavigationScreen.ROUTE_ACTIVE
+                        },
                     destination =
                         state.destination?.place,
                     routePlan = state.routePlan,
+                    vehiclePosition = state.vehiclePosition,
+                    savedDestinationTarget = null,
+                    message = null
+                )
+            NavigationSessionStatus.ARRIVED ->
+                current.copy(
+                    screen = NavigationScreen.ARRIVED,
+                    destination = state.destination?.place,
+                    routePlan = state.routePlan,
+                    vehiclePosition = state.vehiclePosition,
                     savedDestinationTarget = null,
                     message = null
                 )
@@ -2491,6 +2542,7 @@ class MainActivity : AppCompatActivity() {
                         state.destination?.place
                             ?: current.destination,
                     routePlan = null,
+                    vehiclePosition = null,
                     message = state.message
                 )
         }

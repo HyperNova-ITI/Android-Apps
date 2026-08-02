@@ -4,8 +4,10 @@ import android.os.RemoteException
 import android.util.Log
 import com.hypernova.contracts.HyperNovaContract
 import com.hypernova.contracts.navigation.INavigationCommandCallback
+import com.hypernova.contracts.navigation.INavigationRoutePreviewCallback
 import com.hypernova.contracts.navigation.NavigationContract
 import com.hypernova.contracts.navigation.NavigationResult
+import com.hypernova.contracts.navigation.NavigationRoutePreviewResult
 import com.hypernova.navigation.domain.model.DestinationResolution
 import com.hypernova.navigation.domain.model.NavigationSessionStatus
 import com.hypernova.navigation.domain.model.ResolvedDestination
@@ -203,6 +205,66 @@ class NavigationCommandController(
                 }
                 BeginDecision.HANDLED -> Unit
             }
+        }
+    }
+
+    /** Return the repository's current session without changing it. */
+    fun getCurrentNavigationState(
+        requestId: String?,
+        callback: INavigationCommandCallback?
+    ) {
+        val receiver = callback ?: return
+        val id = requestId?.trim().orEmpty()
+        if (id.isBlank()) {
+            executeDelivery(
+                receiver,
+                resultFactory.invalidArgument(
+                    requestId = id,
+                    operation = NavigationContract.OP_GET_CURRENT_STATE,
+                    message = "requestId must not be blank."
+                )
+            )
+            return
+        }
+
+        executor.execute {
+            val result =
+                runCatching {
+                    resultFactory.currentStateResult(id)
+                }.getOrElse {
+                    resultFactory.internalFailure(
+                        requestId = id,
+                        operation = NavigationContract.OP_GET_CURRENT_STATE,
+                        failure = it
+                    )
+                }
+            safeDeliver(receiver, result)
+        }
+    }
+
+    /** Return bounded selected-route geometry without mutating the session. */
+    fun getCurrentNavigationRoutePreview(
+        requestId: String?,
+        callback: INavigationRoutePreviewCallback?
+    ) {
+        val receiver = callback ?: return
+        val id = requestId?.trim().orEmpty()
+        if (id.isBlank()) {
+            executeRoutePreviewDelivery(
+                receiver,
+                resultFactory.invalidRoutePreviewArgument(id)
+            )
+            return
+        }
+
+        executor.execute {
+            val result =
+                runCatching {
+                    resultFactory.currentRoutePreviewResult(id)
+                }.getOrElse {
+                    resultFactory.routePreviewFailure(id, it)
+                }
+            safeDeliverRoutePreview(receiver, result)
         }
     }
 
@@ -523,6 +585,15 @@ class NavigationCommandController(
         }
     }
 
+    private fun executeRoutePreviewDelivery(
+        callback: INavigationRoutePreviewCallback,
+        result: NavigationRoutePreviewResult
+    ) {
+        executor.execute {
+            safeDeliverRoutePreview(callback, result)
+        }
+    }
+
     private fun safeDeliver(
         callback: INavigationCommandCallback,
         result: NavigationResult
@@ -539,6 +610,27 @@ class NavigationCommandController(
             Log.w(
                 TAG,
                 "Navigation callback failed: ${result.requestId}",
+                exception
+            )
+        }
+    }
+
+    private fun safeDeliverRoutePreview(
+        callback: INavigationRoutePreviewCallback,
+        result: NavigationRoutePreviewResult
+    ) {
+        try {
+            callback.onResult(result)
+        } catch (exception: RemoteException) {
+            Log.i(
+                TAG,
+                "Navigation route-preview client disconnected: " +
+                    result.requestId
+            )
+        } catch (exception: RuntimeException) {
+            Log.w(
+                TAG,
+                "Navigation route-preview callback failed: ${result.requestId}",
                 exception
             )
         }

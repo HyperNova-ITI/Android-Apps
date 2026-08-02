@@ -65,6 +65,15 @@
     <color name="hypernova_route_overlay_start">#FAFFFFFF</color>
     <color name="hypernova_route_overlay_end">#F2EAF3F7</color>
 
+    <!-- Lightweight Navigation route preview -->
+    <color name="navigation_preview_background">#071521</color>
+    <color name="navigation_preview_grid">#2A29475C</color>
+    <color name="navigation_preview_route">#20DCEC</color>
+    <color name="navigation_preview_route_glow">#7020DCEC</color>
+    <color name="navigation_preview_marker_outer">#F5FFFFFF</color>
+    <color name="navigation_preview_marker_inner">#081620</color>
+    <color name="navigation_preview_destination">#20DCEC</color>
+
     <!-- Bottom navigation -->
     <color name="hypernova_bottom_nav_start">#FCFFFFFF</color>
     <color name="hypernova_bottom_nav_center">#FFF7FBFD</color>

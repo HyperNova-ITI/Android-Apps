@@ -2,12 +2,14 @@ package com.hypernova.navigation.ui.map
 
 import android.content.Context
 import android.graphics.Color
+import android.os.SystemClock
 import android.view.Gravity
 import androidx.core.content.ContextCompat
 import com.hypernova.navigation.R
 import com.hypernova.navigation.domain.model.GeoPoint
 import com.hypernova.navigation.domain.model.Place
 import com.hypernova.navigation.domain.model.RoutePlan
+import com.hypernova.navigation.domain.model.VehiclePosition
 import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
@@ -29,6 +31,14 @@ import org.maplibre.android.style.layers.PropertyFactory.lineDasharray
 import org.maplibre.android.style.layers.PropertyFactory.lineJoin
 import org.maplibre.android.style.layers.PropertyFactory.lineOpacity
 import org.maplibre.android.style.layers.PropertyFactory.lineWidth
+import org.maplibre.android.style.layers.PropertyFactory.iconAllowOverlap
+import org.maplibre.android.style.layers.PropertyFactory.iconAnchor
+import org.maplibre.android.style.layers.PropertyFactory.iconIgnorePlacement
+import org.maplibre.android.style.layers.PropertyFactory.iconImage
+import org.maplibre.android.style.layers.PropertyFactory.iconRotate
+import org.maplibre.android.style.layers.PropertyFactory.iconRotationAlignment
+import org.maplibre.android.style.layers.PropertyFactory.iconSize
+import org.maplibre.android.style.layers.SymbolLayer
 import org.maplibre.android.style.sources.GeoJsonSource
 import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
@@ -47,6 +57,11 @@ class NavigationMapController(
     private var selectedResultId: String? = null
     private var destination: Place? = null
     private var routePlan: RoutePlan? = null
+    private var vehiclePosition: VehiclePosition? = null
+    private var followVehicle = false
+    private var activeRoutePoints: List<GeoPoint> = emptyList()
+    private var lastPassedDistanceBucket = -1
+    private var lastFollowCameraUpdateMs = 0L
     private var calculating = false
     private var onStyleReady: (() -> Unit)? = null
     private var onStyleError: ((String) -> Unit)? = null
@@ -110,6 +125,8 @@ class NavigationMapController(
         selectedResultId: String? = null,
         destination: Place? = null,
         routePlan: RoutePlan? = null,
+        vehiclePosition: VehiclePosition? = null,
+        followVehicle: Boolean = false,
         calculating: Boolean = false
     ) {
         this.origin = origin
@@ -117,8 +134,31 @@ class NavigationMapController(
         this.selectedResultId = selectedResultId
         this.destination = destination
         this.routePlan = routePlan
+        this.vehiclePosition = vehiclePosition
+        this.followVehicle = followVehicle
+        activeRoutePoints = routePlan?.selected?.points.orEmpty()
+        lastPassedDistanceBucket = -1
+        if (!followVehicle) {
+            lastFollowCameraUpdateMs = 0L
+        }
         this.calculating = calculating
         reapplyScene()
+    }
+
+    fun updateVehiclePosition(
+        position: VehiclePosition?,
+        followCamera: Boolean
+    ) {
+        vehiclePosition = position
+        followVehicle = followCamera
+        val style = map?.style ?: return
+        if (!styleReady) return
+
+        updateVehicleStyle(style, position)
+        updatePassedRoute(style, position)
+        if (followCamera && position != null) {
+            followVehicle(position)
+        }
     }
 
     fun centerOnOrigin() {
@@ -200,11 +240,18 @@ class NavigationMapController(
     private fun addSourcesAndLayers(style: Style) {
         addSourceIfMissing(style, ALTERNATIVE_ROUTE_SOURCE)
         addSourceIfMissing(style, SELECTED_ROUTE_SOURCE)
+        addSourceIfMissing(style, PASSED_ROUTE_SOURCE)
         addSourceIfMissing(style, CALCULATION_SOURCE)
         addSourceIfMissing(style, RESULT_SOURCE)
         addSourceIfMissing(style, SELECTED_RESULT_SOURCE)
         addSourceIfMissing(style, ORIGIN_SOURCE)
         addSourceIfMissing(style, DESTINATION_SOURCE)
+        addSourceIfMissing(style, VEHICLE_SOURCE)
+
+        style.addImage(
+            VEHICLE_IMAGE,
+            VehicleArrowBitmap.create(context)
+        )
 
         val routeColor =
             ContextCompat.getColor(context, R.color.hypernova_cyan)
@@ -262,6 +309,21 @@ class NavigationMapController(
                     lineColor(routeColor),
                     lineWidth(7.0f),
                     lineOpacity(1.0f),
+                    lineCap(Property.LINE_CAP_ROUND),
+                    lineJoin(Property.LINE_JOIN_ROUND)
+                )
+            )
+        }
+
+        if (style.getLayer(PASSED_ROUTE_LAYER) == null) {
+            style.addLayer(
+                LineLayer(
+                    PASSED_ROUTE_LAYER,
+                    PASSED_ROUTE_SOURCE
+                ).withProperties(
+                    lineColor(routeCasing),
+                    lineWidth(7.0f),
+                    lineOpacity(0.92f),
                     lineCap(Property.LINE_CAP_ROUND),
                     lineJoin(Property.LINE_JOIN_ROUND)
                 )
@@ -337,6 +399,22 @@ class NavigationMapController(
             strokeWidth = 4.0f,
             opacity = 1.0f
         )
+
+        if (style.getLayer(VEHICLE_LAYER) == null) {
+            style.addLayer(
+                SymbolLayer(
+                    VEHICLE_LAYER,
+                    VEHICLE_SOURCE
+                ).withProperties(
+                    iconImage(VEHICLE_IMAGE),
+                    iconSize(1.0f),
+                    iconAnchor(Property.ICON_ANCHOR_CENTER),
+                    iconAllowOverlap(true),
+                    iconIgnorePlacement(true),
+                    iconRotationAlignment("map")
+                )
+            )
+        }
     }
 
     private fun addCircleLayer(
@@ -427,6 +505,15 @@ class NavigationMapController(
             alternativeRoutes.map { lineFeature(it.points) }
         )
 
+        updateVehicleStyle(style, vehiclePosition)
+        updatePassedRoute(style, vehiclePosition, force = true)
+
+        if (followVehicle) {
+            vehiclePosition?.let {
+                followVehicle(it, force = true)
+            }
+        }
+
         val calculationLine =
             if (calculating) {
                 val start = origin
@@ -452,6 +539,113 @@ class NavigationMapController(
             }
 
         updateLineSource(style, CALCULATION_SOURCE, calculationLine)
+    }
+
+    private fun updateVehicleStyle(
+        style: Style,
+        position: VehiclePosition?
+    ) {
+        updatePointSource(
+            style,
+            VEHICLE_SOURCE,
+            position?.point
+        )
+        style.getLayerAs<SymbolLayer>(VEHICLE_LAYER)
+            ?.setProperties(
+                iconRotate(position?.bearingDegrees?.toFloat() ?: 0.0f)
+            )
+    }
+
+    private fun updatePassedRoute(
+        style: Style,
+        position: VehiclePosition?,
+        force: Boolean = false
+    ) {
+        if (position == null || activeRoutePoints.size < 2) {
+            lastPassedDistanceBucket = -1
+            updateLineSource(style, PASSED_ROUTE_SOURCE, null)
+            return
+        }
+
+        val distanceBucket =
+            (position.traveledMeters / PASSED_ROUTE_UPDATE_METERS)
+                .toInt()
+        if (
+            !force &&
+            !position.arrived &&
+            distanceBucket == lastPassedDistanceBucket
+        ) {
+            return
+        }
+        lastPassedDistanceBucket = distanceBucket
+
+        val segmentIndex =
+            position.routeSegmentIndex.coerceIn(
+                0,
+                activeRoutePoints.lastIndex - 1
+            )
+        val passedPoints =
+            buildList {
+                addAll(activeRoutePoints.take(segmentIndex + 1))
+                if (
+                    isEmpty() ||
+                    last() != position.point
+                ) {
+                    add(position.point)
+                }
+            }
+
+        updateLineSource(
+            style,
+            PASSED_ROUTE_SOURCE,
+            passedPoints.takeIf { it.size >= 2 }?.let(::lineFeature)
+        )
+    }
+
+    private fun followVehicle(
+        position: VehiclePosition,
+        force: Boolean = false
+    ) {
+        val map = map ?: return
+        val now = SystemClock.elapsedRealtime()
+        if (
+            !force &&
+            now - lastFollowCameraUpdateMs <
+            FOLLOW_CAMERA_UPDATE_INTERVAL_MS
+        ) {
+            return
+        }
+        lastFollowCameraUpdateMs = now
+
+        val viewportHeight =
+            mapView.height.takeIf { it > 0 }
+                ?: context.resources.displayMetrics.heightPixels
+        val topPadding =
+            viewportHeight *
+                (2.0 * FOLLOW_ANCHOR_FRACTION - 1.0)
+        val camera =
+            CameraPosition.Builder()
+                .target(
+                    LatLng(
+                        position.point.latitude,
+                        position.point.longitude
+                    )
+                )
+                .zoom(FOLLOW_ZOOM)
+                .bearing(position.bearingDegrees)
+                .tilt(FOLLOW_TILT_DEGREES)
+                .padding(
+                    0.0,
+                    topPadding.coerceAtLeast(0.0),
+                    0.0,
+                    0.0
+                )
+                .build()
+
+        map.easeCamera(
+            CameraUpdateFactory.newCameraPosition(camera),
+            FOLLOW_CAMERA_EASE_MS
+        )
     }
 
     private fun updatePointSource(
@@ -605,6 +799,8 @@ class NavigationMapController(
             "hn-alternative-route-source"
         private const val SELECTED_ROUTE_SOURCE =
             "hn-selected-route-source"
+        private const val PASSED_ROUTE_SOURCE =
+            "hn-passed-route-source"
         private const val CALCULATION_SOURCE =
             "hn-calculation-source"
         private const val RESULT_SOURCE = "hn-result-source"
@@ -613,6 +809,8 @@ class NavigationMapController(
         private const val ORIGIN_SOURCE = "hn-origin-source"
         private const val DESTINATION_SOURCE =
             "hn-destination-source"
+        private const val VEHICLE_SOURCE =
+            "hn-vehicle-source"
 
         private const val ALTERNATIVE_ROUTE_LAYER =
             "hn-alternative-route-layer"
@@ -620,6 +818,8 @@ class NavigationMapController(
             "hn-selected-route-casing-layer"
         private const val SELECTED_ROUTE_LAYER =
             "hn-selected-route-layer"
+        private const val PASSED_ROUTE_LAYER =
+            "hn-passed-route-layer"
         private const val CALCULATION_LAYER =
             "hn-calculation-layer"
         private const val RESULT_LAYER = "hn-result-layer"
@@ -629,11 +829,21 @@ class NavigationMapController(
         private const val ORIGIN_LAYER = "hn-origin-layer"
         private const val DESTINATION_LAYER =
             "hn-destination-layer"
+        private const val VEHICLE_LAYER =
+            "hn-vehicle-layer"
+        private const val VEHICLE_IMAGE =
+            "hn-vehicle-arrow"
 
         private const val ORIGIN_ZOOM = 16.2
         private const val DESTINATION_ZOOM = 14.5
         private const val SIDE_PADDING_DP = 36
         private const val CAMERA_ANIMATION_MS = 750
         private const val ROUTE_CAMERA_ANIMATION_MS = 1_050
+        private const val FOLLOW_CAMERA_EASE_MS = 220
+        private const val FOLLOW_CAMERA_UPDATE_INTERVAL_MS = 250L
+        private const val FOLLOW_ANCHOR_FRACTION = 0.70
+        private const val FOLLOW_ZOOM = 17.2
+        private const val FOLLOW_TILT_DEGREES = 42.0
+        private const val PASSED_ROUTE_UPDATE_METERS = 25.0
     }
 }
