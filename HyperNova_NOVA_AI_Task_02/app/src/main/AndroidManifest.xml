@@ -5,10 +5,27 @@
         android:name="com.hypernova.ai.permission.READ_STATUS"
         android:protectionLevel="signature" />
 
+    <permission
+        android:name="com.hypernova.permission.CONTROL_COCKPIT_APPS"
+        android:protectionLevel="signature" />
+
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="com.hypernova.permission.CONTROL_COCKPIT_APPS" />
+
+    <queries>
+        <package android:name="com.hypernova.navigation" />
+        <package android:name="com.hypernova.climate" />
+        <intent>
+            <action android:name="com.hypernova.navigation.action.BIND_COMMAND" />
+        </intent>
+        <intent>
+            <action android:name="com.hypernova.climate.action.BIND_COMMAND" />
+        </intent>
+    </queries>
 
     <uses-feature
         android:name="android.hardware.type.automotive"

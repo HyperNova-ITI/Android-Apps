@@ -10,8 +10,13 @@ i.MX 8QM Android 16 guest.
 - Android owns NOVA response playback through the laptop or NXP speaker.
 - The user interface exposes only assistant and vehicle behavior. It never exposes this hardware
   topology to the driver.
-- The Pi currently uses `MockIVI`. Climate and navigation commands do not reach a production app or
-  the TC397 until the command-broker contract is implemented.
+- Climate and Navigation now cross the NOVA Android command broker and the shared AIDL contracts.
+  The real Navigation service and Climate demo service are used in the normal laptop test.
+- The Climate demo service updates the same state rendered by the Climate app and Launcher. It is
+  honest about its scope: it proves app integration, not physical TC397 actuation.
+- In the final vehicle, Climate owns HVAC validation and confirmation semantics, the Android Vehicle
+  Gateway owns the single Android-to-QNX session, and the QNX service alone owns the raw TC397
+  TCP/UDP sockets.
 
 ## 1. Power on and locate the Pi
 
@@ -79,6 +84,7 @@ Terminal 2:
 cd ~
 NOVA_MIC="plughw:CARD=Device,DEV=0" \
 NOVA_ANDROID_SPEAKER=1 \
+NOVA_ANDROID_COMMANDS=1 \
 NOVA_WAKE_THRESHOLD=0.5 \
 NOVA_WAKE=1 \
 NOVA_EVENTS=1 \
@@ -102,9 +108,11 @@ export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-$HOME/Android/Sdk}"
 "$ANDROID_SDK_ROOT/emulator/emulator" \
   -avd HyperNova_API_36 \
   -skin 1080x1920 \
-  -no-snapshot \
+  -no-snapshot-load \
+  -no-snapshot-save \
   -no-boot-anim \
-  -gpu auto \
+  -gpu swiftshader_indirect \
+  -feature Vulkan \
   -netdelay none \
   -netspeed full
 ```
@@ -128,25 +136,44 @@ Physical size: 1080x1920
 ```
 
 The API 35 emulator is only a fallback. The project test target is Android 16/API 36.
+MapLibre in Navigation and Launcher requires Vulkan. Do not launch this AVD with
+`-feature -Vulkan`; that configuration makes both apps terminate with
+`No Vulkan compatible GPU found`.
 
-## 6. Build and install NOVA
+## 6. Build and install NOVA and the real feature apps
 
 From the `Android-Apps` repository:
 
 ```bash
+NOVA_HOST=10.0.2.2
+
 cd HyperNova_NOVA_AI_Task_02
-./gradlew -PnovaHost="$PI_IP" testDebugUnitTest assembleDebug
+./gradlew -PnovaHost="$NOVA_HOST" -PnovaAssistantVolume=12 \
+  testDebugUnitTest :app:assembleDebug
 "$ADB" shell pm clear com.hypernova.ai
+"$ADB" install -r app/build/outputs/apk/debug/app-debug.apk
+
+cd ../HyperNova_Navigation_Task_03/HyperNovaNavigation
+./gradlew testDebugUnitTest :app:assembleDebug
+"$ADB" install -r app/build/outputs/apk/debug/app-debug.apk
+
+cd ../../HyperNova_Climate_Task_05/HyperNovaClimate
+./gradlew testDebugUnitTest :app:assembleDebug
 "$ADB" install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Clearing app data matters when the default Pi address changes because NOVA persists its last
-configured endpoint.
+Use `NOVA_HOST=10.0.2.2` for the laptop probe in step 8A. Use `NOVA_HOST="$PI_IP"` for the live Pi in
+step 8B. Clearing app data matters when this address changes because NOVA persists its last endpoint.
+
+NOVA is installed first because it declares the shared signature permission. All debug APKs must be
+signed with the same debug certificate. The Climate debug service confirms state inside the app so
+the UI, Launcher widget, and AIDL callbacks share one source of truth. The release build deliberately
+does not pretend that a hardware command succeeded before the Vehicle Gateway/QNX path exists.
 
 ## 7. Build and install HyperNova Launcher
 
 ```bash
-cd ../HyperNova_Launcher_Task_01
+cd ../../HyperNova_Launcher_Task_01
 ./gradlew testDebugUnitTest assembleDebug
 "$ADB" install -r app/build/outputs/apk/debug/app-debug.apk
 "$ADB" shell cmd package set-home-activity --user 0 \
@@ -157,7 +184,37 @@ cd ../HyperNova_Launcher_Task_01
 Expected: HyperNova Launcher is the HOME screen. Its NOVA widget should change from unavailable to
 ready when both Pi sockets are connected.
 
-## 8. Open NOVA and check the baseline
+## 8A. Laptop-only integration mode
+
+Build NOVA with `NOVA_HOST=10.0.2.2`. From `HyperNova_NOVA_AI_Task_02`, start the local probe before
+opening NOVA:
+
+```bash
+python3 tools/nova_command_probe.py --hold
+```
+
+The probe substitutes only for the Pi sockets. It exercises the real path through NOVA and both real
+feature APKs, then keeps the connection open for UI inspection. Expected terminal result:
+
+```text
+climate.set_temperature: accepted
+climate.set_temperature: confirmed
+navigation.get_saved_destinations: accepted
+navigation.get_saved_destinations: confirmed
+navigation.set_destination: accepted
+navigation.set_destination: confirmed
+PASS: TCP -> NOVA -> AIDL -> Climate/Navigation -> final callback
+```
+
+Open Launcher after the pass. Its Climate card should show 22°C, fan 3, and AUTO, and Navigation
+should show an active route to the returned saved-home destination. Press Ctrl+C when finished.
+
+## 8B. Live Pi integration mode
+
+Build NOVA with `NOVA_HOST="$PI_IP"`, keep the services from step 3 running, and do not start the
+laptop probe.
+
+## 9. Open NOVA and check the baseline
 
 Tap the NOVA widget, or run:
 
@@ -174,7 +231,7 @@ Expected:
 - No driver-facing label mentions Pi, microphone routing, Android speaker routing, host addresses, or
   TCP ports.
 
-## 9. Run the voice tests
+## 10. Run the voice tests
 
 ### General request
 
@@ -202,9 +259,11 @@ Say:
 Hey NOVA, turn on the AC
 ```
 
-Expected today: the Pi recognizes the command, Android shows the state sequence, and Android plays
-the spoken result. This is still a `MockIVI` result; it is not proof that the Climate app or TC397
-performed the action.
+Expected today: the Pi recognizes the command, Android shows the state sequence, the real Climate
+APK updates, the Launcher Climate card follows it, and Android plays the spoken result. This proves
+the TCP → NOVA broker → AIDL → Climate callback path. It is not yet proof of TC397 actuation; that
+proof requires Climate → Android Vehicle Gateway → QNX service → TC397 and the controller's
+authoritative ACK.
 
 ### Playback and wake-word isolation
 
@@ -212,7 +271,7 @@ While NOVA is speaking, do not issue another command. Confirm that the cockpit s
 re-trigger the Pi wake word. The Pi should suppress/reset wake detection between Android's
 `playback started` and `playback ended` messages.
 
-## 10. Test reconnect behavior
+## 11. Test reconnect behavior
 
 While NOVA is open:
 
@@ -229,7 +288,7 @@ READY → UNAVAILABLE → READY
 
 NOVA should reconnect automatically without reinstalling or restarting Android.
 
-## 11. Collect logs
+## 12. Collect logs
 
 Android:
 
@@ -272,9 +331,10 @@ When reporting a failure, include:
 ### UI says it will check but never finishes
 
 - Follow the same `turn_id` in the Pi log.
-- Check whether the second LLM/tool pass completed.
-- A future destination-app command must return one final `command_result`; an `accepted` event is not
-  a completed result.
+- Follow the same `request_id` through the Android provider callback.
+- Confirm the destination app returns one final `command_result`; `accepted` is not completion.
+- If needed, install the mock provider APKs and use `Normal`, `Reject`, `Unavailable`, and `Timeout`
+  modes to isolate callback handling. Do not use mocks for the normal real-app demo.
 
 ### State changes but no sound is heard
 

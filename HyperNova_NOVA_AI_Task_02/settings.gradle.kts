@@ -27,4 +27,6 @@ dependencyResolutionManagement {
 rootProject.name = "HyperNovaNovaAI"
 include(":app")
 include(":hypernova-contracts")
+include(":mock-navigation")
+include(":mock-climate")
 project(":hypernova-contracts").projectDir = file("../HyperNova_Contracts/contracts")

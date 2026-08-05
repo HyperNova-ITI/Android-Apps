@@ -1,6 +1,8 @@
 package com.hypernova.ai.network
 
 import android.util.Log
+import com.hypernova.ai.command.CommandResult
+import com.hypernova.ai.command.CommandWireCodec
 import com.hypernova.ai.runtime.NovaEndpoint
 import org.json.JSONObject
 import java.io.BufferedReader
@@ -57,6 +59,11 @@ class NovaControlClient(
         if (turnId != null) put("turn_id", turnId)
         put("value", value)
     })
+
+    fun sendCommandResult(result: CommandResult): Boolean =
+        send(CommandWireCodec.toJson(result).apply {
+            put("seq", sequence.incrementAndGet())
+        })
 
     private fun runLoop() {
         var backoffMs = 250L

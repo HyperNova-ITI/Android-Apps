@@ -11,6 +11,12 @@ import androidx.core.app.NotificationCompat
 import com.hypernova.ai.NovaActivity
 import com.hypernova.ai.R
 import com.hypernova.ai.audio.NovaPcmPlayer
+import com.hypernova.ai.command.AndroidCommandExecutor
+import com.hypernova.ai.command.CommandCoordinator
+import com.hypernova.ai.command.CommandResult
+import com.hypernova.ai.command.CommandStatus
+import com.hypernova.ai.command.CommandWireCodec
+import com.hypernova.ai.command.HandlerCommandScheduler
 import com.hypernova.ai.network.NovaAudioClient
 import com.hypernova.ai.network.NovaControlClient
 import com.hypernova.ai.protocol.AudioFrame
@@ -26,6 +32,7 @@ class NovaRuntimeService : Service(),
     private lateinit var controlClient: NovaControlClient
     private lateinit var audioClient: NovaAudioClient
     private lateinit var player: NovaPcmPlayer
+    private lateinit var commandCoordinator: CommandCoordinator
     private val stateCoordinator = NovaStateCoordinator()
     private var lastActionBlocked = false
 
@@ -38,6 +45,11 @@ class NovaRuntimeService : Service(),
         controlClient = NovaControlClient(endpoint, this)
         audioClient = NovaAudioClient(endpoint, this)
         player = NovaPcmPlayer(this, this)
+        commandCoordinator = CommandCoordinator(
+            executor = AndroidCommandExecutor(this),
+            scheduler = HandlerCommandScheduler(),
+            resultSink = ::onCommandResult,
+        )
 
         controlClient.start()
         audioClient.start()
@@ -54,6 +66,7 @@ class NovaRuntimeService : Service(),
     }
 
     override fun onDestroy() {
+        if (::commandCoordinator.isInitialized) commandCoordinator.shutdown()
         if (::player.isInitialized) player.stop()
         if (::controlClient.isInitialized) controlClient.stop()
         if (::audioClient.isInitialized) audioClient.stop()
@@ -74,6 +87,7 @@ class NovaRuntimeService : Service(),
     override fun onControlMessage(message: JSONObject) {
         val turnId = message.optionalText("turn_id")
         when (message.optString("type")) {
+            "command_request" -> handleCommandRequest(message)
             "state" -> publishWireState(message.optString("value"))
             "transcript" -> {
                 lastActionBlocked = false
@@ -114,6 +128,47 @@ class NovaRuntimeService : Service(),
                 )
                 publishControlState(NovaVisibleState.ERROR)
             }
+        }
+    }
+
+    private fun handleCommandRequest(message: JSONObject) {
+        val request = try {
+            CommandWireCodec.parseRequest(message)
+        } catch (error: Exception) {
+            val rejected = CommandWireCodec.invalidRequest(message, error)
+            Log.w(TAG, "Rejected invalid command request: ${rejected.message}")
+            controlClient.sendCommandResult(rejected)
+            return
+        }
+
+        lastActionBlocked = false
+        NovaRuntimeState.publishAction(
+            turnId = request.turnId,
+            name = request.operation,
+            result = "Completing your request…",
+            blocked = false,
+            errorMessage = null,
+        )
+        publishControlState(NovaVisibleState.EXECUTING)
+        commandCoordinator.submit(request)
+    }
+
+    private fun onCommandResult(result: CommandResult) {
+        controlClient.sendCommandResult(result)
+        val isFailure = result.status.isFinal && result.status != CommandStatus.CONFIRMED
+        lastActionBlocked = isFailure
+        NovaRuntimeState.publishAction(
+            turnId = result.request.turnId,
+            name = result.request.operation,
+            result = result.message,
+            blocked = isFailure,
+            errorMessage = result.message.takeIf { isFailure },
+        )
+        when {
+            !result.status.isFinal -> publishControlState(NovaVisibleState.EXECUTING)
+            result.status == CommandStatus.CONFIRMED ->
+                publishControlState(NovaVisibleState.SUCCESS)
+            else -> publishControlState(NovaVisibleState.ERROR)
         }
     }
 

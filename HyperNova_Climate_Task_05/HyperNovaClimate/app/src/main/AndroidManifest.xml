@@ -54,10 +54,14 @@
             </intent-filter>
         </activity>
 
-        <!--
-            The NOVA command service (ClimateCommandService) and the read-only
-            ClimateStatusService are registered in the IPC integration phase.
-        -->
+        <service
+            android:name=".service.ClimateCommandService"
+            android:exported="true"
+            android:permission="com.hypernova.permission.CONTROL_COCKPIT_APPS">
+            <intent-filter>
+                <action android:name="com.hypernova.climate.action.BIND_COMMAND" />
+            </intent-filter>
+        </service>
 
     </application>
 

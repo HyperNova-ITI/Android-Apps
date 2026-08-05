@@ -7,6 +7,7 @@ import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioTrack
 import android.util.Log
+import com.hypernova.ai.BuildConfig
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 
@@ -42,6 +43,7 @@ class NovaPcmPlayer(
         val objectMetadata = JSONObject(String(metadata, Charsets.UTF_8))
         sampleRate = objectMetadata.optInt("sample_rate", 22_050)
         turnId = objectMetadata.optString("turn_id").takeIf { it.isNotBlank() }
+        applyConfiguredAssistantVolume()
 
         val focusResult = audioManager.requestAudioFocus(focusRequest)
         if (focusResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
@@ -65,6 +67,19 @@ class NovaPcmPlayer(
         this.streamId = streamId
         pendingPcm = ByteArrayOutputStream(maxOf(minimumBuffer, sampleRate))
         listener.onPlaybackChanged(true, turnId)
+    }
+
+    private fun applyConfiguredAssistantVolume() {
+        val requested = BuildConfig.NOVA_ASSISTANT_VOLUME_INDEX
+        if (requested < 0) return
+        val maximum = audioManager.getStreamMaxVolume(ASSISTANT_STREAM)
+        val target = requested.coerceIn(
+            audioManager.getStreamMinVolume(ASSISTANT_STREAM),
+            maximum,
+        )
+        if (audioManager.getStreamVolume(ASSISTANT_STREAM) != target) {
+            audioManager.setStreamVolume(ASSISTANT_STREAM, target, 0)
+        }
     }
 
     @Synchronized
@@ -132,6 +147,7 @@ class NovaPcmPlayer(
     private companion object {
         const val TAG = "NovaPcmPlayer"
         const val BYTES_PER_SAMPLE = 2
+        const val ASSISTANT_STREAM = 11
         const val PLAYBACK_TAIL_MS = 80L
         const val MAX_PLAYBACK_MS = 30_000L
     }

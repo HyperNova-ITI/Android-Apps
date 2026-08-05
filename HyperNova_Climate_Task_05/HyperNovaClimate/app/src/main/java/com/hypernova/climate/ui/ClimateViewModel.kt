@@ -5,12 +5,9 @@ import com.hypernova.climate.model.AcMode
 import com.hypernova.climate.model.AirflowMode
 import com.hypernova.climate.model.ClimateCapabilities
 import com.hypernova.climate.model.ClimateState
-import com.hypernova.climate.ui.state.ClimatePreview
+import com.hypernova.climate.runtime.ClimateStateStore
 import com.hypernova.climate.ui.state.ClimateUiState
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 
 /**
  * Exposes the immutable [ClimateUiState] the screen renders from (README §36).
@@ -25,8 +22,7 @@ import kotlinx.coroutines.flow.update
  */
 class ClimateViewModel : ViewModel() {
 
-    private val _uiState = MutableStateFlow(ClimatePreview.initialUiState())
-    val uiState: StateFlow<ClimateUiState> = _uiState.asStateFlow()
+    val uiState: StateFlow<ClimateUiState> = ClimateStateStore.state
 
     /**
      * Cycle the A/C control OFF → COOL → HEAT → OFF.
@@ -35,7 +31,7 @@ class ClimateViewModel : ViewModel() {
      * wired this becomes a confirmed backend command instead.
      */
     fun cycleAcMode() {
-        _uiState.update { state ->
+        ClimateStateStore.update { state ->
             val confirmed = state.confirmedState ?: return@update state
             val next = when (confirmed.acMode) {
                 AcMode.OFF -> AcMode.COOL
@@ -150,17 +146,17 @@ class ClimateViewModel : ViewModel() {
         if (max <= 0) 0 else ((current ?: 0) + 1) % (max + 1)
 
     // ---- Helpers --------------------------------------------------------
-    private inline fun updateConfirmed(crossinline transform: (ClimateState) -> ClimateState) {
-        _uiState.update { state ->
+    private fun updateConfirmed(transform: (ClimateState) -> ClimateState) {
+        ClimateStateStore.update { state ->
             val confirmed = state.confirmedState ?: return@update state
             state.copy(confirmedState = transform(confirmed))
         }
     }
 
-    private inline fun updateWithCaps(
-        crossinline transform: (ClimateState, ClimateCapabilities?) -> ClimateState
+    private fun updateWithCaps(
+        transform: (ClimateState, ClimateCapabilities?) -> ClimateState
     ) {
-        _uiState.update { state ->
+        ClimateStateStore.update { state ->
             val confirmed = state.confirmedState ?: return@update state
             state.copy(confirmedState = transform(confirmed, state.capabilities))
         }

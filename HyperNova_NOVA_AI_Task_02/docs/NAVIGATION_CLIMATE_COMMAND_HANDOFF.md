@@ -28,11 +28,14 @@ Pi voice agent
 | Pi agent | Wake word, ASR, conversation context, intent/arguments, initial safety policy, and final response |
 | NOVA Android | JSON/AIDL adapter, service binding, request correlation, timeouts, and honest UI state |
 | Navigation | Search, saved places, opaque destination IDs, route calculation, active guidance, and navigation state |
-| Climate | Capabilities, HVAC state, command validation, TC397 transport, and hardware confirmation |
+| Climate | Capabilities, HVAC state, command validation, Vehicle Gateway calls, and hardware confirmation semantics |
+| Android Vehicle Gateway | The single Android-to-QNX session, request correlation, reconnect, and AIDL fan-out |
+| QNX gateway service | The only raw TC397 TCP/UDP client, frame/CRC/sequence handling, and ACK/reject translation |
 | TC397 | Physical actuation, rejection, constraints, and final physical safety authority |
 | Launcher | Open apps and read status snapshots; never route AI commands or contact TC397 |
 
-NOVA never contacts TC397 directly. Climate is the only owner of that path.
+NOVA never contacts TC397 or the QNX gateway directly. Climate owns the HVAC domain path, but sends
+vehicle requests only through the Android Vehicle Gateway; the QNX service alone owns TC397 sockets.
 
 ## 2. Common result rules
 
@@ -309,8 +312,10 @@ Climate validates:
 - fan level is within `0..maximumFanLevel`;
 - the vehicle backend is connected.
 
-Every mutating operation becomes `confirmed` only after TC397 acknowledgement or authoritative
-property readback matching the requested value.
+Every production mutating operation becomes `confirmed` only after the result travels back from the
+QNX gateway's TC397 acknowledgement or an authoritative property readback matching the requested
+value. The debug-only laptop adapter may confirm in-process state for UI/AIDL demos, but that result
+must be identified as an app-integration result and never presented as physical actuation proof.
 
 State and capability queries time out after two seconds. Mutations time out after five seconds.
 `ZONE_ALL` means every available cabin zone. If climate power is off, `setTargetTemperature` turns
@@ -347,7 +352,7 @@ extension or API v2.
 
 - Implements the frozen AIDL from `HyperNova_Contracts`; no private copy.
 - Implements state and capabilities from the real climate repository.
-- Maps every advertised v1 mutation to the TC397 layer.
+- Maps every advertised v1 mutation to the Android Vehicle Gateway; it never opens a TC397 socket.
 - Deduplicates `requestId` before transmitting.
 - Returns confirmed only after controller ACK/readback.
 - Demonstrates positive, rejected, timeout, unsupported, duplicate, and disconnected cases.
@@ -480,9 +485,9 @@ Confirmed climate result:
 }
 ```
 
-## 6. NOVA implementation
+## 6. NOVA implementation status
 
-NOVA Android will:
+NOVA Android now:
 
 1. Consume the `HyperNova_Contracts` module.
 2. Receive and validate `command_request`.
@@ -494,13 +499,18 @@ NOVA Android will:
 8. Open Navigation when `setDestination` is accepted.
 9. Return the final result to the Pi.
 
-The Pi agent will:
+Pi agent v3.6 now:
 
 1. Replace integrated-domain `MockIVI` success with Android command requests.
 2. Retain the four returned navigation choices in conversation context.
 3. Resolve “the second one” into an opaque returned ID.
 4. Wait for the final result before composing and speaking success.
-5. Ask for clarification when a selection does not match the current result set.
+5. Resolve first/second/third/fourth and exact returned titles against the current result set.
+
+Installable Navigation and Climate integration providers live in `mock-navigation` and
+`mock-climate`. They implement the exact frozen identities and callback behavior so the complete
+bridge can be tested before the real apps are ready. They are development-only APKs, not production
+fallbacks and not part of the NXP image.
 
 ## 7. Android manifest
 
@@ -538,11 +548,12 @@ The AIDL contains no Trout-, emulator-, hypervisor-, map-provider-, or TC397-tra
 
 ## 9. Remaining hardware configuration
 
-The app contract is frozen. Mahgoub and the vehicle team still provide runtime configuration:
+The app contract is frozen. Mahgoub and the vehicle/QNX teams still provide runtime configuration:
 
 - which frozen Climate v1 operations the first TC397 firmware supports;
 - real min/max/step and maximum fan level;
-- payload IDs and values inside the Climate backend;
+- the Climate-domain operation/argument mapping sent to the Android Vehicle Gateway;
+- payload IDs and values inside the QNX TC397 adapter;
 - ACK, rejection, and readback mapping;
 - confirmed hardware timeout.
 
@@ -555,7 +566,8 @@ Unsupported capabilities must be reported honestly. They do not change the AIDL.
 - “The second one” starts the selected real route.
 - “Show saved destinations” returns real Home/Work/favorites in frozen order.
 - Navigation opens and displays calculating followed by active guidance.
-- At least one supported Climate mutation reaches TC397 and is confirmed.
+- At least one supported Climate mutation reaches TC397 through Climate → Android Vehicle Gateway
+  → QNX gateway and is confirmed from the controller result.
 - Climate rejection and timeout paths are demonstrated.
 - Duplicate requests do not duplicate route or vehicle actions.
 - No component reports success on Binder delivery or controller transmission.

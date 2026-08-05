@@ -3,6 +3,7 @@ plugins {
 }
 
 val novaHost = providers.gradleProperty("novaHost").orElse("192.168.1.32")
+val novaAssistantVolume = providers.gradleProperty("novaAssistantVolume").orElse("-1")
 
 android {
     namespace = "com.hypernova.ai"
@@ -21,6 +22,7 @@ android {
         versionName = "0.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "NOVA_DEFAULT_HOST", "\"${novaHost.get()}\"")
+        buildConfigField("int", "NOVA_ASSISTANT_VOLUME_INDEX", novaAssistantVolume.get())
     }
 
     buildTypes {

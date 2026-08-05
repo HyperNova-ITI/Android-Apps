@@ -23,6 +23,8 @@
 *.ap_
 *.hprof
 *.log
+**/__pycache__/
+*.py[cod]
 
 # Local secrets and signing material
 .env

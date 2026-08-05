@@ -41,8 +41,6 @@ android {
 
     buildTypes {
         debug {
-            // Install the development app beside a production build.
-            applicationIdSuffix = ".dev"
             versionNameSuffix = "-dev"
         }
         release {
