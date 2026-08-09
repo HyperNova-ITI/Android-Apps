@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Copyright (C) 2023 The Android Open Source Project
+  Copyright (C) 2026 HyperNova
+  Licensed under the Apache License, Version 2.0.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:minHeight="38dp"
+    android:orientation="vertical"
+    android:paddingStart="@dimen/hypernova_space_4"
+    android:paddingTop="@dimen/hypernova_space_20"
+    android:paddingEnd="@dimen/hypernova_space_4"
+    android:paddingBottom="@dimen/hypernova_space_10">
+
+    <TextView
+        android:id="@android:id/title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/TextAppearance.CarUi.PreferenceCategoryTitle" />
+
+    <TextView
+        android:id="@android:id/summary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/hypernova_space_2"
+        android:textAppearance="@style/TextAppearance.CarUi.PreferenceSummary" />
+</LinearLayout>

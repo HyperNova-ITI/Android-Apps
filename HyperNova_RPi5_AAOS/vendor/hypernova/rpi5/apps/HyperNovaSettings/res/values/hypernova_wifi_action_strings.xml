@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="hypernova_saved">Saved</string>
+    <string name="hypernova_disconnected">Disconnected</string>
+    <string name="hypernova_disconnect">Disconnect</string>
+    <string name="hypernova_forget">Forget</string>
+    <string name="hypernova_cancel">Cancel</string>
+    <string name="hypernova_wifi_connected_actions">Connected network</string>
+    <string name="hypernova_wifi_saved_actions">Saved network</string>
+    <string name="hypernova_wifi_connect_summary">Connect to this saved network</string>
+    <string name="hypernova_wifi_disconnect_summary">Disconnect and keep this network saved</string>
+    <string name="hypernova_wifi_forget_summary">Remove this saved network from HyperNova</string>
+    <string name="hypernova_wifi_authentication_failed">Authentication failed</string>
+</resources>

@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2026 HyperNova. Licensed under the Apache License, Version 2.0. -->
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/hypernova_background"
+    android:clipToPadding="false"
+    android:fillViewport="true"
+    android:overScrollMode="never"
+    android:paddingStart="@dimen/hypernova_page_margin"
+    android:paddingEnd="@dimen/hypernova_page_margin"
+    android:paddingBottom="@dimen/hypernova_space_32">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- ========================================================= -->
+        <!-- BLUETOOTH POWER                                           -->
+        <!-- ========================================================= -->
+
+        <LinearLayout
+            android:id="@+id/hypernova_bluetooth_state_card"
+            android:layout_width="match_parent"
+            android:layout_height="88dp"
+            android:layout_marginTop="22dp"
+            android:background="@drawable/hypernova_card_background"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="14dp">
+
+            <ImageView
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:contentDescription="@null"
+                android:src="@drawable/hypernova_ic_bluetooth"
+                android:tint="@color/hypernova_cyan" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="@string/hypernova_bluetooth"
+                    android:textColor="@color/hypernova_text_primary"
+                    android:textSize="17sp" />
+
+                <TextView
+                    android:id="@+id/hypernova_bluetooth_state_summary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:textColor="@color/hypernova_text_secondary"
+                    android:textSize="13sp" />
+
+            </LinearLayout>
+
+            <Switch
+                android:id="@+id/hypernova_bluetooth_state_switch"
+                android:layout_width="54dp"
+                android:layout_height="@dimen/hypernova_touch_target"
+                android:background="@null"
+                android:showText="false"
+                android:splitTrack="false"
+                android:switchMinWidth="@dimen/hypernova_switch_visual_width"
+                android:thumb="@drawable/hypernova_switch_thumb_drawable"
+                android:track="@drawable/hypernova_switch_track_drawable" />
+
+        </LinearLayout>
+
+
+        <!-- ========================================================= -->
+        <!-- PAIRED DEVICES                                            -->
+        <!-- ========================================================= -->
+
+        <LinearLayout
+            android:id="@+id/hypernova_bluetooth_paired_section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:layout_marginBottom="10dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    style="@style/HyperNovaText.Section"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/hypernova_bluetooth_paired_devices" />
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="12dp"
+                    android:layout_weight="1"
+                    android:background="@color/hypernova_divider" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/hypernova_card_background"
+                android:clipToOutline="true"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:id="@+id/hypernova_bluetooth_paired_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+
+        <!-- ========================================================= -->
+        <!-- AVAILABLE DEVICES                                         -->
+        <!-- ========================================================= -->
+
+        <LinearLayout
+            android:id="@+id/hypernova_bluetooth_available_section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:layout_marginBottom="10dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    style="@style/HyperNovaText.Section"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/hypernova_bluetooth_available_devices" />
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="10dp"
+                    android:layout_weight="1"
+                    android:background="@color/hypernova_divider" />
+
+                <TextView
+                    android:id="@+id/hypernova_bluetooth_scan_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="@string/hypernova_bluetooth_scanning"
+                    android:textAllCaps="true"
+                    android:textColor="@color/hypernova_cyan"
+                    android:textSize="10sp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/hypernova_bluetooth_available_card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/hypernova_card_background"
+                android:clipToOutline="true"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:id="@+id/hypernova_bluetooth_available_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <TextView
+                    android:id="@+id/hypernova_bluetooth_empty_devices"
+                    android:layout_width="match_parent"
+                    android:layout_height="76dp"
+                    android:gravity="center"
+                    android:text="@string/hypernova_bluetooth_no_devices"
+                    android:textColor="@color/hypernova_text_secondary"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <Space
+            android:layout_width="1dp"
+            android:layout_height="32dp" />
+
+    </LinearLayout>
+
+</ScrollView>

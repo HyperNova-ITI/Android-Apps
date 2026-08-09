@@ -1,3 +1,210 @@
+# HyperNova Media — Phone Edition
+
+This Android Studio module is the standalone public-API phone edition of HyperNova Media. It is intentionally separate from the privileged AAOS implementation retained under `aosp_source_snapshot/` and from the immutable APK handoff under `HyperNovaMedia_Handoff/`.
+
+## Phone build
+
+- Namespace: `com.hypernova.media`
+- Release application ID: `com.hypernova.media.phone`
+- Debug application ID: `com.hypernova.media.phone.debug`
+- Minimum SDK: 26
+- Target SDK: 36
+- UI: Java + XML Views, portrait-first at a 540 × 960 dp design canvas (1080 × 1920 at 320 dpi)
+- Playback: AndroidX Media3 1.10.1
+
+```bash
+./gradlew --no-configuration-cache :app:assembleDebug
+./gradlew --no-configuration-cache :app:installDebug
+adb shell am start -n com.hypernova.media.phone.debug/com.hypernova.media.MainActivity
+```
+
+The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`.
+
+## Architecture
+
+`HyperNovaPlaybackService` is the sole owner of ExoPlayer and MediaSession. `PlaybackController` connects with a Media3 `MediaController`, so Activity recreation cannot create a competing player. The service supplies background playback, media-button handling, audio focus, becoming-noisy behavior, system media controls, lock-screen controls, and the Media3 playback notification.
+
+Platform data flows through phone-safe contracts and immutable snapshots:
+
+```text
+Radio Browser mirrors → RadioApiClient → RadioRepository → RadioUiState
+StorageManager / MediaStore / SAF → UsbVolumeRepository → LibraryUiState
+AudioManager / BluetoothAdapter → PhoneBluetoothAudioBackend → BluetoothUiState
+                                    ↓
+                      MainUiRenderer + PlaybackController
+                                    ↓
+              HyperNovaPlaybackService / MediaSession / ExoPlayer
+```
+
+`MainActivity` owns lifecycle, permission launchers, and navigation rather than querying platform services. `MainUiRenderer` renders state, `LibraryBrowserController` owns USB media filters/search/history, and `RadioBrowserController` owns catalog discovery, filters, and custom-station UX. Network requests and storage metadata scans use cancellable background executors.
+
+Important production classes:
+
+- `radio/RadioApiClient`: Radio Browser mirror discovery, bounded HTTP, JSON validation, and click notification.
+- `radio/RadioRepository`: lifecycle-safe catalog state, offline fallback, favorites, recents, hidden/broken records, user stations, and saved filters.
+- `radio/RadioDatabase`: bounded structured SQLite cache with a 600-row catalog ceiling.
+- `usb/UsbStorageMonitor`: process-lifetime mounted/eject/removed/scanner-finished observer using public Android APIs.
+- `usb/UsbVolumeRepository`: removable-volume selection and state machine.
+- `usb/UsbMediaScanner`: bounded MediaStore/SAF audio-video metadata scanner.
+- `usb/UsbPermissionRepository`: persisted SAF URI ownership and removable-versus-primary classification.
+
+## Phone versus AAOS
+
+The phone build never imports `android.car`, uses hidden APIs, or attempts A2DP sink/AAOS AVRCP browsing. On a phone:
+
+- **Radio** means the public Radio Browser Internet Radio catalog plus optional user stations, played by Media3. No FM tuner is claimed.
+- **Bluetooth** reports paired/connected public A2DP, headset, BLE, and active Android audio-output state. Playback remains this app's MediaSession and Android routes it normally.
+- **USB** means non-emulated removable storage mounted and exposed by Android. MediaStore is automatic where possible and the Storage Access Framework is the public fallback. Internal primary storage is never presented as USB.
+
+The AAOS snapshot remains read-only reference code and retains its privileged car-specific backend contracts separately.
+
+## Internet Radio and Radio Browser
+
+The catalog uses the official [Radio Browser API](https://api.radio-browser.info/) and its documented [station/search endpoints](https://docs.radio-browser.info/). It does not pin one fragile mirror: `RadioApiClient` resolves `all.api.radio-browser.info`, shuffles discovered official mirrors, retries another mirror on transport failure, and sends a descriptive `User-Agent`.
+
+Default discovery combines four bounded official feeds concurrently: Egypt by popularity, Arabic by popularity, English by popularity, and international top-clicked stations. The UI also exposes Popular, Top voted, Trending, Egypt, Arabic, English, genre/tag, Favorites, Recent, station-name search, explicit refresh, and a 48-record result ceiling. Requests use `hidebroken=true`; records additionally require `lastcheckok=1`, a UUID, name, and a valid resolved HTTP(S) stream URL.
+
+Used contracts:
+
+- `/json/stations/search` with name, `countrycode`, language, tag, codec, ordering, offset, limit, and `hidebroken`.
+- `/json/stations/topclick/{count}` for popularity.
+- `/json/stations/topvote/{count}` for top-voted mode.
+- `clicktrend` ordering for trending mode.
+- `/json/url/{stationuuid}` after a playback choice, without parsing/retrying a successful click response.
+
+`RadioDatabase` caches the last successful station metadata and preserves favorites, recents, hidden broken stations, custom stations, verification state, and last filters. A cold offline launch shows cached results with an explicit Offline label. An API failure with cache shows Cached rather than blanking the screen.
+
+Playback always uses `url_resolved` when supplied. Media3 handles redirects, MP3/AAC/OGG/progressive streams and HLS records; its HTTP source has 8-second connect and 12-second read timeouts. A separate 18-second startup watchdog converts a catalog-health false positive into an honest error with Retry, Next, and local Hide-broken options. No stream is downloaded as a file.
+
+Add Station remains secondary. It validates a non-empty name and HTTP(S) URL and stores artwork, country, language, and tags. A saved custom stream is visibly unverified until Media3 actually reaches playback; users can edit, delete, favorite, retry, or hide it.
+
+## Bluetooth behavior
+
+Android 12+ requests `BLUETOOTH_CONNECT` only when the Bluetooth surface needs device details. The app distinguishes unsupported, permission-required, off, no-paired-audio, paired-but-inactive, connecting, and connected-output states. Device names are displayed only when Android reports them. Active routing comes from `AudioManager` media attributes; paired capability comes from public `BluetoothAdapter` state. Battery is deliberately omitted when no public broadcast/API provides it. Settings actions open Android's Bluetooth page. The phone remains an output/controller for this app's MediaSession and never acts as an A2DP sink.
+
+## USB/OTG, MediaStore, and SAF behavior
+
+“Any USB” means any removable USB/OTG mass-storage volume that Android mounts and exposes through public storage contracts. It does not mean raw `/dev` access, a private vendor mount path, root, `MANAGE_EXTERNAL_STORAGE`, a custom SCSI/filesystem driver, or a promise that unsupported phone hardware will mount a drive.
+
+At process start and Activity resume, `UsbStorageMonitor` inspects `StorageManager.getStorageVolumes()`, rejects emulated/internal volumes, and retains mounted removable entries. On Android 11+, the volume's `getMediaStoreVolumeName()` is cross-checked against `MediaStore.getExternalVolumeNames()`. Exactly one removable volume is auto-selected; multiple volumes produce a picker. Broadcasts for mounted, unmounted, eject, removed, bad removal, and media-scanner completion refresh the immutable state.
+
+When Android exposes an indexed removable volume and the appropriate permission exists, `UsbMediaScanner` queries that exact MediaStore volume—never every external volume—and reads real audio/video metadata. Scanning is single-worker, cancellable, iterative for SAF, capped at 4,000 playable files and depth 16, and closes cursors and `MediaMetadataRetriever` instances. MIME type is primary; supported extensions only recover ambiguous `application/octet-stream` documents.
+
+**Select USB folder** launches `ACTION_OPEN_DOCUMENT_TREE`, persists read permission with `takePersistableUriPermission()`, and reconnects after relaunch. External-storage tree UUIDs are compared with real removable volumes. A primary/internal tree is explicitly labeled `Local Folder`, not USB. Revocation becomes Permission required with Reconnect; access is never silently replaced by broad storage permission. Long-pressing Select USB folder releases/forgets the retained grant.
+
+Removal cancels an active scan. If the active Media3 item ID belongs to USB, the app stops and clears the queue, detaches the video surface through normal Activity/player lifecycle, clears stale metadata, and renders Removed before returning to No USB. SAF read failures are also treated as unavailable USB for playback cleanup.
+
+USB browsing retains Tracks, Artists, Albums, Genres, Videos, Folders, Recently played, Favorites, Queue, search, and metadata-aware sorting. Local-folder playback is a fallback for phones with no inserted OTG media and remains visibly distinct.
+
+## Permissions
+
+- `POST_NOTIFICATIONS`: requested on the first playback action on Android 13+; denial does not crash or block foreground UI playback.
+- `INTERNET` and `ACCESS_NETWORK_STATE`: catalog/stream connectivity only; TLS validation is never disabled.
+- `READ_MEDIA_AUDIO`, `READ_MEDIA_VIDEO`, and Android 14 selected visual access: requested only for indexed MediaStore USB browsing.
+- `READ_EXTERNAL_STORAGE`: legacy only, capped at API 32.
+- `BLUETOOTH_CONNECT`: requested only for real paired/connected device state on Android 12+.
+- SAF folder access needs no broad storage permission and remains the reduced-functionality path after denial or absent MediaStore exposure.
+- Foreground-service media playback permissions are declared for the MediaSession service.
+
+## Visual system and Demo Mode
+
+Dark mode is the primary deep-navy/graphite cockpit presentation; light mode has a deliberate pale-graphite palette. The custom Canvas visualizer draws the cabin silhouette, horizon, parallax grid, ambient cyan strips, restrained violet glow, particles, procedural bars, radio rings, and Bluetooth nodes. It changes modes from real player/source state, pauses in `onStop`, respects the system animation scale, and never labels its procedural motion as a measured audio spectrum.
+
+Debug builds expose a hidden state preview by long-pressing the header. Demo Mode is off by default, never persisted, always displays a `DEMO` badge, and previews the target compositions plus permission/no-device/detected/scanning/removed layouts. It does not replace or mutate real backend data. The USB inserted/scanning/removed reference screenshots are Demo previews when no removable drive is physically connected.
+
+## Physical-phone validation
+
+Validated on an OPPO CPH2641 (`OP5B16L1`), Android 15 / API 35, serial `b129ebcb`. The display reports 720 × 1604 pixels, physical 320 dpi, and a current 272 dpi override. Android exposes USB host/accessory features. During validation it exposed only `private` and `emulated;0` mounted volumes—no removable USB—while a previously persisted primary SAF tree remained readable and was correctly labeled Local Folder.
+
+Passed on the physical phone:
+
+- Cold/warm launch, Activity recreation, fast Radio/Bluetooth/USB switching, dark mode, and light mode.
+- Radio Browser DNS mirror discovery, 48-record healthy catalog, Egypt filter, cached offline launch, station metadata/favicons, recents, a real 102.7 KIIS FM stream, pause/play, notification, lock-screen/system media session, and 18-second broken-stream error/retry.
+- Existing persisted SAF grant survived install/relaunch; 2 real local audio files and 1 real local video were scanned. Audio play/pause/seek/next, 8-second portrait video, aspect-fit surface, fullscreen, and Back-to-exit-fullscreen passed.
+- Background audio, screen-off continuation, media-key pause/play, public MediaSession state, and a three-action Media3 foreground notification passed.
+- Bluetooth permission/public state refresh and paired-but-no-active-output rendering passed. A profile-proxy reconnect loop found during validation was removed; the clean regression run produced no repeated profile churn.
+- Scoped logcat contained no app `FATAL EXCEPTION`, ANR, `SecurityException`, receiver leak, player leak, or `NetworkOnMainThreadException` after the final fixes.
+
+The test Wi-Fi's opportunistic private DNS could resolve the Radio Browser host but temporarily timed out on unrelated stream hostnames. The positive stream test was performed after temporarily disabling that system DNS mode and immediately restoring its original unset/default value. This is an environmental resolver limitation; the app's retry/error/cache behavior remained correct.
+
+Screenshots are under `artifacts/phone-radio-usb/`:
+
+```text
+01_radio_discovery.png       real Radio Browser discovery
+02_radio_search.png          real Egypt results
+03_radio_playing.png         real Internet Radio stream
+04_radio_error.png           debug Demo of the tested broken-stream state
+05_usb_no_device.png         debug Demo; no mounted removable volume
+06_usb_detected.png          debug Demo; no physical USB available
+07_usb_scanning.png          debug Demo; no physical USB available
+08_usb_library.png           real persisted Local Folder scan
+09_usb_audio_playing.png     real SAF audio playback
+10_usb_video_playing.png     real SAF video playback
+10_usb_video_fullscreen.png  real fullscreen video surface
+11_usb_removed.png           debug Demo; no physical USB available
+12_bluetooth_regression.png  real phone Bluetooth state
+13_permission_state.png      debug permission rendering
+14_radio_offline_cache.png   real cached/offline state
+15_light_theme.png           real system light theme
+```
+
+## Final engineering gate and change inventory
+
+The final installed artifact passed all of the following on the connected phone:
+
+```bash
+./gradlew --no-configuration-cache :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+./gradlew --no-configuration-cache :app:installDebug
+./gradlew --no-configuration-cache :app:connectedDebugAndroidTest
+```
+
+The final results were `BUILD SUCCESSFUL` for assembly, JVM unit tests, Android lint, installation, and both connected smoke tests. A subsequent normal-mode cold launch and six rapid source switches left the Activity resumed, exposed exactly one active Media3 session, returned 68 healthy API records, reported zero mounted removable volumes, and produced no app fatal/security/network-main-thread/leak/player exception. The process-scoped evidence is retained at `artifacts/phone-radio-usb/final-verification/clean-launch-logcat.txt`.
+
+The implementation inventory is:
+
+- Created the Java Phone Edition under `app/src/main/java/com/hypernova/media/`: application/activity, immutable models, Media3 service/controller, public phone Bluetooth backend, Radio Browser API/repository/cache/backend, USB monitor/volume/scanner/permission layers, UI controllers/adapters/renderer, and the Canvas visualizer.
+- Created debug/release-separated Demo Mode controllers under `app/src/debug/` and `app/src/release/`; the release implementation cannot expose generated preview state.
+- Created the phone layouts `activity_main.xml`, `row_radio_station.xml`, and `row_media_item.xml`, plus vector icons, state/card/input backgrounds, responsive dimensions, and designed light/dark color/theme resources.
+- Modified `app/build.gradle.kts`, `gradle/libs.versions.toml`, and `AndroidManifest.xml` for the separate phone application ID, Java/ViewBinding, Media3 ExoPlayer/session/HLS/UI dependencies, required public permissions, and media playback service.
+- Replaced the starter Kotlin Activity with `com.hypernova.media.MainActivity`, and updated the physical-device instrumentation smoke tests.
+- Created `artifacts/phone-radio-usb/` for the required physical-device review set and final log evidence.
+- Updated this README without removing the archived AAOS integration specification below.
+
+Before the feature work, a timestamped recoverable project backup was created at `backups/HyperNovaMedia_Before_RadioUsb_20260803_235430.tar.gz` (SHA-256 `88e5ca7447991e3c28721a266bd7f82e388e23446743270dd382cc06b73914`). A final per-file SHA-256 comparison against the pre-work manifest confirmed that `aosp_source_snapshot/` and `HyperNovaMedia_Handoff/` are byte-for-byte unchanged.
+
+Exact serial-specific reproduction commands:
+
+```bash
+cd /home/ayman/ITI/Android-Apps/HyperNova_Media_Task_04
+./gradlew --no-configuration-cache :app:assembleDebug
+./gradlew --no-configuration-cache :app:installDebug
+adb -s b129ebcb shell am force-stop com.hypernova.media.phone.debug
+adb -s b129ebcb shell am start -W -n com.hypernova.media.phone.debug/com.hypernova.media.MainActivity
+```
+
+## NXP / final AAOS expectation
+
+On the final NXP AAOS image, a mounted USB volume exposed by Android should be discovered through the same `StorageManager`, MediaStore-volume, and SAF contracts. Target-specific USB controller support, passthrough, kernel drivers, filesystem support, vold/mount policy, and volume exposure remain below the application layer. The Phone Edition does not alter or assume those layers.
+
+## Known phone limitations
+
+- An ordinary phone cannot act as an AAOS A2DP sink or browse another phone's AVRCP catalog.
+- Radio availability and metadata depend on Radio Browser health data, the station endpoint, DNS, and network policy; catalog health cannot guarantee a stream remains reachable.
+- Codec support depends on the physical phone's MediaCodec implementation.
+- USB/OTG discovery and persistence depend on the phone's controller, power role, filesystem support, vold/mount policy, MediaStore indexing, and document provider.
+- Video pauses when the Activity leaves the foreground; audio and radio continue through the MediaSession service.
+- Portrait is requested for the main cockpit composition. Android 16 may relax orientation locking on some large-screen devices.
+
+## Protected reference material
+
+`aosp_source_snapshot/` and `HyperNovaMedia_Handoff/` are reference/handoff inputs only. Phone Edition development does not modify either directory, and it never touches the external AOSP tree under `/mnt/wwn-0x5002538e7006e10b-part3`.
+
+---
+
+# Archived AAOS Product Specification
+
+The remainder of this document is the original AAOS-oriented specification, preserved for integration history. Its package name, car services, and source semantics do not describe the phone APK above.
+
 # HyperNova Cockpit — Task 04: Media Android App
 
 > **Project:** HyperNova Cockpit  

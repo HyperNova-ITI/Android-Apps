@@ -1,0 +1,68 @@
+HyperNova RPi5 AAOS release-state manifest
+Capture date: 2026-08-09
+Product: hypernova_rpi5_car-trunk_staging-userdebug
+
+Intentional persistent changes
+==============================
+* packages/modules/Bluetooth/system/bta/hf_client/bta_hf_client_main.cc
+  HyperNova HFP incoming-RFCOMM/opening-control-block collision fix. Preserve.
+* packages/services/Telecomm/res/values/config.xml
+  Product-configurable car-mode InCallService resource (AOSP default remains empty).
+* packages/services/Telecomm/src/com/android/server/telecom/InCallController.java
+  Initializes configured car-mode InCallService at construction.
+* packages/apps/Car/LatinIME/src/com/android/inputmethod/latin/CarLatinIME.java
+  HYPERNOVA_PORTRAIT_KEYBOARD_RELOAD: rebuilds keyboard models after rotation.
+* vendor/hypernova/rpi5/resource_overlay/packages/services/Telecomm/res/values/config.xml
+  Selects com.hypernova.phone at car-mode priority 100.
+* device/brcm/rpi5/vendor.prop
+  MAP Client remains disabled; DRM mode remains 1920x1080; portrait orientation remains source-configured.
+* vendor/hypernova/rpi5/overlay/HyperNovaCarSystemUIOverlay
+  Keeps HyperNova Launcher as cockpit app-grid/system-bar target.
+* vendor/hypernova/rpi5/apps/HyperNovaLauncher/Android.bp
+  HyperNovaLauncher is platform-signed system_ext privileged HOME prebuilt and overrides stock launcher modules.
+* vendor/hypernova/rpi5/apps/HyperNovaMedia/HyperNovaMedia.apk
+  Release APK is the freshly built HyperNova Media project artifact; its SHA256 is recorded below.
+
+Media source of truth
+=====================
+Project: /home/ayman/ITI/Android-Apps/HyperNova_Media_Task_04
+Backend: app/src/main/java/com/hypernova/media/bluetooth/PhoneBluetoothAudioBackend.java
+Backend SHA256: e49229f0cb47f979592602531ce540b1066083d188b7c2d1a2103a9d0f00140f
+Backend line count: 947
+Release APK: app/build/outputs/apk/release/app-release-unsigned.apk
+Running debug APK was captured for audit only; it is not copied into source or /data.
+
+Current audited APK hashes
+==========================
+HyperNovaMedia vendor/release prebuilt: 030edc0b00262f5bd0e32871c94a60b412aa7d0b7227f905778bc03227158c49
+CarLatinIME AOSP output (patched): 153fb91a4101813b6370f6b1e5be5f405825d8c6a83a9bbd9be1f7d340f20fac
+Running CarLatinIME /data APK: 153fb91a4101813b6370f6b1e5be5f405825d8c6a83a9bbd9be1f7d340f20fac
+
+Runtime-only audit classification
+==================================
+* Current HOME resolver state was captured, but no userdata is packaged. Source-persistent HOME intent, Launcher prebuilt override, and CarSystemUI overlay are retained.
+* Current CarLatinIME /data APK is not used as release input; patched source reproduces the same hash in AOSP output.
+* Current running HyperNova Media debug suffix is not copied; release source/prebuilt is authoritative and matches the freshly built release artifact.
+* User settings, package grants, package enabled state, ADB properties, and /data package state are not copied wholesale. Required permissions/properties are represented by product/default-permission/privapp configuration.
+* MAP Client remains product-disabled. A2DP Sink, AVRCP Controller, HFP Client, PBAP Client, Telecom car-mode, Connectivity, Navigation, Settings, Phone, Launcher, and display overlays remain in product source.
+
+Build/image records
+===================
+Full product build: SUCCESS (`m -j10`, 2026-08-09).
+system.img SHA256: 309a03312d436cdf45d1e02c8a33f4e55eb5dfbf209707233c66399e4b78777d
+vendor.img SHA256: f3c65af472c16fd79235932605c68b1d76bdeb63f5085ba7d6dc79aafbbecb89
+boot.img SHA256: e5ec3cfabba6454293a1e099862fa6c1e5f700c0baea70f8abe5c29c0a6be86e
+system_ext HyperNovaMedia output SHA256: 5e033a7669d70c862e928d2af7946144f14710add6394330969884bdcef2cea3
+com.android.btservices APEX SHA256: 65a2086bed189a08867829e2fa37397c67b18a80f1ba9098f2e4703531bbb617
+
+Source repository status at capture
+=====================================
+packages/modules/Bluetooth: modified HFP source; expected old HFP backup untracked.
+packages/services/Telecomm: modified config.xml and InCallController.java.
+packages/apps/Car/LatinIME: modified CarLatinIME.java.
+HyperNova Media project: existing project modifications/untracked source tree are preserved; release APK was rebuilt successfully and matches the vendor prebuilt before platform signing.
+All three AOSP modified repositories passed `git diff --check`.
+
+Image generation gate
+=====================
+`device/brcm/rpi5/mkimg.sh` was inspected and is the established generator. Its mandatory `sudo -v` check requested the host password; the command was interrupted before any image creation or storage access. No SD device was selected or touched.

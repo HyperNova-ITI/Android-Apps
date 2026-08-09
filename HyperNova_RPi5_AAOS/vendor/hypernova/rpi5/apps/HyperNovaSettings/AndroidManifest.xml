@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.hypernova.settings"
+    coreApp="true"
+    android:sharedUserId="android.uid.system"
+    android:versionCode="1"
+    android:versionName="1.0">
+
+    <uses-sdk
+        android:minSdkVersion="24"
+        android:targetSdkVersion="35" />
+
+    <uses-permission android:name="android.permission.MODIFY_DAY_NIGHT_MODE" />
+    <uses-permission android:name="android.permission.INTERNAL_SYSTEM_WINDOW" />
+    <uses-permission android:name="android.permission.SET_TIME_ZONE" />
+
+    <!--
+         Allows HyperNova Settings to bind to the privileged
+         HyperNovaConnectivityService.
+
+         The service defines this as a signature-level permission.
+         Both applications are platform signed.
+    -->
+    <uses-permission
+        android:name="com.hypernova.permission.BIND_CONNECTIVITY_SERVICE" />
+
+    <application
+        android:name="com.android.car.settings.CarSettingsApplication"
+        android:directBootAware="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/hypernova_app_label"
+        android:requiredForAllUsers="true"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:resizeableActivity="true"
+        android:theme="@style/Theme.HyperNova"
+        tools:replace="android:icon,android:label,android:name,android:roundIcon,android:theme">
+
+        <!--
+             CarSettings-core contributes the full upstream manifest.
+             Remove its product surface, then declare only the HyperNova
+             feature entries and required subordinate flows.
+        -->
+        <activity tools:node="removeAll" />
+        <activity-alias tools:node="removeAll" />
+        <service tools:node="removeAll" />
+        <receiver tools:node="removeAll" />
+        <provider tools:node="removeAll" />
+
+        <!--
+             Car UI inflates interface-backed widgets, including
+             CarUiRecyclerView, through a factory installed by this
+             provider before activity content is inflated.
+        -->
+        <provider
+            android:name="com.android.car.ui.core.CarUiInstaller"
+            android:authorities="${applicationId}.CarUiInstaller"
+            android:directBootAware="true"
+            android:exported="false"
+            android:process="@string/car_ui_installer_process_name" />
+
+        <activity
+            android:name="com.android.car.settings.hypernova.HyperNovaSettingsActivities$HomeActivity"
+            android:exported="true"
+            android:finishOnTaskLaunch="true"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize">
+
+            <intent-filter android:priority="100">
+                <action android:name="com.hypernova.settings.action.OPEN" />
+                <action android:name="android.settings.SETTINGS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
+            <meta-data
+                android:name="com.android.car.settings.SINGLE_PANE"
+                android:value="true" />
+
+            <meta-data
+                android:name="distractionOptimized"
+                android:value="true" />
+        </activity>
+
+        <activity
+            android:name="com.android.car.settings.hypernova.HyperNovaSettingsActivities$DisplayActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize">
+
+            <intent-filter android:priority="100">
+                <action android:name="android.settings.DISPLAY_SETTINGS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
+            <meta-data
+                android:name="com.android.car.settings.SINGLE_PANE"
+                android:value="true" />
+
+            <meta-data
+                android:name="distractionOptimized"
+                android:value="true" />
+        </activity>
+
+        <activity
+            android:name="com.android.car.settings.hypernova.HyperNovaSettingsActivities$SoundActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize">
+
+            <intent-filter android:priority="100">
+                <action android:name="android.settings.SOUND_SETTINGS" />
+                <action android:name="android.settings.panel.action.VOLUME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
+            <meta-data
+                android:name="com.android.car.settings.SINGLE_PANE"
+                android:value="true" />
+
+            <meta-data
+                android:name="distractionOptimized"
+                android:value="true" />
+        </activity>
+
+        <activity
+            android:name="com.android.car.settings.hypernova.HyperNovaSettingsActivities$WifiActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize">
+
+            <intent-filter android:priority="100">
+                <action android:name="android.net.wifi.PICK_WIFI_NETWORK" />
+                <action android:name="android.settings.WIFI_SETTINGS" />
+                <action android:name="android.settings.WIRELESS_SETTINGS" />
+                <action android:name="android.settings.panel.action.WIFI" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
+            <meta-data
+                android:name="com.android.car.settings.SINGLE_PANE"
+                android:value="true" />
+
+            <meta-data
+                android:name="distractionOptimized"
+                android:value="true" />
+        </activity>
+
+        <activity
+            android:name="com.android.car.settings.hypernova.HyperNovaSettingsActivities$AddWifiActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize">
+
+            <intent-filter android:priority="100">
+                <action android:name="android.settings.WIFI_ADD_NETWORKS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
+            <meta-data
+                android:name="com.android.car.settings.SINGLE_PANE"
+                android:value="true" />
+
+            <meta-data
+                android:name="distractionOptimized"
+                android:value="true" />
+        </activity>
+
+        <activity
+            android:name="com.android.car.settings.hypernova.HyperNovaSettingsActivities$BluetoothActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize">
+
+            <intent-filter android:priority="100">
+                <action android:name="android.settings.BLUETOOTH_SETTINGS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
+            <meta-data
+                android:name="com.android.car.settings.SINGLE_PANE"
+                android:value="true" />
+
+            <meta-data
+                android:name="distractionOptimized"
+                android:value="true" />
+        </activity>
+
+        <activity
+            android:name="com.android.car.settings.hypernova.HyperNovaSettingsActivities$DateTimeActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize">
+
+            <intent-filter android:priority="100">
+                <action android:name="android.settings.DATE_SETTINGS" />
+                <action android:name="android.intent.action.QUICK_CLOCK" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
+            <meta-data
+                android:name="com.android.car.settings.SINGLE_PANE"
+                android:value="true" />
+
+            <meta-data
+                android:name="distractionOptimized"
+                android:value="true" />
+        </activity>
+
+        <activity
+            android:name="com.android.car.settings.hypernova.HyperNovaSettingsActivities$AudioGroupActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize">
+
+            <meta-data
+                android:name="com.android.car.settings.SINGLE_PANE"
+                android:value="true" />
+
+            <meta-data
+                android:name="distractionOptimized"
+                android:value="true" />
+        </activity>
+
+        <activity
+            android:name="com.android.car.settings.common.SubSettingsActivity"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize">
+
+            <meta-data
+                android:name="com.android.car.settings.SINGLE_PANE"
+                android:value="true" />
+
+            <meta-data
+                android:name="distractionOptimized"
+                android:value="true" />
+        </activity>
+
+
+        <!--
+             The ARZOPA HDMI panel exposes no Linux backlight node on this RPi5.
+             This system-UID fallback observes Android SCREEN_BRIGHTNESS and applies
+             a non-interactive black display overlay so the visible luminance follows
+             the Settings slider without pretending the HDMI panel has a hardware
+             backlight API. If a real backlight node becomes available, the service
+             automatically stays transparent.
+        -->
+        <service
+            android:name="com.android.car.settings.hypernova.HyperNovaSoftwareBrightnessService"
+            android:directBootAware="true"
+            android:enabled="true"
+            android:exported="false"
+            android:stopWithTask="false" />
+
+        <!-- Official AOSP Bluetooth pairing flow. -->
+        <activity
+            android:name="com.android.car.settings.bluetooth.BluetoothPairingDialog"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:permission="android.permission.BLUETOOTH_PRIVILEGED"
+            android:taskAffinity="car.settings.bluetooth"
+            android:theme="@style/ActionDialogTheme"
+            android:windowSoftInputMode="stateVisible|adjustResize">
+
+            <meta-data
+                android:name="distractionOptimized"
+                android:value="true" />
+        </activity>
+
+        <activity
+            android:name="com.android.car.settings.bluetooth.BluetoothDevicePickerActivity"
+            android:clearTaskOnLaunch="true"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:exported="true"
+            android:label="@string/bluetooth_device_picker"
+            android:screenOrientation="portrait">
+
+            <intent-filter>
+                <action android:name="android.bluetooth.devicepicker.action.LAUNCH" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name="com.android.car.settings.bluetooth.BluetoothRequestPermissionActivity"
+            android:clearTaskOnLaunch="true"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:launchMode="singleInstance"
+            android:permission="android.permission.BLUETOOTH_CONNECT"
+            android:theme="@style/ActionDialogTheme">
+
+            <intent-filter>
+                <action android:name="android.bluetooth.adapter.action.REQUEST_DISCOVERABLE" />
+                <action android:name="android.bluetooth.adapter.action.REQUEST_ENABLE" />
+                <action android:name="android.bluetooth.adapter.action.REQUEST_DISABLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name="com.android.car.settings.bluetooth.BluetoothPairingService"
+            android:exported="false" />
+
+        <receiver
+            android:name="com.android.car.settings.bluetooth.BluetoothPairingRequest"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.bluetooth.device.action.PAIRING_REQUEST" />
+            </intent-filter>
+        </receiver>
+
+    </application>
+
+</manifest>

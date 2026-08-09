@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2026 HyperNova. Licensed under the Apache License, Version 2.0. -->
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="126dp"
+    android:background="@drawable/hypernova_sound_group_row_background"
+    android:orientation="vertical"
+    android:paddingStart="16dp"
+    android:paddingTop="12dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="8dp">
+
+    <!-- ========================================================= -->
+    <!-- GROUP TITLE + VALUE                                       -->
+    <!-- ========================================================= -->
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/hypernova_sound_group_icon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:contentDescription="@null"
+            android:scaleType="centerInside"
+            android:tint="@color/hypernova_cyan" />
+
+        <TextView
+            android:id="@+id/hypernova_sound_group_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="14dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif-medium"
+            android:maxLines="1"
+            android:textColor="@color/hypernova_text_primary"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/hypernova_sound_group_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="@color/hypernova_text_secondary"
+            android:textSize="14sp" />
+
+    </LinearLayout>
+
+
+    <!-- ========================================================= -->
+    <!-- GROUP VOLUME CONTROLS                                     -->
+    <!-- ========================================================= -->
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="58dp"
+        android:layout_marginTop="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <!-- Minus -->
+        <FrameLayout
+            android:layout_width="@dimen/hypernova_touch_target"
+            android:layout_height="@dimen/hypernova_touch_target">
+
+            <ImageButton
+                android:id="@+id/hypernova_sound_group_decrease"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_gravity="center"
+                android:background="@drawable/hypernova_round_control_background"
+                android:contentDescription="@string/hypernova_decrease"
+                android:padding="10dp"
+                android:src="@drawable/hypernova_ic_minus"
+                android:tint="@color/hypernova_text_primary" />
+
+        </FrameLayout>
+
+
+        <!-- Real group slider -->
+        <SeekBar
+            android:id="@+id/hypernova_sound_group_seekbar"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/hypernova_touch_target"
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="6dp"
+            android:layout_weight="1"
+            android:progressDrawable="@drawable/hypernova_seekbar_progress"
+            android:splitTrack="false"
+            android:thumb="@drawable/hypernova_seekbar_thumb" />
+
+
+        <!-- Plus -->
+        <FrameLayout
+            android:layout_width="@dimen/hypernova_touch_target"
+            android:layout_height="@dimen/hypernova_touch_target">
+
+            <ImageButton
+                android:id="@+id/hypernova_sound_group_increase"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_gravity="center"
+                android:background="@drawable/hypernova_round_control_background"
+                android:contentDescription="@string/hypernova_increase"
+                android:padding="10dp"
+                android:src="@drawable/hypernova_ic_plus"
+                android:tint="@color/hypernova_text_primary" />
+
+        </FrameLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

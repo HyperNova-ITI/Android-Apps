@@ -20,12 +20,13 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.hypernova.navigation.data.persistence.NavigationPreferences
@@ -157,10 +158,10 @@ class MainActivity : AppCompatActivity() {
         repository =
             navigationApplication.navigationRepository
 
-        enableEdgeToEdge()
         MapLibre.getInstance(this)
 
         binding = ActivityMainBinding.inflate(layoutInflater)
+        configureFullScreenMode()
         setContentView(binding.root)
         mapView = MapView(this).also { runtimeMapView ->
             runtimeMapView.contentDescription =
@@ -224,19 +225,17 @@ class MainActivity : AppCompatActivity() {
         ViewCompat.setOnApplyWindowInsetsListener(
             binding.main
         ) { view, insets ->
-            val systemBars =
-                insets.getInsets(
-                    WindowInsetsCompat.Type.systemBars()
-                )
-
-            view.setPadding(
-                systemBars.left,
-                systemBars.top,
-                systemBars.right,
-                systemBars.bottom
-            )
-
+            view.setPadding(0, 0, 0, 0)
             insets
+        }
+    }
+
+    private fun configureFullScreenMode() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            hide(WindowInsetsCompat.Type.systemBars())
+            systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
     }
 
@@ -284,7 +283,7 @@ class MainActivity : AppCompatActivity() {
         debugForcedState = false
 
         when (uiState.screen) {
-            NavigationScreen.HOME -> finish()
+            NavigationScreen.HOME -> returnToLauncher()
 
             NavigationScreen.SEARCH,
             NavigationScreen.SEARCHING -> {
@@ -298,15 +297,26 @@ class MainActivity : AppCompatActivity() {
             }
 
             NavigationScreen.CALCULATING_ROUTE -> {
-                cancelRouteCalculation()
+                /*
+                 * Destination selection starts OSRM calculation immediately.
+                 * Back here means abandon this unstarted route and leave the
+                 * Navigation app, not return to Search/Results.
+                 */
+                repository.cancelNavigation()
+                returnToLauncher()
             }
 
             NavigationScreen.ROUTE_PREVIEW -> {
-                showSearch(uiState.query)
+                /*
+                 * Route exists but Start Route has not been pressed.
+                 * Back abandons the preview and returns directly to HOME.
+                 */
+                repository.cancelNavigation()
+                returnToLauncher()
             }
 
             NavigationScreen.ROUTE_ACTIVE -> {
-                confirmEndRoute()
+                returnToLauncher()
             }
 
             NavigationScreen.ROUTE_OVERVIEW -> {
@@ -328,6 +338,30 @@ class MainActivity : AppCompatActivity() {
                 goHome(clearRoute = false)
             }
         }
+    }
+
+    /**
+     * Leaves Navigation visible state and returns to the current Android HOME.
+     *
+     * The active route is deliberately preserved. NavigationRepository and
+     * NavigationCommandService continue exposing the active route state to
+     * HyperNova Launcher.
+     */
+    private fun returnToLauncher() {
+        hideKeyboard()
+
+        val homeIntent =
+            Intent(Intent.ACTION_MAIN).apply {
+                addCategory(Intent.CATEGORY_HOME)
+                addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP
+                )
+            }
+
+        startActivity(homeIntent)
+        moveTaskToBack(true)
     }
 
     // ============================================================
@@ -390,6 +424,7 @@ class MainActivity : AppCompatActivity() {
             NavigationScreen.ROUTE_ERROR -> renderSpecialState()
         }
 
+        updateMapViewportForCurrentScreen()
         renderMapScene()
         updateMapStateCardVisibility()
 
@@ -2275,6 +2310,90 @@ class MainActivity : AppCompatActivity() {
             }
     }
 
+    /**
+     * Keep the real MapView physically inside the portion of the screen that
+     * is not covered by HyperNova controls.
+     *
+     * Route panels are FrameLayouts whose top/bottom cards are measured at
+     * runtime, so this follows the actual UI instead of guessing fixed camera
+     * padding values.
+     */
+    private fun updateMapViewportForCurrentScreen() {
+        binding.stateHost.post {
+            if (binding.root.height <= 0 || binding.stateHost.height <= 0) {
+                return@post
+            }
+
+            val rootHeight = binding.root.height
+            val stateTop = binding.stateHost.top
+            val stateBottom = binding.stateHost.bottom
+
+            var visibleTop = stateTop
+            var visibleBottom = stateBottom
+
+            val panelRoot =
+                binding.stateHost.getChildAt(0) as? android.view.ViewGroup
+
+            if (panelRoot != null) {
+                for (index in 0 until panelRoot.childCount) {
+                    val child = panelRoot.getChildAt(index)
+                    if (child.visibility != View.VISIBLE) continue
+
+                    val params =
+                        child.layoutParams as? android.widget.FrameLayout.LayoutParams
+                            ?: continue
+
+                    val gravity = params.gravity
+
+                    if (
+                        gravity != -1 &&
+                        gravity and android.view.Gravity.TOP ==
+                            android.view.Gravity.TOP
+                    ) {
+                        visibleTop =
+                            visibleTop.coerceAtLeast(
+                                stateTop + child.bottom + dp(8)
+                            )
+                    }
+
+                    if (
+                        gravity != -1 &&
+                        gravity and android.view.Gravity.BOTTOM ==
+                            android.view.Gravity.BOTTOM
+                    ) {
+                        visibleBottom =
+                            visibleBottom.coerceAtMost(
+                                stateTop + child.top - dp(8)
+                            )
+                    }
+                }
+            }
+
+            if (visibleBottom <= visibleTop + dp(120)) {
+                visibleTop = stateTop
+                visibleBottom = stateBottom
+            }
+
+            val params =
+                binding.mapContainer.layoutParams as
+                    android.widget.FrameLayout.LayoutParams
+
+            val newTopMargin = visibleTop.coerceAtLeast(0)
+            val newBottomMargin =
+                (rootHeight - visibleBottom).coerceAtLeast(0)
+
+            if (
+                params.topMargin != newTopMargin ||
+                params.bottomMargin != newBottomMargin
+            ) {
+                params.topMargin = newTopMargin
+                params.bottomMargin = newBottomMargin
+                binding.mapContainer.layoutParams = params
+                binding.mapContainer.requestLayout()
+            }
+        }
+    }
+
     private fun renderMapScene() {
         if (!::mapController.isInitialized) return
 
@@ -2322,20 +2441,13 @@ class MainActivity : AppCompatActivity() {
             selectedResultId = uiState.selectedResultId,
             destination = destination,
             routePlan = routePlan,
-            vehiclePosition =
-                if (
-                    uiState.screen in setOf(
-                        NavigationScreen.ROUTE_ACTIVE,
-                        NavigationScreen.ROUTE_OVERVIEW,
-                        NavigationScreen.ARRIVED
-                    )
-                ) {
-                    uiState.vehiclePosition
-                } else {
-                    null
-                },
-            followVehicle =
-                uiState.screen == NavigationScreen.ROUTE_ACTIVE,
+            /*
+             * Static-route mode:
+             * keep the OSRM route active but never render fake/simulated
+             * vehicle progress or move the camera.
+             */
+            vehiclePosition = null,
+            followVehicle = false,
             calculating =
                 uiState.screen ==
                     NavigationScreen.CALCULATING_ROUTE ||
@@ -2354,7 +2466,8 @@ class MainActivity : AppCompatActivity() {
                 NavigationScreen.CALCULATING_ROUTE,
                 NavigationScreen.ROUTE_PREVIEW ->
                     mapController.fitRoute()
-                NavigationScreen.ROUTE_ACTIVE,
+                NavigationScreen.ROUTE_ACTIVE ->
+                    mapController.fitRoute(active = true)
                 NavigationScreen.ARRIVED -> Unit
                 NavigationScreen.ROUTE_OVERVIEW ->
                     mapController.fitRoute(overview = true)
@@ -2455,15 +2568,12 @@ class MainActivity : AppCompatActivity() {
                     vehiclePosition = uiState.vehiclePosition
                 ) == uiState
             if (positionOnlyUpdate) {
-                uiState = updated
-                if (::mapController.isInitialized) {
-                    mapController.updateVehiclePosition(
-                        position = updated.vehiclePosition,
-                        followCamera =
-                            updated.screen ==
-                                NavigationScreen.ROUTE_ACTIVE
-                    )
-                }
+                /*
+                 * Static-route mode: repository position updates may still
+                 * exist for future real GPS integration, but this demo UI
+                 * deliberately does not animate or consume them.
+                 */
+                uiState = updated.copy(vehiclePosition = null)
                 return
             }
 
@@ -2522,7 +2632,7 @@ class MainActivity : AppCompatActivity() {
                     destination =
                         state.destination?.place,
                     routePlan = state.routePlan,
-                    vehiclePosition = state.vehiclePosition,
+                    vehiclePosition = null,
                     savedDestinationTarget = null,
                     message = null
                 )
@@ -2531,7 +2641,7 @@ class MainActivity : AppCompatActivity() {
                     screen = NavigationScreen.ARRIVED,
                     destination = state.destination?.place,
                     routePlan = state.routePlan,
-                    vehiclePosition = state.vehiclePosition,
+                    vehiclePosition = null,
                     savedDestinationTarget = null,
                     message = null
                 )
@@ -2760,6 +2870,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        configureFullScreenMode()
         mapView.onResume()
     }
 

@@ -47,10 +47,10 @@
             android:id="@+id/topBar"
             layout="@layout/view_top_bar"
             android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:layout_marginStart="12dp"
+            android:layout_height="@dimen/navigation_top_bar_height"
+            android:layout_marginStart="@dimen/navigation_page_margin"
             android:layout_marginTop="8dp"
-            android:layout_marginEnd="12dp" />
+            android:layout_marginEnd="@dimen/navigation_page_margin" />
 
         <FrameLayout
             android:id="@+id/stateHost"
@@ -73,20 +73,20 @@
 
     <LinearLayout
         android:id="@+id/mapControls"
-        android:layout_width="56dp"
+        android:layout_width="@dimen/navigation_map_control_size"
         android:layout_height="wrap_content"
         android:layout_gravity="end|center_vertical"
-        android:layout_marginEnd="14dp"
+        android:layout_marginEnd="@dimen/navigation_map_control_margin_end"
         android:gravity="center"
         android:orientation="vertical">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/zoomInButton"
             style="@style/Widget.HyperNova.Button.Secondary"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
+            android:layout_width="@dimen/navigation_map_control_size"
+            android:layout_height="@dimen/navigation_map_control_size"
             android:contentDescription="@string/map_zoom_in"
-            android:minWidth="56dp"
+            android:minWidth="@dimen/navigation_map_control_size"
             android:padding="0dp"
             android:text="@string/map_zoom_in_symbol"
             android:textSize="26sp" />
@@ -94,11 +94,11 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/zoomOutButton"
             style="@style/Widget.HyperNova.Button.Secondary"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
+            android:layout_width="@dimen/navigation_map_control_size"
+            android:layout_height="@dimen/navigation_map_control_size"
             android:layout_marginTop="8dp"
             android:contentDescription="@string/map_zoom_out"
-            android:minWidth="56dp"
+            android:minWidth="@dimen/navigation_map_control_size"
             android:padding="0dp"
             android:text="@string/map_zoom_out_symbol"
             android:textSize="26sp" />
@@ -106,11 +106,11 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/centerOriginButton"
             style="@style/Widget.HyperNova.Button.Secondary"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
+            android:layout_width="@dimen/navigation_map_control_size"
+            android:layout_height="@dimen/navigation_map_control_size"
             android:layout_marginTop="8dp"
             android:contentDescription="@string/map_center_origin"
-            android:minWidth="56dp"
+            android:minWidth="@dimen/navigation_map_control_size"
             android:padding="0dp"
             android:text=""
             app:icon="@drawable/ic_navigation"
@@ -123,7 +123,7 @@
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/mapStateCard"
         style="@style/Widget.HyperNova.Card"
-        android:layout_width="320dp"
+        android:layout_width="@dimen/navigation_map_state_width"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:layout_margin="24dp"

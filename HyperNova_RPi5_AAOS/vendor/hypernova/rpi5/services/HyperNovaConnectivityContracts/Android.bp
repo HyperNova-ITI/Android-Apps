@@ -1,0 +1,28 @@
+package {
+    default_applicable_licenses: [
+        "Android-Apache-2.0",
+    ],
+}
+
+java_library {
+    name: "HyperNovaConnectivityContracts",
+
+    srcs: [
+        "src/**/*.java",
+        "src/**/*.aidl",
+    ],
+
+    aidl: {
+        local_include_dirs: [
+            "src",
+        ],
+    },
+
+    platform_apis: true,
+
+    installable: false,
+
+    visibility: [
+        "//visibility:public",
+    ],
+}

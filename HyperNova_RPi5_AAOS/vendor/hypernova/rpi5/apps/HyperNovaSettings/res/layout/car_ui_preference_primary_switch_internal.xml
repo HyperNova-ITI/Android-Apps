@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     Copyright (C) 2023 The Android Open Source Project
+     Copyright (C) 2026 HyperNova
+     Licensed under the Apache License, Version 2.0.
+-->
+
+<com.android.car.ui.uxr.DrawableStateRelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="88dp"
+    android:layout_marginBottom="@dimen/hypernova_space_8"
+    android:background="@drawable/hypernova_card_background"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center_vertical"
+    android:paddingStart="16dp"
+    android:paddingEnd="14dp"
+    android:tag="carUiPreference">
+
+    <com.android.car.ui.uxr.DrawableStateImageView
+        android:id="@android:id/icon"
+        android:layout_width="26dp"
+        android:layout_height="26dp"
+        android:layout_alignParentStart="true"
+        android:layout_centerVertical="true"
+        android:contentDescription="@null"
+        android:scaleType="centerInside"
+        android:tint="@color/hypernova_cyan" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_marginEnd="12dp"
+        android:layout_toEndOf="@android:id/icon"
+        android:layout_toStartOf="@android:id/widget_frame"
+        android:paddingStart="14dp"
+        android:orientation="vertical">
+
+        <com.android.car.ui.uxr.DrawableStateTextView
+            android:id="@android:id/title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif-medium"
+            android:maxLines="1"
+            android:textColor="@color/hypernova_text_primary"
+            android:textSize="16sp" />
+
+        <com.android.car.ui.uxr.DrawableStateTextView
+            android:id="@android:id/summary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif"
+            android:maxLines="1"
+            android:textColor="@color/hypernova_text_secondary"
+            android:textSize="13sp" />
+
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@android:id/widget_frame"
+        android:layout_width="58dp"
+        android:layout_height="match_parent"
+        android:layout_alignParentEnd="true"
+        android:gravity="center" />
+
+</com.android.car.ui.uxr.DrawableStateRelativeLayout>

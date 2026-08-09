@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="screen_padding">16dp</dimen>
+    <dimen name="nova_orb_width">500dp</dimen>
+    <dimen name="nova_orb_height">62dp</dimen>
+    <dimen name="dashboard_compact_row_height">126dp</dimen>
+    <dimen name="dashboard_utility_row_height">110dp</dimen>
+    <dimen name="navigation_dashboard_min_height">172dp</dimen>
+</resources>

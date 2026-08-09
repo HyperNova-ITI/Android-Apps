@@ -1,0 +1,98 @@
+Exact intentional AOSP source diffs captured 2026-08-09
+
+packages/modules/Bluetooth/system/bta/hf_client/bta_hf_client_main.cc
+@@
+ bool bta_hf_client_allocate_handle(const RawAddress& bd_addr, uint16_t* p_handle) {
+   tBTA_HF_CLIENT_CB* existing_cb = bta_hf_client_find_cb_by_bda(bd_addr);
+   if (existing_cb != NULL) {
++    /*
++     * HyperNova AAOS HFP simultaneous-connect collision fix.
++     *
++     * During Bluetooth autoconnect the AAOS Headset Client and the phone
++     * can initiate HFP at nearly the same time.
++     *
++     * The outgoing AAOS path has already allocated a control block for
++     * this BDADDR, while the phone's incoming RFCOMM connection can win
++     * before the outgoing RFCOMM handle has been created.
++     *
++     * In that specific OPENING + conn_handle==0 state, use the existing
++     * AOSP collision machinery and reuse the same control block.
++     *
++     * The collision callback moves the state back to INIT, cancels the
++     * outgoing discovery and arms the collision timer. The incoming
++     * RFC_OPEN event can then follow the normal accepted-connection path.
++     */
++    if (existing_cb->state == BTA_HF_CLIENT_OPENING_ST &&
++        existing_cb->conn_handle == 0) {
++      log::warn(
++          "HYPERNOVA HFP collision: incoming RFCOMM won; "
++          "reusing CB handle {} for peer {}",
++          existing_cb->handle, bd_addr);
++
++      bta_hf_client_collision_cback(
++          BTA_SYS_CONN_OPEN,
++          BTA_ID_HS,
++          0,
++          bd_addr);
++
++      *p_handle = existing_cb->handle;
++      return true;
++    }
+
+     log::error("cannot allocate handle since BDADDR already exists");
+     return false;
+   }
+
+packages/services/Telecomm/res/values/config.xml
+@@
++    <string name="default_car_mode_incall_service_package"
++            translatable="false"></string>
++    <integer name="default_car_mode_incall_service_priority">0</integer>
+
+packages/services/Telecomm/src/com/android/server/telecom/InCallController.java
+@@
+         mCarModeTracker = carModeTracker;
+         mSystemStateHelper.addListener(mSystemStateListener);
++        initializeConfiguredCarModeInCallService();
+         mClockProxy = clockProxy;
+@@
++    private void initializeConfiguredCarModeInCallService() {
++        String packageName = mContext.getString(
++                R.string.default_car_mode_incall_service_package);
++
++        if (TextUtils.isEmpty(packageName)) {
++            return;
++        }
++
++        int priority = mContext.getResources().getInteger(
++                R.integer.default_car_mode_incall_service_priority);
++
++        priority = Math.max(0, priority);
++
++        Log.i(this,
++                "initializeConfiguredCarModeInCallService: "
++                        + "packageName=%s, priority=%d",
++                packageName,
++                priority);
+
++        mCarModeTracker.handleEnterCarMode(priority, packageName);
++    }
+
+packages/apps/Car/LatinIME/src/com/android/inputmethod/latin/CarLatinIME.java
+@@
++    @Override
++    public void onConfigurationChanged(Configuration newConfig) {
++        super.onConfigurationChanged(newConfig);
++
++        mLocale = null;
++        mQweKeyboard = createKeyboard(LAYOUT_XML);
++        mSymbolKeyboard = createKeyboard(SYMBOL_LAYOUT_XML);
++
++        if (mKeyboardView != null) {
++            mKeyboardView.setKeyboard(mQweKeyboard, getLocale());
++            mKeyboardView.requestLayout();
++            mKeyboardView.invalidate();
++        }
++    }
+
+HyperNova Media source is intentionally not rewritten in this release task. The authoritative project source and release artifact are recorded in release_manifest.txt; the current AOSP prebuilt is already the same release artifact before platform signing.

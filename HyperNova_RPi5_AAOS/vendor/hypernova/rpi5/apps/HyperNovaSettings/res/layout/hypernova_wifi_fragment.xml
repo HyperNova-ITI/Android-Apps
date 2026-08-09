@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2026 HyperNova. Licensed under the Apache License, Version 2.0. -->
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/hypernova_background"
+    android:clipToPadding="false"
+    android:fillViewport="true"
+    android:overScrollMode="never"
+    android:paddingStart="@dimen/hypernova_page_margin"
+    android:paddingEnd="@dimen/hypernova_page_margin"
+    android:paddingBottom="@dimen/hypernova_space_32">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- ========================================================= -->
+        <!-- WI-FI STATE                                               -->
+        <!-- ========================================================= -->
+
+        <LinearLayout
+            android:id="@+id/hypernova_wifi_state_card"
+            android:layout_width="match_parent"
+            android:layout_height="88dp"
+            android:layout_marginTop="22dp"
+            android:background="@drawable/hypernova_card_background"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="14dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="@string/hypernova_wifi"
+                    android:textColor="@color/hypernova_text_primary"
+                    android:textSize="17sp" />
+
+                <TextView
+                    android:id="@+id/hypernova_wifi_state_summary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:textColor="@color/hypernova_text_secondary"
+                    android:textSize="13sp" />
+
+            </LinearLayout>
+
+            <Switch
+                android:id="@+id/hypernova_wifi_state_switch"
+                android:layout_width="54dp"
+                android:layout_height="@dimen/hypernova_touch_target"
+                android:background="@null"
+                android:showText="false"
+                android:splitTrack="false"
+                android:switchMinWidth="@dimen/hypernova_switch_visual_width"
+                android:thumb="@drawable/hypernova_switch_thumb_drawable"
+                android:track="@drawable/hypernova_switch_track_drawable" />
+
+        </LinearLayout>
+
+
+        <!-- ========================================================= -->
+        <!-- CONNECTED NETWORK                                         -->
+        <!-- ========================================================= -->
+
+        <LinearLayout
+            android:id="@+id/hypernova_connected_section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:layout_marginBottom="10dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    style="@style/HyperNovaText.Section"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/hypernova_section_connected_network" />
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="12dp"
+                    android:layout_weight="1"
+                    android:background="@color/hypernova_divider" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/hypernova_connected_network_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+        </LinearLayout>
+
+
+        <!-- ========================================================= -->
+        <!-- AVAILABLE NETWORKS                                        -->
+        <!-- ========================================================= -->
+
+        <LinearLayout
+            android:id="@+id/hypernova_available_section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:layout_marginBottom="10dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    style="@style/HyperNovaText.Section"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/hypernova_section_networks" />
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="12dp"
+                    android:layout_weight="1"
+                    android:background="@color/hypernova_divider" />
+
+                <LinearLayout
+                    android:id="@+id/hypernova_wifi_refresh_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:minWidth="116dp"
+                    android:background="@drawable/hypernova_wifi_refresh_background"
+                    android:clickable="true"
+                    android:contentDescription="@string/hypernova_wifi_refresh_content_description"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="16dp">
+
+                    <ImageView
+                        android:id="@+id/hypernova_wifi_refresh_icon"
+                        android:layout_width="19dp"
+                        android:layout_height="19dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/hypernova_ic_refresh"
+                        android:tint="@color/hypernova_cyan" />
+
+                    <TextView
+                        android:id="@+id/hypernova_wifi_refresh_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="@string/hypernova_wifi_refresh"
+                        android:textColor="@color/hypernova_cyan"
+                        android:textSize="13sp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/hypernova_available_networks_card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/hypernova_card_background"
+                android:clipToOutline="true"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:id="@+id/hypernova_available_networks_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <TextView
+                    android:id="@+id/hypernova_wifi_available_empty_state"
+                    android:layout_width="match_parent"
+                    android:layout_height="72dp"
+                    android:gravity="center_vertical"
+                    android:paddingStart="18dp"
+                    android:paddingEnd="18dp"
+                    android:text="@string/hypernova_wifi_scanning"
+                    android:textColor="@color/hypernova_text_secondary"
+                    android:textSize="14sp"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+
+        <!-- ========================================================= -->
+        <!-- ADD NETWORK                                               -->
+        <!-- ========================================================= -->
+
+        <LinearLayout
+            android:id="@+id/hypernova_add_network"
+            android:layout_width="match_parent"
+            android:layout_height="74dp"
+            android:layout_marginTop="22dp"
+            android:background="@drawable/hypernova_card_background"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="14dp">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:contentDescription="@null"
+                android:src="@drawable/hypernova_ic_plus"
+                android:tint="@color/hypernova_cyan" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:layout_weight="1"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/wifi_setup_add_network"
+                android:textColor="@color/hypernova_text_primary"
+                android:textSize="16sp" />
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:contentDescription="@null"
+                android:src="@drawable/hypernova_ic_chevron"
+                android:tint="@color/hypernova_text_primary" />
+
+        </LinearLayout>
+
+        <Space
+            android:layout_width="1dp"
+            android:layout_height="32dp" />
+
+    </LinearLayout>
+
+</ScrollView>

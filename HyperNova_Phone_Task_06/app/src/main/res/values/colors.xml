@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- =========================================================
+         HYPERNOVA PHONE — LIGHT THEME
+         Base resources = Light mode.
+         Dark overrides live in values-night/colors.xml.
+         ========================================================= -->
+
+    <!-- Backgrounds -->
+    <color name="hn_background_primary">#F4F7FA</color>
+    <color name="hn_background_secondary">#EAF0F5</color>
+
+    <!-- Surfaces -->
+    <color name="hn_surface_primary">#FFFFFFFF</color>
+    <color name="hn_surface_secondary">#F1F5F8</color>
+    <color name="hn_surface_overlay">#E5EDF3</color>
+
+    <!-- Borders -->
+    <color name="hn_border_primary">#A8B8C6</color>
+    <color name="hn_border_subtle">#D5DFE7</color>
+
+    <!-- HyperNova Cyan -->
+    <color name="hn_primary_cyan">#009EAD</color>
+    <color name="hn_primary_cyan_pressed">#008B99</color>
+    <color name="hn_primary_cyan_dark">#067681</color>
+
+    <!-- Typography -->
+    <color name="hn_text_primary">#10212E</color>
+    <color name="hn_text_secondary">#526675</color>
+    <color name="hn_text_disabled">#8A99A5</color>
+
+    <!-- Semantic -->
+    <color name="hn_success">#168A35</color>
+    <color name="hn_warning">#B76B00</color>
+    <color name="hn_error">#C93443</color>
+
+    <!-- Common -->
+    <color name="hn_white">#FFFFFFFF</color>
+    <color name="hn_transparent">#00000000</color>
+
+</resources>

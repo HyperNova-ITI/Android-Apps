@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
     <!--
@@ -21,14 +22,25 @@
         android:name="com.hypernova.permission.CONTROL_COCKPIT_APPS" />
 
     <!-- Read-only Android framework state used by dashboard cards. -->
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission
+        android:name="android.permission.ACCESS_WIFI_STATE" />
+
+    <!--
+        Required to inspect the real connected Bluetooth device.
+        Bluetooth being ON is not treated as a connected phone.
+    -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_CONNECT" />
+
     <!-- Required only for the read-only OpenFreeMap style/tile renderer. -->
-    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission
+        android:name="android.permission.INTERNET" />
 
     <!-- MapLibre can optionally consume device location, but Launcher must not. -->
     <uses-permission
         android:name="android.permission.ACCESS_COARSE_LOCATION"
         tools:node="remove" />
+
     <uses-permission
         android:name="android.permission.ACCESS_FINE_LOCATION"
         tools:node="remove" />
@@ -38,13 +50,12 @@
         android:name="android.hardware.type.automotive"
         android:required="true" />
 
-    <!--
-        Package visibility declarations.
+    <!-- MapLibre must not make the boot-critical HOME depend on Vulkan. -->
+    <uses-feature
+        android:name="android.hardware.vulkan.version"
+        android:required="false"
+        tools:replace="android:required" />
 
-        Android limits which installed applications can be detected.
-        The launcher declares every HyperNova package and OPEN action
-        that it needs to discover or launch.
-    -->
     <queries>
 
         <!-- NOVA AI -->
@@ -143,18 +154,10 @@
             android:excludeFromRecents="true"
             android:exported="true"
             android:launchMode="singleTask"
-            android:resizeableActivity="false"
+            android:resizeableActivity="true"
             android:screenOrientation="portrait"
             android:stateNotNeeded="true">
 
-            <!--
-                Register HyperNova Launcher as a real HOME application.
-
-                Android uses this filter when:
-                - The system boots.
-                - The driver presses Home.
-                - The default launcher is selected.
-            -->
             <intent-filter android:priority="10">
 
                 <action android:name="android.intent.action.MAIN" />
@@ -164,12 +167,6 @@
 
             </intent-filter>
 
-            <!--
-                Keep the normal launcher entry during development.
-
-                This allows Android Studio and adb to start the
-                application directly without changing the HOME app.
-            -->
             <intent-filter>
 
                 <action android:name="android.intent.action.MAIN" />

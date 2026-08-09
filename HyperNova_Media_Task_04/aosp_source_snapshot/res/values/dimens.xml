@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="hn_space_4">4dp</dimen>
+    <dimen name="hn_space_8">8dp</dimen>
+    <dimen name="hn_space_12">12dp</dimen>
+    <dimen name="hn_space_16">16dp</dimen>
+    <dimen name="hn_space_20">20dp</dimen>
+    <dimen name="hn_space_24">24dp</dimen>
+    <dimen name="hn_space_32">32dp</dimen>
+
+    <dimen name="hn_screen_margin">18dp</dimen>
+    <dimen name="hn_header_height">64dp</dimen>
+    <dimen name="hn_source_height">92dp</dimen>
+    <dimen name="hn_touch_min">48dp</dimen>
+    <dimen name="hn_play_button">68dp</dimen>
+    <dimen name="hn_card_radius">22dp</dimen>
+    <dimen name="hn_small_card_radius">16dp</dimen>
+    <dimen name="hn_card_stroke">1dp</dimen>
+    <dimen name="hn_selected_stroke">2dp</dimen>
+
+    <dimen name="hn_text_title">22sp</dimen>
+    <dimen name="hn_text_header_status">11sp</dimen>
+    <dimen name="hn_text_source_title">15sp</dimen>
+    <dimen name="hn_text_source_subtitle">11sp</dimen>
+    <dimen name="hn_text_media_title">24sp</dimen>
+    <dimen name="hn_text_body">14sp</dimen>
+    <dimen name="hn_text_secondary">12sp</dimen>
+    <dimen name="hn_text_readout">38sp</dimen>
+</resources>

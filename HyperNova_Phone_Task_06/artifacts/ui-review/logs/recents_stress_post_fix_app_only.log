@@ -1,0 +1,464 @@
+08-08 20:11:22.263 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:22.275 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:22.275 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:22.275 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:22.336 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:22.345 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:22.350 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:22.350 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:22.350 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:22.716 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:22.718 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:22.935 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:22.935 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:22.941 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:22.951 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:22.951 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:22.951 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:23.002 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:23.008 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:23.014 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:23.014 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:23.014 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:23.392 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:23.393 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:23.634 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:23.634 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:23.646 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:23.646 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:23.646 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:24.899 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:24.900 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:24.901 28665 28665 I Choreographer: Skipped 74 frames!  The application may be doing too much work on its main thread.
+08-08 20:11:25.953 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:25.954 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:25.966 28665 29931 I HWUI    : Davey! duration=2312ms; Flags=0, FrameTimelineVsyncId=160668886, IntendedVsync=542879468167443, Vsync=542880714547297, InputEventId=-875740299, HandleInputStart=542880721649364, AnimationStart=542880721654051, PerformTraversalsStart=542880723515301, DrawStart=542881526909937, FrameDeadline=542879484834109, FrameInterval=542880720663791, FrameStartTime=16842971, SyncQueued=542881761156186, SyncStart=542881761327332, IssueDrawCommandsStart=542881771560041, SwapBuffers=542881774474780, FrameCompleted=542881780547436, DequeueBufferDuration=84427, QueueBufferDuration=486094, GpuCompleted=542881780547436, SwapBuffersCompleted=542881775509051, DisplayPresentTime=0, CommandSubmissionCompleted=542881774474780, 
+08-08 20:11:25.985 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:25.985 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:25.985 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:26.350 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:26.351 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:26.352 28665 28665 I Choreographer: Skipped 85 frames!  The application may be doing too much work on its main thread.
+08-08 20:11:26.570 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:26.571 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:26.584 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:26.584 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:26.584 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:26.588 28665 29931 I HWUI    : Davey! duration=1665ms; Flags=0, FrameTimelineVsyncId=160668918, IntendedVsync=542880732369609, Vsync=542882165994144, InputEventId=-577526084, HandleInputStart=542882172377280, AnimationStart=542882172381551, PerformTraversalsStart=542882173193634, DrawStart=542882319929936, FrameDeadline=542881809164107, FrameInterval=542882171236707, FrameStartTime=16866171, SyncQueued=542882383445665, SyncStart=542882383603738, IssueDrawCommandsStart=542882388984728, SwapBuffers=542882391873165, FrameCompleted=542882398011343, DequeueBufferDuration=78698, QueueBufferDuration=682031, GpuCompleted=542882398011343, SwapBuffersCompleted=542882394227540, DisplayPresentTime=0, CommandSubmissionCompleted=542882391873165, 
+08-08 20:11:26.605 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:26.641 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:26.641 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:26.641 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:27.004 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:27.005 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:27.240 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:27.252 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:27.252 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:27.252 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:27.327 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:27.332 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:27.338 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:27.338 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:27.338 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:27.696 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:27.909 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:27.921 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:27.921 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:27.921 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:27.995 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:28.004 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:28.011 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:28.012 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:28.012 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:28.402 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:28.624 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:28.635 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:28.635 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:28.635 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:28.707 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:28.714 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:28.720 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:28.721 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:28.721 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:29.093 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:29.306 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:29.318 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:29.318 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:29.318 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:30.599 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:30.601 28665 28665 I Choreographer: Skipped 75 frames!  The application may be doing too much work on its main thread.
+08-08 20:11:31.218 28665 28672 I hypernova.phone: Background concurrent mark compact GC freed 13MB AllocSpace bytes, 0(0B) LOS objects, 49% free, 13MB/26MB, paused 658us,3.359ms total 108.404ms
+08-08 20:11:31.972 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:31.973 28665 28665 I Choreographer: Skipped 81 frames!  The application may be doing too much work on its main thread.
+08-08 20:11:31.997 28665 29931 I HWUI    : Davey! duration=2651ms; Flags=0, FrameTimelineVsyncId=160669193, IntendedVsync=542885146547052, Vsync=542886408983427, InputEventId=-925999901, HandleInputStart=542886422066133, AnimationStart=542886422070195, PerformTraversalsStart=542886423940351, DrawStart=542887435279882, FrameDeadline=542885163213718, FrameInterval=542886421148112, FrameStartTime=16832485, SyncQueued=542887779461080, SyncStart=542887779621705, IssueDrawCommandsStart=542887789911861, SwapBuffers=542887792721705, FrameCompleted=542887798698007, DequeueBufferDuration=60313, QueueBufferDuration=630625, GpuCompleted=542887798698007, SwapBuffersCompleted=542887794122070, DisplayPresentTime=0, CommandSubmissionCompleted=542887792721705, 
+08-08 20:11:32.002 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:32.002 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:32.002 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:32.401 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:32.618 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:32.629 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:32.629 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:32.629 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:32.689 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:32.695 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:32.701 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:32.701 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:32.701 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:33.105 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:33.315 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:33.327 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:33.327 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:33.327 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:33.392 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:33.400 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:33.405 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:33.406 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:33.406 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:33.771 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:34.232 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:34.249 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:34.250 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:34.250 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:34.255 28665 28685 I HWUI    : Davey! duration=842ms; Flags=0, FrameTimelineVsyncId=160669353, IntendedVsync=542889224680660, Vsync=542889591347312, InputEventId=-221271585, HandleInputStart=542889593481913, AnimationStart=542889593485975, PerformTraversalsStart=542889594169621, DrawStart=542889866993058, FrameDeadline=542889241347326, FrameInterval=542889593012381, FrameStartTime=16666666, SyncQueued=542890044673058, SyncStart=542890044851548, IssueDrawCommandsStart=542890049678683, SwapBuffers=542890057522538, FrameCompleted=542890066953631, DequeueBufferDuration=92864, QueueBufferDuration=1423490, GpuCompleted=542890066953631, SwapBuffersCompleted=542890060998944, DisplayPresentTime=35192970650200, CommandSubmissionCompleted=542890057522538, 
+08-08 20:11:34.362 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:34.367 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:34.375 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:34.375 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:34.375 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:35.115 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:35.116 28665 28665 I Choreographer: Skipped 44 frames!  The application may be doing too much work on its main thread.
+08-08 20:11:35.335 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:35.347 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:35.347 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:35.347 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:35.351 28665 28677 I HWUI    : Davey! duration=978ms; Flags=0, FrameTimelineVsyncId=160669405, IntendedVsync=542890185147550, Vsync=542890926249582, InputEventId=-492873299, HandleInputStart=542890937257329, AnimationStart=542890937261912, PerformTraversalsStart=542890938041339, DrawStart=542891084810298, FrameDeadline=542890370246496, FrameInterval=542890935950402, FrameStartTime=16843228, SyncQueued=542891151096964, SyncStart=542891151249933, IssueDrawCommandsStart=542891153508787, SwapBuffers=542891155922225, FrameCompleted=542891163413058, DequeueBufferDuration=64584, QueueBufferDuration=721771, GpuCompleted=542891163413058, SwapBuffersCompleted=542891157532589, DisplayPresentTime=35192971156169, CommandSubmissionCompleted=542891155922225, 
+08-08 20:11:36.635 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:36.637 28665 28665 I Choreographer: Skipped 76 frames!  The application may be doing too much work on its main thread.
+08-08 20:11:37.505 28665 28672 I hypernova.phone: Background concurrent mark compact GC freed 13MB AllocSpace bytes, 0(0B) LOS objects, 49% free, 13MB/26MB, paused 599us,3.292ms total 102.351ms
+08-08 20:11:37.973 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:37.973 28665 28665 I Choreographer: Skipped 79 frames!  The application may be doing too much work on its main thread.
+08-08 20:11:37.999 28665 29931 I HWUI    : Davey! duration=2637ms; Flags=0, FrameTimelineVsyncId=160669466, IntendedVsync=542891162276292, Vsync=542892442022888, InputEventId=-948037985, HandleInputStart=542892457176026, AnimationStart=542892457180922, PerformTraversalsStart=542892459269203, DrawStart=542893466560505, FrameDeadline=542891195564668, FrameInterval=542892456216703, FrameStartTime=16838771, SyncQueued=542893780866286, SyncStart=542893781037901, IssueDrawCommandsStart=542893791244724, SwapBuffers=542893794366807, FrameCompleted=542893800386807, DequeueBufferDuration=82656, QueueBufferDuration=643073, GpuCompleted=542893800386807, SwapBuffersCompleted=542893795665661, DisplayPresentTime=0, CommandSubmissionCompleted=542893794366807, 
+08-08 20:11:38.002 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:38.002 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:38.002 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:38.363 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:38.582 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:38.592 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:38.593 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:38.593 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:38.660 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:38.671 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:38.677 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:38.677 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:38.677 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:38.740 28665 29931 I HWUI    : Davey! duration=750ms; Flags=0, FrameTimelineVsyncId=160669513, IntendedVsync=542893808440871, Vsync=542894179143995, InputEventId=-195404994, HandleInputStart=542894184791494, AnimationStart=542894184795817, PerformTraversalsStart=542894185480817, DrawStart=542894331109150, FrameDeadline=542893825107537, FrameInterval=542894183904880, FrameStartTime=16850142, SyncQueued=542894393198734, SyncStart=542894393359098, IssueDrawCommandsStart=542894399972640, SwapBuffers=542894403116234, FrameCompleted=542894559467848, DequeueBufferDuration=81406, QueueBufferDuration=923333, GpuCompleted=542894559467848, SwapBuffersCompleted=542894404756286, DisplayPresentTime=0, CommandSubmissionCompleted=542894403116234, 
+08-08 20:11:39.039 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:39.278 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:39.290 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:39.290 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:39.290 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:39.366 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:39.373 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:39.378 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:39.378 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:39.378 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:39.741 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:39.956 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:39.969 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:39.969 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:39.970 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:40.041 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:40.052 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:40.057 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:40.057 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:40.057 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:40.457 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:40.669 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:40.679 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:40.679 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:40.679 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:41.937 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:41.939 28665 28665 I Choreographer: Skipped 74 frames!  The application may be doing too much work on its main thread.
+08-08 20:11:42.883 28665 28672 I hypernova.phone: Background concurrent mark compact GC freed 13MB AllocSpace bytes, 0(0B) LOS objects, 49% free, 13MB/26MB, paused 620us,3.691ms total 131.510ms
+08-08 20:11:43.475 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:43.476 28665 28665 I Choreographer: Skipped 90 frames!  The application may be doing too much work on its main thread.
+08-08 20:11:43.499 28665 29931 I HWUI    : Davey! duration=2798ms; Flags=0, FrameTimelineVsyncId=160669743, IntendedVsync=542896504001218, Vsync=542897749660090, InputEventId=-147341302, HandleInputStart=542897759286649, AnimationStart=542897759290607, PerformTraversalsStart=542897761286857, DrawStart=542898857736388, FrameDeadline=542896520667884, FrameInterval=542897758352118, FrameStartTime=16833228, SyncQueued=542899282772430, SyncStart=542899282921024, IssueDrawCommandsStart=542899293374149, SwapBuffers=542899296513315, FrameCompleted=542899302701128, DequeueBufferDuration=78541, QueueBufferDuration=867813, GpuCompleted=542899302701128, SwapBuffersCompleted=542899298528471, DisplayPresentTime=0, CommandSubmissionCompleted=542899296513315, 
+08-08 20:11:43.507 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:43.507 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:43.507 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:43.914 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:44.142 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:44.153 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:44.153 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:44.153 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:44.238 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:44.245 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:44.250 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:44.250 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:44.250 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:44.655 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:44.965 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:44.976 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:44.976 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:44.976 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:44.991 28665 29931 I HWUI    : Davey! duration=717ms; Flags=0, FrameTimelineVsyncId=160669857, IntendedVsync=542900075706072, Vsync=542900475706056, InputEventId=-396947626, HandleInputStart=542900477474929, AnimationStart=542900477479461, PerformTraversalsStart=542900478280034, DrawStart=542900693458679, FrameDeadline=542900092372738, FrameInterval=542900476919565, FrameStartTime=16666666, SyncQueued=542900781749825, SyncStart=542900781943627, IssueDrawCommandsStart=542900783624148, SwapBuffers=542900786064929, FrameCompleted=542900793226804, DequeueBufferDuration=73490, QueueBufferDuration=576823, GpuCompleted=542900793226804, SwapBuffersCompleted=542900787228106, DisplayPresentTime=35192971156841, CommandSubmissionCompleted=542900786064929, 
+08-08 20:11:45.042 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:45.047 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:45.055 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:45.055 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:45.055 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:45.460 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:45.689 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:45.700 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:45.700 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:45.700 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:45.761 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:45.767 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:45.773 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:45.773 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:45.773 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:46.246 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:46.483 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:46.498 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:46.498 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:46.498 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:46.506 28665 29931 I HWUI    : Davey! duration=721ms; Flags=0, FrameTimelineVsyncId=160669956, IntendedVsync=542901593133665, Vsync=542902059800313, InputEventId=-759176845, HandleInputStart=542902068196179, AnimationStart=542902068202377, PerformTraversalsStart=542902069050085, DrawStart=542902219925189, FrameDeadline=542901609800331, FrameInterval=542902067390762, FrameStartTime=16666666, SyncQueued=542902299272116, SyncStart=542902299422741, IssueDrawCommandsStart=542902301778262, SwapBuffers=542902306465658, FrameCompleted=542902314291595, DequeueBufferDuration=87396, QueueBufferDuration=788334, GpuCompleted=542902314291595, SwapBuffersCompleted=542902308314564, DisplayPresentTime=0, CommandSubmissionCompleted=542902306465658, 
+08-08 20:11:47.975 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:47.977 28665 28665 I Choreographer: Skipped 87 frames!  The application may be doing too much work on its main thread.
+08-08 20:11:49.053 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:49.053 28665 28665 I Choreographer: Skipped 63 frames!  The application may be doing too much work on its main thread.
+08-08 20:11:49.065 28665 29931 I HWUI    : Davey! duration=2562ms; Flags=0, FrameTimelineVsyncId=160670002, IntendedVsync=542902317698602, Vsync=542903782723879, InputEventId=-485127870, HandleInputStart=542903797655449, AnimationStart=542903797659511, PerformTraversalsStart=542903799533886, DrawStart=542904605553313, FrameDeadline=542902343133635, FrameInterval=542903796730136, FrameStartTime=16839371, SyncQueued=542904861194199, SyncStart=542904861328365, IssueDrawCommandsStart=542904871370553, SwapBuffers=542904874336438, FrameCompleted=542904880383417, DequeueBufferDuration=70937, QueueBufferDuration=481823, GpuCompleted=542904880383417, SwapBuffersCompleted=542904875411074, DisplayPresentTime=0, CommandSubmissionCompleted=542904874336438, 
+08-08 20:11:49.081 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:49.081 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:49.081 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:49.449 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:49.666 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:49.679 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:49.679 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:49.679 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:49.746 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:49.754 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:49.760 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:49.760 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:49.760 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:50.126 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:50.361 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:50.372 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:50.373 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:50.373 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:58.835 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:58.843 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:58.859 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:58.859 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:58.859 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:59.227 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:59.466 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:59.477 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:59.477 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:59.477 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:59.538 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:11:59.546 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:11:59.551 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:59.551 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:59.551 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:11:59.977 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:00.197 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:00.208 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:00.208 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:00.208 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:00.315 28665 29931 I HWUI    : Davey! duration=756ms; Flags=0, FrameTimelineVsyncId=160670379, IntendedVsync=542915378632267, Vsync=542915783475907, InputEventId=-502818995, HandleInputStart=542915798634038, AnimationStart=542915798638465, PerformTraversalsStart=542915799239559, DrawStart=542915946686017, FrameDeadline=542915395298933, FrameInterval=542915798033726, FrameStartTime=16868485, SyncQueued=542916013647632, SyncStart=542916013777788, IssueDrawCommandsStart=542916015532267, SwapBuffers=542916018112111, FrameCompleted=542916134971590, DequeueBufferDuration=57344, QueueBufferDuration=488698, GpuCompleted=542916134971590, SwapBuffersCompleted=542916019191746, DisplayPresentTime=0, CommandSubmissionCompleted=542916018112111, 
+08-08 20:12:01.591 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:01.593 28665 28665 I Choreographer: Skipped 81 frames!  The application may be doing too much work on its main thread.
+08-08 20:12:02.790 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:02.791 28665 28665 I Choreographer: Skipped 70 frames!  The application may be doing too much work on its main thread.
+08-08 20:12:02.819 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:02.819 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:02.819 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:02.887 28665 29931 I HWUI    : Davey! duration=2684ms; Flags=0, FrameTimelineVsyncId=160670437, IntendedVsync=542916022447429, Vsync=542917397059063, InputEventId=-604092393, HandleInputStart=542917413687319, AnimationStart=542917413692162, PerformTraversalsStart=542917415784454, DrawStart=542918345078777, FrameDeadline=542916154380758, FrameInterval=542917412616017, FrameStartTime=16970514, SyncQueued=542918597003464, SyncStart=542918597145808, IssueDrawCommandsStart=542918607612787, SwapBuffers=542918610587422, FrameCompleted=542918706793412, DequeueBufferDuration=83281, QueueBufferDuration=615417, GpuCompleted=542918706793412, SwapBuffersCompleted=542918612218620, DisplayPresentTime=0, CommandSubmissionCompleted=542918610587422, 
+08-08 20:12:03.178 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:03.394 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:03.405 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:03.405 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:03.405 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:03.475 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:03.483 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:03.489 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:03.489 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:03.489 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:03.850 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:04.083 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:04.096 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:04.097 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:04.097 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:04.163 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:04.170 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:04.175 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:04.175 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:04.175 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:04.532 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:04.745 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:04.756 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:04.757 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:04.757 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:04.810 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:04.819 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:04.825 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:04.825 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:04.825 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:05.188 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:05.423 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:05.435 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:05.435 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:05.435 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:06.704 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:06.705 28665 28665 I Choreographer: Skipped 75 frames!  The application may be doing too much work on its main thread.
+08-08 20:12:07.761 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:07.762 28665 28665 I Choreographer: Skipped 61 frames!  The application may be doing too much work on its main thread.
+08-08 20:12:07.772 28665 29931 I HWUI    : Davey! duration=2330ms; Flags=0, FrameTimelineVsyncId=160670728, IntendedVsync=542921258019742, Vsync=542922520760392, InputEventId=-42486456, HandleInputStart=542922526300181, AnimationStart=542922526304400, PerformTraversalsStart=542922528415286, DrawStart=542923331354816, FrameDeadline=542921284633571, FrameInterval=542922524931796, FrameStartTime=16836542, SyncQueued=542923570446691, SyncStart=542923570585598, IssueDrawCommandsStart=542923579942629, SwapBuffers=542923582671952, FrameCompleted=542923588745337, DequeueBufferDuration=153438, QueueBufferDuration=458021, GpuCompleted=542923588745337, SwapBuffersCompleted=542923583712473, DisplayPresentTime=35192970645440, CommandSubmissionCompleted=542923582671952, 
+08-08 20:12:07.789 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:07.789 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:07.789 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:08.145 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:08.362 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:08.373 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:08.373 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:08.373 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:08.457 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:08.465 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:08.473 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:08.473 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:08.473 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:08.837 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:09.070 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:09.081 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:09.081 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:09.081 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:09.164 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:09.172 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:09.178 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:09.178 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:09.178 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:09.537 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:09.751 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:09.762 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:09.762 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:09.762 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:09.833 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:09.840 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:09.845 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:09.845 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:09.845 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:10.269 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:10.496 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:10.507 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:10.507 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:10.507 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:11.857 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:11.859 28665 28665 I Choreographer: Skipped 80 frames!  The application may be doing too much work on its main thread.
+08-08 20:12:12.909 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:12.910 28665 28665 I Choreographer: Skipped 61 frames!  The application may be doing too much work on its main thread.
+08-08 20:12:12.928 28665 29931 I HWUI    : Davey! duration=2406ms; Flags=0, FrameTimelineVsyncId=160671003, IntendedVsync=542926329848001, Vsync=542927676328001, InputEventId=-711469545, HandleInputStart=542927679455127, AnimationStart=542927679459659, PerformTraversalsStart=542927681593513, DrawStart=542928481545648, FrameDeadline=542926356308972, FrameInterval=542927678645284, FrameStartTime=16831000, SyncQueued=542928717983929, SyncStart=542928718136429, IssueDrawCommandsStart=542928727933096, SwapBuffers=542928730587262, FrameCompleted=542928736464554, DequeueBufferDuration=317709, QueueBufferDuration=555365, GpuCompleted=542928736464554, SwapBuffersCompleted=542928731700283, DisplayPresentTime=0, CommandSubmissionCompleted=542928730587262, 
+08-08 20:12:12.937 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:12.937 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:12.937 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:13.291 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:13.506 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:13.517 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:13.517 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:13.517 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:13.584 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:13.592 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:13.597 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:13.597 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:13.597 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:13.957 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:14.190 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:14.201 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:14.201 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:14.201 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:14.263 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:14.270 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:14.276 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:14.276 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:14.276 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:14.633 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:14.852 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:14.863 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:14.863 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:14.863 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:14.926 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:14.935 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:14.942 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:14.942 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:14.942 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:15.321 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:15.541 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:15.552 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:15.552 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:15.552 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:16.813 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:16.815 28665 28665 I Choreographer: Skipped 75 frames!  The application may be doing too much work on its main thread.
+08-08 20:12:17.949 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:17.949 28665 28665 I Choreographer: Skipped 66 frames!  The application may be doing too much work on its main thread.
+08-08 20:12:17.976 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:17.976 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:17.976 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:18.069 28665 29931 I HWUI    : Davey! duration=2519ms; Flags=0, FrameTimelineVsyncId=160671258, IntendedVsync=542931369154956, Vsync=542932633187781, InputEventId=-111967406, HandleInputStart=542932635466584, AnimationStart=542932635470750, PerformTraversalsStart=542932637497053, DrawStart=542933523515802, FrameDeadline=542931394616972, FrameInterval=542932634564136, FrameStartTime=16853771, SyncQueued=542933757616271, SyncStart=542933757749396, IssueDrawCommandsStart=542933767150385, SwapBuffers=542933769757729, FrameCompleted=542933888651583, DequeueBufferDuration=67708, QueueBufferDuration=617031, GpuCompleted=542933888651583, SwapBuffersCompleted=542933770887729, DisplayPresentTime=0, CommandSubmissionCompleted=542933769757729, 
+08-08 20:12:18.329 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:18.544 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:18.556 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:18.556 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:18.556 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:18.615 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:18.623 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:18.629 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:18.629 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:18.629 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:18.990 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:19.225 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:19.236 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:19.236 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:19.236 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:19.295 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:19.306 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:19.313 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:19.313 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:19.313 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:19.673 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:19.885 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:19.897 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:19.897 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:19.897 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:19.953 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:19.960 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:19.966 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:19.966 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:19.966 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:20.352 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:20.568 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:20.580 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:20.580 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:20.580 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:21.848 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:21.851 28665 28665 I Choreographer: Skipped 74 frames!  The application may be doing too much work on its main thread.
+08-08 20:12:22.904 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:22.905 28665 28665 I Choreographer: Skipped 61 frames!  The application may be doing too much work on its main thread.
+08-08 20:12:22.933 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:22.933 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:22.933 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:23.009 28665 29931 I HWUI    : Davey! duration=2421ms; Flags=0, FrameTimelineVsyncId=160671510, IntendedVsync=542936407567072, Vsync=542937654775726, InputEventId=-424203474, HandleInputStart=542937671159759, AnimationStart=542937671164082, PerformTraversalsStart=542937673281321, DrawStart=542938476386998, FrameDeadline=542936424233738, FrameInterval=542937670331999, FrameStartTime=16854171, SyncQueued=542938713467936, SyncStart=542938713604394, IssueDrawCommandsStart=542938722958092, SwapBuffers=542938725556790, FrameCompleted=542938828796425, DequeueBufferDuration=68230, QueueBufferDuration=591042, GpuCompleted=542938828796425, SwapBuffersCompleted=542938726753561, DisplayPresentTime=0, CommandSubmissionCompleted=542938725556790, 
+08-08 20:12:23.289 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:23.506 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:23.517 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:23.517 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:23.517 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:23.574 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:23.587 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:23.594 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:23.594 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:23.594 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:23.950 28665 28665 V AutofillManager: requestHideFillUi(null): anchor = null
+08-08 20:12:24.182 28665 28665 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-08 20:12:24.194 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:24.194 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-08 20:12:24.194 28665 28665 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
