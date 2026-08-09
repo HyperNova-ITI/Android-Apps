@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2026 HyperNova. Licensed under the Apache License, Version 2.0. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/hypernova_selected" />
+            <stroke android:width="1dp" android:color="@color/hypernova_cyan" />
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/hypernova_selected" />
+            <stroke android:width="1dp" android:color="@color/hypernova_cyan_bright" />
+            <corners android:radius="11dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/hypernova_transparent" />
+            <stroke android:width="1dp" android:color="@color/hypernova_border_soft" />
+            <corners android:radius="11dp" />
+        </shape>
+    </item>
+</selector>

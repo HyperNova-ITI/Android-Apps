@@ -1,0 +1,50 @@
+android_app_import {
+    name: "HyperNovaLauncher",
+
+    apk: "HyperNovaLauncher.apk",
+
+    certificate: "platform",
+
+    privileged: true,
+    system_ext_specific: true,
+
+    // HyperNova becomes the only visible HOME implementation.
+    overrides: [
+        "CarLauncher",
+        "CarMapsPlaceholder",
+        "CarUiPortraitLauncher",
+    ],
+
+    required: [
+        "allowed_privapp_com.hypernova.launcher",
+        "default_permissions_com.hypernova.launcher",
+    ],
+
+    enforce_uses_libs: false,
+
+    dex_preopt: {
+        enabled: false,
+    },
+}
+
+prebuilt_etc {
+    name: "allowed_privapp_com.hypernova.launcher",
+
+    src: "privapp-permissions-com.hypernova.launcher.xml",
+
+    filename_from_src: true,
+    sub_dir: "permissions",
+
+    system_ext_specific: true,
+}
+
+prebuilt_etc {
+    name: "default_permissions_com.hypernova.launcher",
+
+    src: "default-permissions-com.hypernova.launcher.xml",
+
+    filename_from_src: true,
+    sub_dir: "default-permissions",
+
+    system_ext_specific: true,
+}

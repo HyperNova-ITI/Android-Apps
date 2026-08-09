@@ -1,0 +1,175 @@
+--------- beginning of main
+08-04 00:43:31.149 16537 16537 I dia.phone.debug: Late-enabling -Xcheck:jni
+08-04 00:43:31.219 16537 16537 E dia.phone.debug: Unknown bits set in runtime_flags: 0x40000000
+08-04 00:43:31.219 16537 16537 I dia.phone.debug: Using generational CollectorTypeCMC GC.
+08-04 00:43:31.238 16537 16537 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+08-04 00:43:31.250 16537 16537 D OplusActivityThreadExtImpl: java.lang.NoSuchMethodException: dalvik.system.VMRuntime.SupressionGC [int, int]
+08-04 00:43:31.251 16537 16537 W libc    : Access denied finding property "persist.vendor.sys.activitylog"
+08-04 00:43:31.252 16537 16537 I OneTrace: Mark active for pid=16537? true
+08-04 00:43:31.252 16537 16543 D cutils-dev: properties changed in otrace_seq_number_changed!
+08-04 00:43:31.252 16537 16537 D cutils-dev: otrace_set_tracing_enabled? true tag:0
+08-04 00:43:31.315 16537 16549 D OplusAppHeapManager: java.lang.NoSuchMethodException: dalvik.system.VMRuntime.updateProcessValue [int, int, int]
+08-04 00:43:31.317 16537 16537 D OplusActivityManager: get AMS extension: android.os.BinderProxy@c7dd74c
+08-04 00:43:31.328 16537 16537 D callGcSupression: java.lang.NullPointerException: Attempt to invoke virtual method 'java.lang.Object java.lang.reflect.Method.invoke(java.lang.Object, java.lang.Object[])' on a null object reference
+08-04 00:43:31.333 16537 16537 D CompactWindowAppManager: initCompactApplicationInfo CompactMode: , NormalMode: 
+08-04 00:43:31.345 16537 16537 D OplusScrollToTopManager: setIsInWhiteList false
+08-04 00:43:31.346 16537 16537 D OplusViewDebugManager: OplusViewDebugManager Constructor android.view.debug.OplusViewDebugManager@d151caa [mHasViewDebugProperty true] [mHasMsgDebugProperty false] [DEBUG false] [EXTRAINFOENABLE false] [LIGHT_OS true]
+08-04 00:43:31.375 16537 16537 W libc    : Access denied finding property "ro.odm.prev.product.name"
+08-04 00:43:31.760 16537 16537 D nativeloader: Configuring clns-7 for other apk /data/app/~~QYXt1_c515C-kPKpW437Nw==/com.hypernova.media.phone.debug-E-Hg0-Or5Z4UYZRdf0KK0A==/base.apk. target_sdk_version=36, uses_libraries=, library_path=/data/app/~~QYXt1_c515C-kPKpW437Nw==/com.hypernova.media.phone.debug-E-Hg0-Or5Z4UYZRdf0KK0A==/lib/arm64, permitted_path=/data:/mnt/expand:/data/user/0/com.hypernova.media.phone.debug
+--------- beginning of system
+08-04 00:43:31.762 16537 16537 I Quality : ActivityThread: createClassLoader delay 374 /data/app/~~QYXt1_c515C-kPKpW437Nw==/com.hypernova.media.phone.debug-E-Hg0-Or5Z4UYZRdf0KK0A==/base.apk 16537
+08-04 00:43:31.766 16537 16537 I Quality : ActivityThread: createOrUpdateClassLoaderLocked delay 388 com.hypernova.media.phone.debug 16537
+08-04 00:43:31.789 16537 16537 V GraphicsEnvironment: Currently set values for:
+08-04 00:43:31.789 16537 16537 V GraphicsEnvironment:   angle_gl_driver_selection_pkgs=[]
+08-04 00:43:31.789 16537 16537 V GraphicsEnvironment:   angle_gl_driver_selection_values=[]
+08-04 00:43:31.789 16537 16537 V GraphicsEnvironment: Global.Settings values are invalid: number of packages: 0, number of values: 0
+08-04 00:43:31.790 16537 16537 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+08-04 00:43:31.796 16537 16537 D ResourcesManagerExtImpl: applyConfigurationToAppResourcesLocked app.getDisplayId() return callback.displayId:-1
+08-04 00:43:31.831 16537 16537 D nativeloader: Load libSchedAssistJni.so using system ns (caller=/system/framework/oplus-framework.jar): ok
+08-04 00:43:31.831 16537 16537 D ExtensionsLoader: createInstance(64bit) : createExtendedFactory
+08-04 00:43:31.832 16537 16537 D ExtensionsLoader: Opened libSchedAssistExtImpl.so
+08-04 00:43:31.832 16537 16537 E SchedAssist: sysOpen failed with error=Permission denied
+08-04 00:43:31.833 16537 16537 E SchedAssist: open sharedFd failed with error=Permission denied
+08-04 00:43:31.833 16537 16537 E SchedAssist: open sharedFd failed with error=Permission denied
+08-04 00:43:31.833 16537 16537 E SchedAssist: open sharedFd failed with error=Permission denied
+08-04 00:43:31.833 16537 16537 E SchedAssist: open sharedFd failed with error=No such file or directory
+08-04 00:43:31.838 16537 16537 D OplusGraphicsEvent: OplusGraphicsEventListener create now!
+08-04 00:43:31.840 16537 16537 D OplusGraphicsEvent: addEventListener success!
+08-04 00:43:31.845 16537 16537 D ScrollOptim [ConfigManager]: initOptConfig: pkg= com.hypernova.media.phone.debug, mOptEnable= true, mAnimAheadEnable= true, mInsertDefaultNum= 1, mFrameInsertEnableList= {}, mSCEnableList= []
+08-04 00:43:31.882 16537 16537 I MediaController: Init 11e6449 [AndroidXMedia3/1.10.1] [OP5B16L1, CPH2641, OPPO, 35]
+08-04 00:43:32.091 16537 16537 I HyperNovaUsbMonitor: startup · mounted removable volumes=0
+08-04 00:43:32.118 16537 16598 W AidlConversionCppNdk: aidl2legacy_AudioChannelLayout_audio_channel_mask_t: no legacy output audio_channel_mask_t found for AudioChannelLayout{layoutMask: 16}
+08-04 00:43:32.270 16537 16537 I Quality : ActivityThread: callApplicationOnCreate delay 421 com.hypernova.media.phone.debug 16537
+08-04 00:43:32.274 16537 16537 D callGcSupression: java.lang.NullPointerException: Attempt to invoke virtual method 'java.lang.Object java.lang.reflect.Method.invoke(java.lang.Object, java.lang.Object[])' on a null object reference
+08-04 00:43:32.279 16537 16537 I HWUI    : SupportApps size 0
+08-04 00:43:32.284 16537 16616 D ExtensionsLoader: createInstance(64bit) : createExtendedFactory
+08-04 00:43:32.285 16537 16616 D ExtensionsLoader: Opened libSchedAssistExtImpl.so
+08-04 00:43:32.290 16537 16537 D ResourcesManagerExtImpl: applyConfigurationToAppResourcesLocked app.getDisplayId() return callback.displayId:0
+08-04 00:43:32.353 16537 16537 D AppCompatDelegate: Checking for metadata for AppLocalesMetadataHolderService : Service not found
+08-04 00:43:32.435 16537 16537 I oplus.android.OplusFrameworkFactoryImpl: Unknow feature:IOplusTextViewRTLUtilForUG
+08-04 00:43:32.439 16537 16537 D nativeloader: Load liboplushwui_jni.so using system ns (caller=/system/framework/oplus-framework.jar): ok
+08-04 00:43:32.497 16537 16537 I dia.phone.debug: hiddenapi: Accessing hidden method Landroid/view/ViewGroup;->makeOptionalFitsSystemWindows()V (runtime_flags=0, domain=platform, api=unsupported) from Landroidx/appcompat/widget/ViewUtils; (domain=app, TargetSdkVersion=36) using reflection: allowed
+08-04 00:43:32.546 16537 16537 E OplusCustomizeRestrictionManager: sInstance is null, start a new sInstance
+08-04 00:43:32.675 16537 16537 D ScrollOptimizationHelper: can't find the config file for optimizaiton
+08-04 00:43:32.675 16537 16537 D ScrollOptimizationHelper: will not debug for debug is false
+08-04 00:43:32.676 16537 16537 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-04 00:43:32.676 16537 16537 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-04 00:43:32.676 16537 16537 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-04 00:43:32.817 16537 16537 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-04 00:43:32.818 16537 16537 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-04 00:43:32.818 16537 16537 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-04 00:43:32.875 16537 16537 I Quality : InflateViewInfo:108095417,merge
+08-04 00:43:32.908 16537 16537 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-04 00:43:32.908 16537 16537 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-04 00:43:32.908 16537 16537 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-04 00:43:32.922 16537 16537 I DynamicFramerate [FRTCConfigManager]: initFrameRateConfig: 
+08-04 00:43:32.922 16537 16537 I DynamicFramerate [FRTCConfigManager]: 	levels: [120, 60]
+08-04 00:43:32.922 16537 16537 I DynamicFramerate [FRTCConfigManager]: 	thresholds: [200]
+08-04 00:43:32.923 16537 16537 I DynamicFramerate [FRTCConfigManager]: FRTCConfigManager: FRTC_CAPABILITY = 120, package name = com.hypernova.media.phone.debug, WINDOW_ANIMATION_SPEED_RATE = 10, SCROLL_ANIMATION_SPEED_RATE = 20, PACKAGE_ENABLE = false
+08-04 00:43:32.923 16537 16537 I DynamicFramerate [DynamicFrameRateController]: init info: mPackageName = com.hypernova.media.phone.debug, mIsEnabled = false
+08-04 00:43:33.035 16537 16537 D OplusInputMethodUtil: init sDebug to false, init sDebugIme to false, init sAlwaysOn to false
+08-04 00:43:33.035 16537 16537 D OplusInputMethodUtil: updateDebugToClass InputMethodManager.DEBUG = false
+08-04 00:43:33.035 16537 16537 D OplusInputMethodUtil: updateDebugToClass ImeFocusController.DEBUG = false
+08-04 00:43:33.035 16537 16537 D OplusInputMethodUtil: updateDebugToClass InsetsController.DEBUG = false
+08-04 00:43:33.035 16537 16537 D OplusInputMethodUtil: updateDebugToClass BaseInputConnection.DEBUG = false
+08-04 00:43:33.054 16537 16537 V TextView: notifyAutoFillManagerAfterTextChanged
+08-04 00:43:33.055 16537 16537 V AutofillManager: notifyValueChanged(1073741824): ignoring on state UNKNOWN
+08-04 00:43:33.056 16537 16537 V TextView: notifyAutoFillManagerAfterTextChanged
+08-04 00:43:33.057 16537 16537 V AutofillManager: notifyValueChanged(1073741824): ignoring on state UNKNOWN
+08-04 00:43:33.062 16537 16537 V TextView: notifyAutoFillManagerAfterTextChanged
+08-04 00:43:33.062 16537 16537 V AutofillManager: notifyValueChanged(1073741824): ignoring on state UNKNOWN
+08-04 00:43:33.065 16537 16537 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-04 00:43:33.065 16537 16537 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-04 00:43:33.065 16537 16537 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-04 00:43:33.194 16537 16537 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-04 00:43:33.194 16537 16537 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-04 00:43:33.194 16537 16537 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-04 00:43:33.398 16537 16537 V TextView: notifyAutoFillManagerAfterTextChanged
+08-04 00:43:33.398 16537 16537 V AutofillManager: notifyValueChanged(1073741825): ignoring on state UNKNOWN
+08-04 00:43:33.400 16537 16537 V TextView: notifyAutoFillManagerAfterTextChanged
+08-04 00:43:33.400 16537 16537 V AutofillManager: notifyValueChanged(1073741825): ignoring on state UNKNOWN
+08-04 00:43:33.404 16537 16537 V TextView: notifyAutoFillManagerAfterTextChanged
+08-04 00:43:33.404 16537 16537 V AutofillManager: notifyValueChanged(1073741825): ignoring on state UNKNOWN
+08-04 00:43:33.407 16537 16537 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-04 00:43:33.407 16537 16537 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-04 00:43:33.407 16537 16537 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-04 00:43:33.510 16537 16537 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-04 00:43:33.510 16537 16537 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-04 00:43:33.510 16537 16537 I oplus.android.OplusFrameworkFactoryImpl: get feature:IOplusDynamicVsyncFeature
+08-04 00:43:33.520 16537 16537 I Quality : InflateViewInfo:1021214374,androidx.constraintlayout.widget.ConstraintLayout
+08-04 00:43:33.565 16537 16537 I Quality : ActivityThread: activityStart delay 1291 com.hypernova.media.phone.debug 16537
+08-04 00:43:33.580 16537 16537 I HyperNovaUsbMonitor: resume · mounted removable volumes=0
+08-04 00:43:33.661 16537 16537 W WindowOnBackDispatcher: OnBackInvokedCallback is not enabled for the application.
+08-04 00:43:33.661 16537 16537 W WindowOnBackDispatcher: Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+08-04 00:43:33.666 16537 16537 D ScrollOptim [SceneManager]: updateCurrentActivity: mCurrentActivityName=com.hypernova.media.MainActivity, isOptEnable=true, isAnimAheadEnable=true, isFrameInsertEnable=true, InsertNum=1, isEnabledForScrollChanged=false
+08-04 00:43:33.666 16537 16537 D ActivityThread: ComponentInfo{com.hypernova.media.phone.debug/com.hypernova.media.MainActivity} checkFinished=false 2
+08-04 00:43:33.667 16537 16537 D ResourcesManagerExtImpl: applyConfigurationToAppResourcesLocked app.getDisplayId() return callback.displayId:0
+08-04 00:43:33.668 16537 16537 I HyperNovaUsbMonitor: resume · mounted removable volumes=0
+08-04 00:43:33.710 16537 16537 D WindowManager: Add to mViews: com.android.internal.policy.DecorView{a04f21d I.E...... R.....ID 0,0-0,0 alpha=1.0 viewInfo = }[MainActivity],pkg= com.hypernova.media.phone.debug
+08-04 00:43:33.712 16537 16537 W HWUI    : Unknown dataspace 0
+08-04 00:43:33.713 16537 16616 D ExtensionsLoader: createInstance(64bit) : createExtendedFactory
+08-04 00:43:33.715 16537 16616 D ExtensionsLoader: Opened libhwuiextimpl.so
+08-04 00:43:33.715 16537 16616 D skia    : setRusSupported enable 0
+08-04 00:43:33.716 16537 16537 D ExtensionsLoader: createInstance(64bit) : createExtendedFactory
+08-04 00:43:33.716 16537 16537 D ExtensionsLoader: Opened libSchedAssistExtImpl.so
+08-04 00:43:33.740 16537 16537 D ViewRootImplExtImpl: onDisplayChanged -1 for VRI android.view.ViewRootImpl@7839319
+08-04 00:43:33.744 16537 16537 D callGcSupression: java.lang.NullPointerException: Attempt to invoke virtual method 'java.lang.Object java.lang.reflect.Method.invoke(java.lang.Object, java.lang.Object[])' on a null object reference
+08-04 00:43:33.745 16537 16537 D ResourcesManagerExtImpl: applyConfigurationToAppResourcesLocked app.getDisplayId() return callback.displayId:0
+08-04 00:43:33.748 16537 16537 I Choreographer: Skipped 113 frames!  The application may be doing too much work on its main thread.
+08-04 00:43:33.758 16537 16537 E OplusBracketLog: [OplusViewMirrorManager] updateHostViewRootIfNeeded, not support android.view.ViewRootImpl@7839319
+08-04 00:43:33.777 16537 16537 I SurfaceView: 212944853 onAttachedToWindow
+08-04 00:43:33.800 16537 16631 E FeatureFlagsImplExport: android.os.flagging.AconfigStorageReadException: ERROR_PACKAGE_NOT_FOUND: package com.android.libcore cannot be found on the device
+08-04 00:43:33.896 16537 16537 D ViewRootImplExtImpl: wrapConfigInfoIntoFlags rotation=0, smallestScreenWidthDp=424, relayoutAsync=false, flags=0, newFlags=27787264, residentWS=false, title=com.hypernova.media.phone.debug/com.hypernova.media.MainActivity
+08-04 00:43:33.915 16537 16537 D VRI[MainActivity]: relayoutWindow result, sizeChanged:true, surfaceControlChanged:true, transformHintChanged:false, mSurfaceSize:Point(720, 1604), mLastSurfaceSize:Point(0, 0), mWidth:-1, mHeight:-1, requestedWidth:720, requestedHeight:1604, transformHint:0, installOrientation:0, displayRotation:0, isSurfaceValid:true, attr.flag:-2122252032, tmpFrames:ClientWindowFrames{frame=[0,0][720,1604] display=[0,0][720,1604] parentFrame=[0,0][0,0]}, relayoutAsync:false, mSyncSeqId:0
+08-04 00:43:33.916 16537 16537 W VRI[MainActivity]: updateBlastSurfaceIfNeeded, surfaceSize:Point(720, 1604), lastSurfaceSize:Point(0, 0), format:-3, blastBufferQueue:null
+08-04 00:43:33.926 16537 16537 D BufferQueueConsumer: [](id:409900000000,api:0,p:-1,c:16537) connect: controlledByApp=false
+08-04 00:43:33.931 16537 16616 I AdrenoGLES-0: QUALCOMM build                   : a800de1061, I09c0ebfd3c
+08-04 00:43:33.931 16537 16616 I AdrenoGLES-0: Build Date                       : 10/22/24
+08-04 00:43:33.931 16537 16616 I AdrenoGLES-0: OpenGL ES Shader Compiler Version: EV031.36.08.30
+08-04 00:43:33.931 16537 16616 I AdrenoGLES-0: Local Branch                     : 
+08-04 00:43:33.931 16537 16616 I AdrenoGLES-0: Remote Branch                    : refs/tags/AU_LINUX_ANDROID_LA.VENDOR.1.0.11.00.00.770.073
+08-04 00:43:33.931 16537 16616 I AdrenoGLES-0: Remote Branch                    : NONE
+08-04 00:43:33.931 16537 16616 I AdrenoGLES-0: Reconstruct Branch               : NOTHING
+08-04 00:43:33.932 16537 16616 I AdrenoGLES-0: Build Config                     : S P 12.1.1 AArch64
+08-04 00:43:33.932 16537 16616 I AdrenoGLES-0: Driver Path                      : /vendor/lib64/egl/libGLESv2_adreno.so
+08-04 00:43:33.932 16537 16616 I AdrenoGLES-0: Driver Version                   : 0615.92
+08-04 00:43:33.940 16537 16616 I AdrenoGLES-0: PFP: 0x016ee206, ME: 0x00000000
+08-04 00:43:34.001 16537 16616 D BufferQueueProducer: [VRI[MainActivity]#0(BLAST Consumer)0](id:409900000000,api:1,p:16537,c:16537) connect: api=1 producerControlledByApp=true
+08-04 00:43:34.026 16537 16537 I SurfaceControl:  setExtendedRangeBrightness sc=Surface(name=com.hypernova.media.phone.debug/com.hypernova.media.MainActivity)/@0x22f2226,currentBufferRatio=1.0,desiredRatio=1.0
+08-04 00:43:34.052 16537 16537 I Quality : UISlowBinder:135089841
+08-04 00:43:34.134 16537 16616 D BLASTBufferQueue: [VRI[MainActivity]#0](f:0,a:1) acquireNextBufferLocked size=720x1604 mFrameNumber=1 applyTransaction=true mTimestamp=281769599468397(auto) mPendingTransactions.size=0 graphicBufferId=71025874173952 transform=0
+08-04 00:43:34.135 16537 16616 D VRI[MainActivity]: Received frameCommittedCallback lastAttemptedDrawFrameNum=1 didProduceBuffer=true syncBuffer=false
+08-04 00:43:34.136 16537 16537 D VRI[MainActivity]: draw finished. seqId=0
+08-04 00:43:34.137 16537 16537 D ViewRootImplExtImpl: setMaxDequeuedBufferCount: 2
+08-04 00:43:34.159 16537 16554 I HWUI    : Davey! duration=2281ms; Flags=1, FrameTimelineVsyncId=83661879, IntendedVsync=281767326630334, Vsync=281769208419334, InputEventId=0, HandleInputStart=281769216891158, AnimationStart=281769216909803, PerformTraversalsStart=281769218092460, DrawStart=281769494083137, FrameDeadline=281767343297000, FrameInterval=281769215011887, FrameStartTime=16653000, SyncQueued=281769519628710, SyncStart=281769519836939, IssueDrawCommandsStart=281769523316678, SwapBuffers=281769597852199, FrameCompleted=281769608421522, DequeueBufferDuration=12052969, QueueBufferDuration=1137761, GpuCompleted=281769608421522, SwapBuffersCompleted=281769601136105, DisplayPresentTime=0, CommandSubmissionCompleted=281769597852199, 
+08-04 00:43:34.173 16537 16537 I ExoPlayerImpl: Init 19d4d4 [AndroidXMedia3/1.10.1] [OP5B16L1, CPH2641, OPPO, 35]
+08-04 00:43:34.281 16537 16537 I MediaSessionImpl: Init 72ae835 [AndroidXMedia3/1.10.1] [OP5B16L1, CPH2641, OPPO, 35]
+08-04 00:43:34.321 16537 16537 I MediaSessionCompat: Couldn't find a unique registered media button receiver in the given context.
+08-04 00:43:34.364 16537 16537 D VRI[MainActivity]: onFocusEvent true
+08-04 00:43:34.395 16537 16537 V AutofillManager: requestHideFillUi(null): anchor = null
+08-04 00:43:34.411 16537 16537 D OplusInputMethodManagerInternal: get inputMethodManager extension: com.android.internal.view.IInputMethodManager$Stub$Proxy@a0be370
+08-04 00:43:34.417 16537 16537 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-04 00:43:34.456 16537 16537 I Choreographer: Skipped 41 frames!  The application may be doing too much work on its main thread.
+08-04 00:43:34.499 16537 16537 D callGcSupression: java.lang.NullPointerException: Attempt to invoke virtual method 'java.lang.Object java.lang.reflect.Method.invoke(java.lang.Object, java.lang.Object[])' on a null object reference
+08-04 00:43:34.502 16537 16537 W VRI[MainActivity]: handleResized, msg:, frameChanged:false, configChanged:false, displayChanged:false, attachedFrameChanged:false, compatScaleChanged:false, pendingDragResizing=false
+08-04 00:43:34.532 16537 16549 I HWUI    : Davey! duration=765ms; Flags=0, FrameTimelineVsyncId=83661930, IntendedVsync=281769226364666, Vsync=281769909697972, InputEventId=-228536078, HandleInputStart=281769924503918, AnimationStart=281769924514855, PerformTraversalsStart=281769925294022, DrawStart=281769951301991, FrameDeadline=281769641411000, FrameInterval=281769923225949, FrameStartTime=16666666, SyncQueued=281769964769074, SyncStart=281769964920272, IssueDrawCommandsStart=281769965244439, SwapBuffers=281769983550532, FrameCompleted=281769992408605, DequeueBufferDuration=5193489, QueueBufferDuration=899427, GpuCompleted=281769992408605, SwapBuffersCompleted=281769986480428, DisplayPresentTime=3591943109412678659, CommandSubmissionCompleted=281769983550532, 
+08-04 00:43:34.623 16537 16537 V AutofillManager: requestHideFillUi(null): anchor = null
+08-04 00:43:34.685 16537 16627 I HyperNovaRadioApi: Discovery returned 68 healthy unique stations from de1.api.radio-browser.info
+08-04 00:43:34.749 16537 16616 D VRI[MainActivity]: Received frameCommittedCallback lastAttemptedDrawFrameNum=3 didProduceBuffer=true syncBuffer=false
+08-04 00:43:34.750 16537 16537 D VRI[MainActivity]: draw finished. seqId=0
+08-04 00:43:34.753 16537 16537 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-04 00:43:34.776 16537 16537 I MediaController: Init a33947c [AndroidXMedia3/1.10.1] [OP5B16L1, CPH2641, OPPO, 35]
+08-04 00:43:34.871 16537 16537 V AutofillManager: requestHideFillUi(null): anchor = null
+08-04 00:43:34.891 16537 16537 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-04 00:43:34.950 16537 16537 D AutofillManager: notifyViewReadyInner:1073741825
+08-04 00:43:35.079 16537 16537 V AutofillManager: requestHideFillUi(null): anchor = null
+08-04 00:43:35.101 16537 16537 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-04 00:43:35.209 16537 16537 D AutofillManager: notifyViewReadyInner:1073741824
+08-04 00:43:35.293 16537 16543 I dia.phone.debug: Compiler allocated 7008KB to compile void android.view.ViewRootImpl.performTraversals()
+08-04 00:43:35.378 16537 16638 D OplusScrollToTopManager: com.hypernova.media.phone.debug/com.hypernova.media.MainActivity,This com.android.internal.policy.DecorView{a04f21d V.E...... R.....ID 0,0-720,1604 aid=0 alpha=1.0 viewInfo = }[MainActivity] change focus to true
+08-04 00:43:35.431 16537 16537 V AutofillManager: requestHideFillUi(null): anchor = null
+08-04 00:43:35.479 16537 16537 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-04 00:43:35.580 16537 16537 V AutofillManager: requestHideFillUi(null): anchor = null
+08-04 00:43:35.604 16537 16537 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-04 00:43:38.894 16537 16714 D ProfileInstaller: Installing profile for com.hypernova.media.phone.debug
+08-04 00:43:41.443 16537 16544 I dia.phone.debug: Background concurrent mark compact GC freed 17MB AllocSpace bytes, 20(716KB) LOS objects, 49% free, 6782KB/13MB, paused 705us,5.515ms total 98.985ms

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<overlay>
+    <item target="bool/config_enableTopSystemBar" value="@bool/config_enableTopSystemBar" />
+    <item target="bool/config_enableLeftSystemBar" value="@bool/config_enableLeftSystemBar" />
+    <item target="bool/config_enableRightSystemBar" value="@bool/config_enableRightSystemBar" />
+    <item target="bool/config_enableBottomSystemBar" value="@bool/config_enableBottomSystemBar" />
+    <item target="integer/config_showDisplayCompatToolbarOnSystemBar" value="@integer/config_showDisplayCompatToolbarOnSystemBar" />
+    <item target="integer/config_systemBarPersistency" value="@integer/config_systemBarPersistency" />
+    <item target="bool/config_enableRecentsEntryPoint" value="@bool/config_enableRecentsEntryPoint" />
+    <item target="string/config_notificationPanelViewMediator" value="@string/config_notificationPanelViewMediator" />
+    <item target="string/config_appGridComponentName" value="@string/config_appGridComponentName" />
+    <item target="string/system_bar_app_drawer_intent" value="@string/system_bar_app_drawer_intent" />
+</overlay>

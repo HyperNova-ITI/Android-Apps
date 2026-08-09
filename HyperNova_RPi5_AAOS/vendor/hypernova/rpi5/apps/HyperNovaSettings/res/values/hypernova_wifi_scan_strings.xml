@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="hypernova_wifi_refresh">Refresh</string>
+
+    <string name="hypernova_wifi_scanning">
+        Scanning…
+    </string>
+
+    <string name="hypernova_wifi_scan_unavailable">
+        Try again
+    </string>
+
+    <string name="hypernova_wifi_no_networks">
+        No networks found
+    </string>
+
+    <string name="hypernova_wifi_refresh_content_description">
+        Refresh Wi-Fi networks
+    </string>
+
+</resources>

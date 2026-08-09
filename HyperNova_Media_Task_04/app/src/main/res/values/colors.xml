@@ -1,5 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <color name="hn_background">#F1F6F8</color>
+    <color name="hn_background_deep">#E5EEF2</color>
+    <color name="hn_surface">#F9FCFD</color>
+    <color name="hn_surface_high">#FFFFFF</color>
+    <color name="hn_surface_selected">#E3F8FA</color>
+    <color name="hn_border">#9EB5BF</color>
+    <color name="hn_border_soft">#CCD9DE</color>
+    <color name="hn_text_primary">#07131C</color>
+    <color name="hn_text_secondary">#506570</color>
+    <color name="hn_text_muted">#788A92</color>
+    <color name="hn_cyan">#008D9C</color>
+    <color name="hn_cyan_bright">#00B8C8</color>
+    <color name="hn_cyan_dark">#006B76</color>
+    <color name="hn_violet">#874EC7</color>
+    <color name="hn_success">#0A9E5B</color>
+    <color name="hn_warning">#B36B00</color>
+    <color name="hn_error">#B93544</color>
+    <color name="hn_on_cyan">#FFFFFF</color>
+    <color name="hn_scrim">#AA06111B</color>
+    <color name="hn_transparent">#00000000</color>
 </resources>

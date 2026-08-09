@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2026 HyperNova. Licensed under the Apache License, Version 2.0. -->
+<resources>
+    <color name="hypernova_background">#F3F7FA</color>
+    <color name="hypernova_background_secondary">#EAF1F5</color>
+    <color name="hypernova_background_glow">#D9F1F4</color>
+    <color name="hypernova_card">#FFFFFF</color>
+    <color name="hypernova_card_elevated">#F8FBFD</color>
+    <color name="hypernova_selected">#DDF4F6</color>
+    <color name="hypernova_border">#8FA6B5</color>
+    <color name="hypernova_border_soft">#C6D4DE</color>
+    <color name="hypernova_divider">#D8E2E8</color>
+    <color name="hypernova_cyan">#087F91</color>
+    <color name="hypernova_cyan_bright">#0AA7B8</color>
+    <color name="hypernova_cyan_pressed">#066D7D</color>
+    <color name="hypernova_cyan_dark">#055563</color>
+    <color name="hypernova_text_primary">#071722</color>
+    <color name="hypernova_text_secondary">#4E616E</color>
+    <color name="hypernova_text_disabled">#82919B</color>
+    <color name="hypernova_text_on_accent">#FFFFFF</color>
+    <color name="hypernova_success">#087B34</color>
+    <color name="hypernova_warning">#9A5900</color>
+    <color name="hypernova_error">#C62B42</color>
+    <color name="hypernova_transparent">#00000000</color>
+    <color name="hypernova_scrim">#33020812</color>
+
+    <!-- App-local CarUi resource overrides keep every CarSettings-core subflow on brand. -->
+    <color name="car_ui_activity_background_color">@color/hypernova_background</color>
+    <color name="car_ui_text_color_primary">@color/hypernova_text_primary</color>
+    <color name="car_ui_text_color_secondary">@color/hypernova_text_secondary</color>
+    <color name="car_ui_text_color_hint">@color/hypernova_text_disabled</color>
+    <color name="car_ui_preference_icon_color">@color/hypernova_cyan</color>
+    <color name="car_ui_toolbar_nav_icon_color">@color/hypernova_text_primary</color>
+    <color name="car_ui_toolbar_menu_item_icon_color">@color/hypernova_text_primary</color>
+    <color name="car_ui_toolbar_menu_item_icon_background_color">@color/hypernova_selected</color>
+    <color name="car_ui_preference_two_action_divider_color">@color/hypernova_divider</color>
+    <color name="icon_color_default">@color/hypernova_cyan</color>
+</resources>

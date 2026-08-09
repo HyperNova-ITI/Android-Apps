@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="hn_page_margin">16dp</dimen>
+    <dimen name="hn_gutter">10dp</dimen>
+    <dimen name="hn_card_radius">18dp</dimen>
+    <dimen name="hn_small_radius">12dp</dimen>
+    <dimen name="hn_touch">48dp</dimen>
+    <dimen name="hn_source_height">76dp</dimen>
+    <dimen name="hn_header_height">62dp</dimen>
+    <dimen name="hn_card_padding">16dp</dimen>
+    <dimen name="hn_hero_height">270dp</dimen>
+    <dimen name="hn_radio_list_height">320dp</dimen>
+    <dimen name="hn_library_list_height">360dp</dimen>
+    <dimen name="hn_content_vertical_spacing">12dp</dimen>
+</resources>

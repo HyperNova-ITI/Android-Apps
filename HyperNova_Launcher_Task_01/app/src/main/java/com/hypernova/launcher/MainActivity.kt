@@ -2,6 +2,7 @@ package com.hypernova.launcher
 
 import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
@@ -53,6 +54,7 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val TAG = "HyperNovaLauncher"
         private const val FEEDBACK_DURATION_MS = 4000L
+        private const val OPTIONAL_INTEGRATION_DELAY_MS = 250L
     }
 
     private lateinit var binding: ActivityMainBinding
@@ -71,6 +73,9 @@ class MainActivity : AppCompatActivity() {
     private var animatedNovaState: AssistantRuntimeState? = null
     private var navigationMapView: MapView? = null
     private var navigationMapController: LauncherNavigationMapController? = null
+    private var cockpitIntegrationsReady = false
+    private var activityStarted = false
+    private var activityResumed = false
 
     private val resetFeedbackRunnable = Runnable {
         if (
@@ -108,8 +113,6 @@ class MainActivity : AppCompatActivity() {
                 context = this,
                 appLauncher = appLauncher
             )
-
-        initializeNavigationMap(savedInstanceState)
 
         /*
          * Create the real MediaSession connection.
@@ -180,6 +183,21 @@ class MainActivity : AppCompatActivity() {
 
         refreshAndRenderState()
 
+        /*
+         * Commit a usable HyperNova frame before loading MapLibre or touching
+         * optional cockpit services. Android dispatches onStart/onResume before
+         * the first draw, so those external connections are gated as well.
+         */
+        binding.root.postDelayed(
+            {
+                if (isFinishing || isDestroyed) return@postDelayed
+                initializeNavigationMap(savedInstanceState)
+                cockpitIntegrationsReady = true
+                if (activityStarted) connectCockpitIntegrations()
+            },
+            OPTIONAL_INTEGRATION_DELAY_MS,
+        )
+
         Log.d(
             TAG,
             "HyperNova Launcher started"
@@ -188,74 +206,80 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
+        activityStarted = true
 
-        navigationMapView?.onStart()
-
-        availabilityMonitor.start()
-
-        navigationStatusClient.connect()
-        climateStatusClient.connect()
-        phoneStatusClient.connect()
-        systemSettingsClient.connect()
-
-        if (::mediaSessionClient.isInitialized) {
-            Log.d(
-                TAG,
-                "Connecting to HyperNova MediaSession"
-            )
-
-            mediaSessionClient.connect()
+        /*
+         * MapView lifecycle must mirror Activity lifecycle.
+         * onStop() already stops it, so returning to HOME must call onStart()
+         * before onResume(). Missing this transition is what leaves the
+         * Launcher MapLibre surface black after returning from Navigation.
+         */
+        runOptionalIntegration("start Navigation map") {
+            navigationMapView?.onStart()
         }
-
-        if (::novaStatusClient.isInitialized) {
-            novaStatusClient.connect()
-        }
+        if (cockpitIntegrationsReady) connectCockpitIntegrations()
     }
 
     override fun onResume() {
         super.onResume()
-
-        navigationMapView?.onResume()
+        activityResumed = true
+        runOptionalIntegration("resume Navigation map") {
+            navigationMapView?.onResume()
+            navigationMapView?.post {
+                navigationMapController?.refreshScene()
+            }
+        }
 
         if (::themeController.isInitialized) {
             renderThemeToggle()
         }
 
         if (
+            cockpitIntegrationsReady &&
             ::appLauncher.isInitialized &&
             ::stateController.isInitialized
         ) {
-            navigationStatusClient.refresh()
-            climateStatusClient.refresh()
-            phoneStatusClient.refresh()
-            systemSettingsClient.refresh()
+            runOptionalIntegration("refresh Navigation") { navigationStatusClient.refresh() }
+            runOptionalIntegration("refresh Climate") { climateStatusClient.refresh() }
+            runOptionalIntegration("refresh Phone") { phoneStatusClient.refresh() }
+            runOptionalIntegration("refresh Settings") { systemSettingsClient.refresh() }
             refreshAndRenderState()
         }
     }
 
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus && ::binding.isInitialized) {
+            runOptionalIntegration("restore immersive cockpit mode") {
+                configureFullScreenMode()
+            }
+        }
+    }
+
     override fun onStop() {
+        activityStarted = false
         if (::availabilityMonitor.isInitialized) {
-            availabilityMonitor.stop()
+            runOptionalIntegration("stop package monitor") { availabilityMonitor.stop() }
         }
 
         if (::systemSettingsClient.isInitialized) {
-            systemSettingsClient.disconnect()
+            runOptionalIntegration("disconnect Settings") { systemSettingsClient.disconnect() }
         }
 
         if (::phoneStatusClient.isInitialized) {
-            phoneStatusClient.disconnect()
+            runOptionalIntegration("disconnect Phone") { phoneStatusClient.disconnect() }
         }
 
         if (::climateStatusClient.isInitialized) {
-            climateStatusClient.disconnect()
+            runOptionalIntegration("disconnect Climate") { climateStatusClient.disconnect() }
         }
 
         if (::navigationStatusClient.isInitialized) {
-            navigationStatusClient.disconnect()
+            runOptionalIntegration("disconnect Navigation") { navigationStatusClient.disconnect() }
         }
 
         if (::novaStatusClient.isInitialized) {
-            novaStatusClient.disconnect()
+            runOptionalIntegration("disconnect NOVA") { novaStatusClient.disconnect() }
         }
 
         if (::mediaSessionClient.isInitialized) {
@@ -264,27 +288,30 @@ class MainActivity : AppCompatActivity() {
                 "Releasing HyperNova MediaController"
             )
 
-            mediaSessionClient.disconnect()
+            runOptionalIntegration("disconnect Media") { mediaSessionClient.disconnect() }
         }
 
-        navigationMapView?.onStop()
+        runOptionalIntegration("stop Navigation map") { navigationMapView?.onStop() }
 
         super.onStop()
     }
 
     override fun onPause() {
-        navigationMapView?.onPause()
+        activityResumed = false
+        runOptionalIntegration("pause Navigation map") { navigationMapView?.onPause() }
         super.onPause()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
-        navigationMapView?.onSaveInstanceState(outState)
+        runOptionalIntegration("save Navigation map state") {
+            navigationMapView?.onSaveInstanceState(outState)
+        }
         super.onSaveInstanceState(outState)
     }
 
     override fun onLowMemory() {
         super.onLowMemory()
-        navigationMapView?.onLowMemory()
+        runOptionalIntegration("trim Navigation map") { navigationMapView?.onLowMemory() }
     }
 
     override fun onDestroy() {
@@ -297,9 +324,11 @@ class MainActivity : AppCompatActivity() {
         }
 
 
-        navigationMapController?.destroy()
+        runOptionalIntegration("destroy Navigation map controller") {
+            navigationMapController?.destroy()
+        }
         navigationMapController = null
-        navigationMapView?.onDestroy()
+        runOptionalIntegration("destroy Navigation map") { navigationMapView?.onDestroy() }
         navigationMapView = null
 
         super.onDestroy()
@@ -358,11 +387,21 @@ class MainActivity : AppCompatActivity() {
         }
 
     private fun initializeNavigationMap(savedInstanceState: Bundle?) {
+        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_VULKAN_HARDWARE_VERSION)) {
+            Log.i(TAG, "Vulkan is not advertised; retaining Canvas Navigation fallback")
+            stateController.updateNavigationMapAvailability(false)
+            return
+        }
+
         runCatching {
             MapLibre.getInstance(this)
             val mapView = MapView(this).also { view ->
                 view.contentDescription = getString(R.string.navigation_map_description)
-                view.isClickable = false
+                view.isClickable = true
+                view.isFocusable = true
+                view.setOnClickListener {
+                    openHyperNovaApp(AppDestination.NAVIGATION)
+                }
                 binding.navigationMapContainer.addView(
                     view,
                     0,
@@ -385,9 +424,64 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
+            /*
+             * Transparent touch target above MapLibre.
+             * MapLibre owns an internal renderer hierarchy, so relying only
+             * on parent/card clicks is not deterministic.
+             */
+            binding.navigationMapContainer
+                .findViewWithTag<View>("hypernova_navigation_map_click_overlay")
+                ?.let { oldOverlay ->
+                    binding.navigationMapContainer.removeView(oldOverlay)
+                }
+
+            val navigationClickOverlay =
+                View(this).apply {
+                    tag = "hypernova_navigation_map_click_overlay"
+                    isClickable = true
+                    isFocusable = true
+                    setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                    setOnClickListener {
+                        openHyperNovaApp(AppDestination.NAVIGATION)
+                    }
+                }
+
+            binding.navigationMapContainer.addView(
+                navigationClickOverlay,
+                FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                ),
+            )
+
+            if (activityStarted) mapView.onStart()
+            if (activityResumed) mapView.onResume()
         }.onFailure { failure ->
             Log.w(TAG, "Read-only Navigation map unavailable; retaining Canvas fallback", failure)
             stateController.updateNavigationMapAvailability(false)
+        }
+    }
+
+    /** Connect each optional integration independently so one failure cannot take down HOME. */
+    private fun connectCockpitIntegrations() {
+        runOptionalIntegration("start package monitor") { availabilityMonitor.start() }
+        runOptionalIntegration("connect Navigation") { navigationStatusClient.connect() }
+        runOptionalIntegration("connect Climate") { climateStatusClient.connect() }
+        runOptionalIntegration("connect Phone") { phoneStatusClient.connect() }
+        runOptionalIntegration("connect Settings") { systemSettingsClient.connect() }
+        runOptionalIntegration("connect Media") {
+            Log.d(TAG, "Connecting to HyperNova MediaSession")
+            mediaSessionClient.connect()
+        }
+        runOptionalIntegration("connect NOVA") { novaStatusClient.connect() }
+    }
+
+    /** Catch runtime and optional native renderer failures at the integration boundary. */
+    private inline fun runOptionalIntegration(operation: String, block: () -> Unit) {
+        try {
+            block()
+        } catch (failure: Throwable) {
+            Log.w(TAG, "Could not $operation; keeping Launcher available", failure)
         }
     }
 
@@ -899,15 +993,15 @@ class MainActivity : AppCompatActivity() {
         if (navigation.routePoints.size >= 2) {
             binding.navigationRoutePreview.setRoute(
                 navigation.routePoints,
-                navigation.currentPosition,
-                navigation.currentBearingDegrees,
+                null,
+                null,
             )
             navigationMapController?.setNavigation(
                 navigation.routeId,
                 navigation.routeVersion,
                 navigation.routePoints,
-                navigation.currentPosition,
-                navigation.currentBearingDegrees,
+                null,
+                null,
             )
         } else {
             binding.navigationRoutePreview.clearRoute()

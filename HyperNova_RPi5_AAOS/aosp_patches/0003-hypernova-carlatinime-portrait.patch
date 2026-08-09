@@ -1,0 +1,34 @@
+diff --git a/src/com/android/inputmethod/latin/CarLatinIME.java b/src/com/android/inputmethod/latin/CarLatinIME.java
+index b3f8135..a494792 100644
+--- a/src/com/android/inputmethod/latin/CarLatinIME.java
++++ b/src/com/android/inputmethod/latin/CarLatinIME.java
+@@ -156,6 +156,29 @@ public class CarLatinIME extends InputMethodService {
+         mSymbolKeyboard = createKeyboard(SYMBOL_LAYOUT_XML);
+     }
+ 
++    /**
++     * HYPERNOVA_PORTRAIT_KEYBOARD_RELOAD
++     *
++     * RPi5 starts with the physical 1920x1080 mode, then Android applies
++     * the locked portrait ROTATION_270 logical configuration (1080x1920).
++     * Recreate Keyboard models after a configuration change so they use
++     * the final portrait Resources/DisplayMetrics instead of boot-time ones.
++     */
++    @Override
++    public void onConfigurationChanged(Configuration newConfig) {
++        super.onConfigurationChanged(newConfig);
++
++        mLocale = null;
++        mQweKeyboard = createKeyboard(LAYOUT_XML);
++        mSymbolKeyboard = createKeyboard(SYMBOL_LAYOUT_XML);
++
++        if (mKeyboardView != null) {
++            mKeyboardView.setKeyboard(mQweKeyboard, getLocale());
++            mKeyboardView.requestLayout();
++            mKeyboardView.invalidate();
++        }
++    }
++
+     @Override
+     public void onDestroy() {
+         super.onDestroy();

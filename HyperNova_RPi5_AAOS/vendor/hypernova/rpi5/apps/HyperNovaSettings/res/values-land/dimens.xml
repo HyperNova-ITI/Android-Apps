@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Compact shared chrome keeps all HyperNova Settings pages inside a 600px cockpit. -->
+    <dimen name="hypernova_page_margin">18dp</dimen>
+    <dimen name="hypernova_header_height">60dp</dimen>
+    <dimen name="hypernova_header_content_height">59dp</dimen>
+    <dimen name="hypernova_status_height">82dp</dimen>
+    <dimen name="hypernova_row_min_height">64dp</dimen>
+    <dimen name="hypernova_compact_row_height">60dp</dimen>
+    <dimen name="hypernova_switch_row_height">64dp</dimen>
+    <dimen name="hypernova_slider_card_height">104dp</dimen>
+</resources>

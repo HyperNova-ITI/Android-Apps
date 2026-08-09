@@ -1,0 +1,300 @@
+08-08 20:04:25.090 26934 27037 V Ana Vodafone - UALib: UAirship - !SDK-VERSION-STRING!:com.urbanairship.android:urbanairship-core:18.7.2
+08-08 20:04:25.131 26934 26934 D nativeloader: Load libSchedAssistJni.so using system ns (caller=/system/framework/oplus-framework.jar): ok
+08-08 20:04:25.131 26934 26934 D ExtensionsLoader: createInstance(64bit) : createExtendedFactory
+08-08 20:04:25.132 26934 26934 D ExtensionsLoader: Opened libSchedAssistExtImpl.so
+08-08 20:04:25.133 26934 26934 E SchedAssist: sysOpen failed with error=Permission denied
+08-08 20:04:25.133 26934 26934 E SchedAssist: open sharedFd failed with error=Permission denied
+08-08 20:04:25.133 26934 26934 E SchedAssist: open sharedFd failed with error=Permission denied
+08-08 20:04:25.133 26934 26934 E SchedAssist: open sharedFd failed with error=Permission denied
+08-08 20:04:25.133 26934 26934 E SchedAssist: open sharedFd failed with error=No such file or directory
+08-08 20:04:25.134 26934 27037 D Ana Vodafone Channel ID: 6764f84a-ef47-4cf8-af05-ecc076e6af77
+08-08 20:04:25.137 26934 26934 D OplusGraphicsEvent: OplusGraphicsEventListener create now!
+08-08 20:04:25.139 26934 26934 D OplusGraphicsEvent: addEventListener success!
+08-08 20:04:25.141  3009  4133 E ScrollOptim [OplusPerfService]: isScrollOptimEnable: mSoptBean = ScrollOptimBean, mOptEnable=true, mCommonOnly=false, mPreAnimStrategy=1, mPreAnimBlacklist=[com.kyk.world, com.shopify.arrive], mPreAnimWhitelist=[], mInsertNum=1, mFrameInsertList={com.shopify.arrive={}, com.sina.weibo={com.sina.weibo.VisitorMainTabActivity=3}, com.tencent.mm={com.tencent.mm.ui.AlbumUI=3, com.tencent.mm.plugin.sns.ui.SnsTimeLineUI=3, com.tencent.mm.plugin.sns.ui.improve.ImproveSnsTimelineUI=3}, com.taobao.idlefish={}, com.kyk.world={}}, mSCEnableList={com.ss.android.ugc.aweme=[com.ss.android.ugc.aweme.splash.SplashActivity], com.sankuai.meituan=[com.meituan.android.pt.homepage.activity.MainActivity], com.dragon.read=[com.dragon.read.pages.main.MainFragmentActivity], com.sina.weibo=[com.sina.weibo.VisitorMainTabActivity], com.xunmeng.pinduoduo=[com.xunmeng.pinduoduo.activity.NewPageActivity], com.tencent.qqmusic=[com.tencent.qqmusic.activity.AppStarterActivity], com.tencent.mobileqq=[com.qzone.feed.ui.activity.QZoneFriendFeedActivity], com.tencent.qqlive=[com.tencent.qqlive.ona.activity.SplashHomeActivity], com.ct.client=[com.ct.client.activity.MainActivity]}
+08-08 20:04:25.141  3009  4133 E ScrollOptim [OplusPerfService]: isScrollOptimEnable: pkgName = com.emeint.android.myservices, output = Bundle[{pre_anim_enable=true, frame_insert_list=null, frame_insert_default_num=1, scroll_changed_enable_list=null}]
+08-08 20:04:25.141 26934 26934 D ScrollOptim [ConfigManager]: initOptConfig: pkg= com.emeint.android.myservices, mOptEnable= true, mAnimAheadEnable= true, mInsertDefaultNum= 1, mFrameInsertEnableList= {}, mSCEnableList= []
+08-08 20:04:25.152 26934 27037 E Ana Vodafone - UALib: Failed to parse json
+08-08 20:04:25.153 26934 27037 V Ana Vodafone - UALib: PreferenceDataStore - Preference updated: com.urbanairship.contacts.OPERATIONS
+08-08 20:04:25.154 26934 27041 V Ana Vodafone - UALib: PreferenceDataStore - Removing preference: com.urbanairship.contacts.OPERATIONS
+08-08 20:04:25.164   896   896 E lowmemorykiller: device memory 208643 free 10259 file 201602
+08-08 20:04:25.169 26934 27037 E Ana Vodafone - UALib: Scheduler failed to schedule jobInfo
+08-08 20:04:25.169 26934 27037 E Ana Vodafone - UALib: com.urbanairship.job.SchedulerException: Failed to schedule job
+08-08 20:04:25.169 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.job.WorkManagerScheduler.schedule(:31)
+08-08 20:04:25.169 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.job.JobDispatcher.dispatch(:122)
+08-08 20:04:25.169 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.job.JobDispatcher.dispatch(:116)
+08-08 20:04:25.169 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.remotedata.RemoteDataRefreshManager.dispatchRefreshJob(:74)
+08-08 20:04:25.169 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.remotedata.RemoteData.<init>(:195)
+08-08 20:04:25.169 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.remotedata.RemoteData.<init>(:62)
+08-08 20:04:25.169 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.remotedata.RemoteData.<init>(:117)
+08-08 20:04:25.169 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.remotedata.RemoteData.<init>(:100)
+08-08 20:04:25.169 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.remotedata.RemoteData.<init>(:502)
+08-08 20:04:25.169 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.UAirship.init(:751)
+08-08 20:04:25.169 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.UAirship.executeTakeOff(:428)
+08-08 20:04:25.169 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.UAirship.access$000(:72)
+08-08 20:04:25.169 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.UAirship$2.run(:387)
+08-08 20:04:25.169 26934 27037 E Ana Vodafone - UALib: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1100)
+08-08 20:04:25.169 26934 27037 E Ana Vodafone - UALib: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+08-08 20:04:25.169 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.util.AirshipThreadFactory$1.run(:50)
+08-08 20:04:25.169 26934 27037 E Ana Vodafone - UALib: 	at java.lang.Thread.run(Thread.java:1572)
+08-08 20:04:25.169 26934 27037 E Ana Vodafone - UALib: Caused by: kotlin.UninitializedPropertyAccessException: lateinit property  has not been initialized
+08-08 20:04:25.169 26934 27037 E Ana Vodafone - UALib: 	at vodafone.vis.engezly.AnaVodafoneApplication.getWorkerFactory(:61)
+08-08 20:04:25.169 26934 27037 E Ana Vodafone - UALib: 	at vodafone.vis.engezly.AnaVodafoneApplication.Architecture(:193)
+08-08 20:04:25.169 26934 27037 E Ana Vodafone - UALib: 	at o.getViewportAspectRatioStrategy.Architecture(:176)
+08-08 20:04:25.169 26934 27037 E Ana Vodafone - UALib: 	at o.realtimeUs$AnimatedBarChartKtAnimatedBarChart1112.valueOf(:173)
+08-08 20:04:25.169 26934 27037 E Ana Vodafone - UALib: 	at o.realtimeUs.AnimatedBarChartKtAnimatedBarChart1112(:353)
+08-08 20:04:25.169 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.job.WorkManagerScheduler.schedule(:28)
+08-08 20:04:25.169 26934 27037 E Ana Vodafone - UALib: 	... 16 more
+08-08 20:04:25.171 26934 27037 E Ana Vodafone - UALib: Scheduler failed to schedule jobInfo
+08-08 20:04:25.171 26934 27037 E Ana Vodafone - UALib: com.urbanairship.job.SchedulerException: Failed to schedule job
+08-08 20:04:25.171 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.job.WorkManagerScheduler.schedule(:31)
+08-08 20:04:25.171 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.job.JobDispatcher.dispatchPending(:141)
+08-08 20:04:25.171 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.job.JobDispatcher.dispatch(:121)
+08-08 20:04:25.171 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.job.JobDispatcher.dispatch(:116)
+08-08 20:04:25.171 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.meteredusage.AirshipMeteredUsage.scheduleUpload(:78)
+08-08 20:04:25.171 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.meteredusage.AirshipMeteredUsage.updateConfig(:69)
+08-08 20:04:25.171 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.meteredusage.AirshipMeteredUsage.<init>(:56)
+08-08 20:04:25.171 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.meteredusage.AirshipMeteredUsage.<init>(:32)
+08-08 20:04:25.171 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.meteredusage.AirshipMeteredUsage.<init>(:163)
+08-08 20:04:25.171 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.UAirship.init(:754)
+08-08 20:04:25.171 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.UAirship.executeTakeOff(:428)
+08-08 20:04:25.171 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.UAirship.access$000(:72)
+08-08 20:04:25.171 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.UAirship$2.run(:387)
+08-08 20:04:25.171 26934 27037 E Ana Vodafone - UALib: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1100)
+08-08 20:04:25.171 26934 27037 E Ana Vodafone - UALib: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+08-08 20:04:25.171 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.util.AirshipThreadFactory$1.run(:50)
+08-08 20:04:25.171 26934 27037 E Ana Vodafone - UALib: 	at java.lang.Thread.run(Thread.java:1572)
+08-08 20:04:25.171 26934 27037 E Ana Vodafone - UALib: Caused by: kotlin.UninitializedPropertyAccessException: lateinit property  has not been initialized
+08-08 20:04:25.171 26934 27037 E Ana Vodafone - UALib: 	at vodafone.vis.engezly.AnaVodafoneApplication.getWorkerFactory(:61)
+08-08 20:04:25.171 26934 27037 E Ana Vodafone - UALib: 	at vodafone.vis.engezly.AnaVodafoneApplication.Architecture(:193)
+08-08 20:04:25.171 26934 27037 E Ana Vodafone - UALib: 	at o.getViewportAspectRatioStrategy.Architecture(:176)
+08-08 20:04:25.171 26934 27037 E Ana Vodafone - UALib: 	at o.realtimeUs$AnimatedBarChartKtAnimatedBarChart1112.valueOf(:173)
+08-08 20:04:25.171 26934 27037 E Ana Vodafone - UALib: 	at o.realtimeUs.AnimatedBarChartKtAnimatedBarChart1112(:353)
+08-08 20:04:25.171 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.job.WorkManagerScheduler.schedule(:28)
+08-08 20:04:25.171 26934 27037 E Ana Vodafone - UALib: 	... 16 more
+08-08 20:04:25.182 26934 27037 V Ana Vodafone - UALib: PushProviders - Found provider: FCM Push Provider 18.7.2
+08-08 20:04:25.186 26934 27037 E Ana Vodafone - UALib: Scheduler failed to schedule jobInfo
+08-08 20:04:25.186 26934 27037 E Ana Vodafone - UALib: com.urbanairship.job.SchedulerException: Failed to schedule job
+08-08 20:04:25.186 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.job.WorkManagerScheduler.schedule(:31)
+08-08 20:04:25.186 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.job.JobDispatcher.dispatchPending(:141)
+08-08 20:04:25.186 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.job.JobDispatcher.dispatch(:121)
+08-08 20:04:25.186 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.job.JobDispatcher.dispatch(:116)
+08-08 20:04:25.186 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.push.PushManager.dispatchUpdateJob(:452)
+08-08 20:04:25.186 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.push.PushManager.updateManagerEnablement(:431)
+08-08 20:04:25.186 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.push.PushManager.init(:354)
+08-08 20:04:25.186 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.UAirship.init(:804)
+08-08 20:04:25.186 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.UAirship.executeTakeOff(:428)
+08-08 20:04:25.186 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.UAirship.access$000(:72)
+08-08 20:04:25.186 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.UAirship$2.run(:387)
+08-08 20:04:25.186 26934 27037 E Ana Vodafone - UALib: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1100)
+08-08 20:04:25.186 26934 27037 E Ana Vodafone - UALib: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+08-08 20:04:25.186 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.util.AirshipThreadFactory$1.run(:50)
+08-08 20:04:25.186 26934 27037 E Ana Vodafone - UALib: 	at java.lang.Thread.run(Thread.java:1572)
+08-08 20:04:25.186 26934 27037 E Ana Vodafone - UALib: Caused by: kotlin.UninitializedPropertyAccessException: lateinit property  has not been initialized
+08-08 20:04:25.186 26934 27037 E Ana Vodafone - UALib: 	at vodafone.vis.engezly.AnaVodafoneApplication.getWorkerFactory(:61)
+08-08 20:04:25.186 26934 27037 E Ana Vodafone - UALib: 	at vodafone.vis.engezly.AnaVodafoneApplication.Architecture(:193)
+08-08 20:04:25.186 26934 27037 E Ana Vodafone - UALib: 	at o.getViewportAspectRatioStrategy.Architecture(:176)
+08-08 20:04:25.186 26934 27037 E Ana Vodafone - UALib: 	at o.realtimeUs$AnimatedBarChartKtAnimatedBarChart1112.valueOf(:173)
+08-08 20:04:25.186 26934 27037 E Ana Vodafone - UALib: 	at o.realtimeUs.AnimatedBarChartKtAnimatedBarChart1112(:353)
+08-08 20:04:25.186 26934 27037 E Ana Vodafone - UALib: 	at com.urbanairship.job.WorkManagerScheduler.schedule(:28)
+08-08 20:04:25.186 26934 27037 E Ana Vodafone - UALib: 	... 14 more
+08-08 20:04:25.198 26934 27037 V Ana Vodafone - UALib: MessageCenter - Initializing Inbox...
+08-08 20:04:25.198 26934 27037 I Ana Vodafone - UALib: Airship ready!
+08-08 20:04:25.210 26934 27023 E FeatureFlagsImplExport: android.os.flagging.AconfigStorageReadException: ERROR_PACKAGE_NOT_FOUND: package com.android.libcore cannot be found on the device
+08-08 20:04:25.210 26934 27025 E FeatureFlagsImplExport: android.os.flagging.AconfigStorageReadException: ERROR_PACKAGE_NOT_FOUND: package com.android.libcore cannot be found on the device
+08-08 20:04:25.218 26934 27037 D WM-PackageManagerHelper: Skipping component enablement for androidx.work.impl.background.systemjob.SystemJobService
+08-08 20:04:25.218 26934 27037 D WM-Schedulers: Created SystemJobScheduler and enabled SystemJobService
+08-08 20:04:25.221 26934 27048 D WM-ForceStopRunnable: The default process name was not specified.
+08-08 20:04:25.222 26934 27048 D WM-ForceStopRunnable: Performing cleanup operations.
+08-08 20:04:25.240 26934 27048 D WM-SystemJobScheduler: Reconciling jobs
+08-08 20:04:25.248 26934 27048 D WM-ForceStopRunnable: Found unfinished work, scheduling it.
+08-08 20:04:25.255 26934 27048 D WM-SystemJobScheduler: Scheduling work ID a406d9df-f2b0-4ce6-9531-20e8bcf70272Job ID 156069
+08-08 20:04:25.265   896   896 E lowmemorykiller: device memory 208291 free 9778 file 201987
+08-08 20:04:25.266 26934 27048 D WM-SystemJobScheduler: Scheduling work ID 654883e7-3a31-4540-b383-0412db750876Job ID 156068
+08-08 20:04:25.273 26934 27048 D WM-GreedyScheduler: Starting tracking for 654883e7-3a31-4540-b383-0412db750876,a406d9df-f2b0-4ce6-9531-20e8bcf70272
+08-08 20:04:25.287  3935  5287 W TelephonyPermissions: reportAccessDeniedToReadIdentifiers:com.emeint.android.myservices:getActiveSubscriptionInfoList:4
+08-08 20:04:25.289 26934 27053 D WM-SystemJobScheduler: Scheduling work ID 7b29ba21-b6da-4378-97b5-a7fe15342c52Job ID 156070
+08-08 20:04:25.297 26934 27053 D WM-GreedyScheduler: Starting tracking for 654883e7-3a31-4540-b383-0412db750876,a406d9df-f2b0-4ce6-9531-20e8bcf70272,7b29ba21-b6da-4378-97b5-a7fe15342c52
+08-08 20:04:25.317 26934 27054 D WM-SystemJobScheduler: Scheduling work ID 7575a36d-4ce1-4b51-8c26-c0129ce1626eJob ID 156071
+08-08 20:04:25.333 26934 27054 D WM-GreedyScheduler: Starting tracking for 654883e7-3a31-4540-b383-0412db750876,7575a36d-4ce1-4b51-8c26-c0129ce1626e,a406d9df-f2b0-4ce6-9531-20e8bcf70272,7b29ba21-b6da-4378-97b5-a7fe15342c52
+08-08 20:04:25.344 26934 27054 D WM-SystemJobScheduler: Scheduling work ID 8228a572-1056-4faa-b267-da4c61332541Job ID 156072
+08-08 20:04:25.353   951   951 E KeymasterUtils: rsp_header->status: -28
+08-08 20:04:25.354   951   951 E KeyMasterHalDevice: abort_operation
+08-08 20:04:25.355   951   951 E KeyMasterHalDevice: ret: -28
+08-08 20:04:25.361 26934 27054 D WM-GreedyScheduler: Starting work for 8228a572-1056-4faa-b267-da4c61332541
+08-08 20:04:25.361 26934 27054 D WM-GreedyScheduler: Starting tracking for 654883e7-3a31-4540-b383-0412db750876,7575a36d-4ce1-4b51-8c26-c0129ce1626e,a406d9df-f2b0-4ce6-9531-20e8bcf70272,7b29ba21-b6da-4378-97b5-a7fe15342c52
+08-08 20:04:25.365   951   951 E KeymasterUtils: rsp_header->status: -28
+08-08 20:04:25.365   951   951 E KeyMasterHalDevice: abort_operation
+08-08 20:04:25.365   951   951 E KeyMasterHalDevice: ret: -28
+08-08 20:04:25.367   896   896 E lowmemorykiller: device memory 208238 free 9016 file 202695
+08-08 20:04:25.370 26934 27052 D WM-Processor: createParentFolder: processing WorkGenerationalId(workSpecId=8228a572-1056-4faa-b267-da4c61332541, generation=0)
+08-08 20:04:25.386  3009  3712 I Osense-PsiDetector: 814,34,2978,4607,36,146,116,749,1147,393,399,0,4,5765
+08-08 20:04:25.388  3009  3705 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_RES_MEM_PSI_NORMAL, bundle: Bundle[{memLevel=3}]
+08-08 20:04:25.392  3009  3705 I Osense-BaseDecisionMaker: scene: SCENE_RES_MEM_PSI_NORMAL, excutingPolicy: clear
+08-08 20:04:25.394  3009  3705 D Osense-BaseDecisionMaker: invoke clear policy,type: cached
+08-08 20:04:25.394 26934 27048 D WM-ConstraintTracker: lambdanew1androidxcameraviewCameraController: initial state = NetworkState(isConnected=true, isValidated=true, isMetered=false, isNotRoaming=true)
+08-08 20:04:25.394 26934 27048 D WM-NetworkStateTracker: Registering network callback
+08-08 20:04:25.394  3979  4446 D CommonApp-741-10120: transport layer data is invalid
+08-08 20:04:25.396  3009  3710 I OsenseKillAction: KillAction: [atomic clean] start name=lowmem, requestId=122248, startAvail=814, startFreeMB=35, purposeAvailMB=1200, purposeFreeMB=-1, anonRssTarget=386, minBgCount=0, swapTarget=0, scene=SCENE_RES_MEM_PSI_NORMAL, type=cached, qb=false, cchOnly=true, urgency=false, hoggingCpuPids={}, invalid-cnt=7
+08-08 20:04:25.396  3009  3710 I OsenseKillAction: KillAction: [atomic clean] end: skip for no-killable-cached-process
+08-08 20:04:25.397  3009  3710 I OsenseKillAction: KillAction: 386mb more anonRss to reclaim, 0mb more swapMb to reclaim, <skip> mem guard, cur avail=0mb, bundle: Bundle[{appcareThreshold=0, triggerMemory=1000, qbmode=false, memLevel=3, type=cached, level=1, scene=SCENE_RES_MEM_PSI_NORMAL, requestId=122248, purposeMemory=1200}]
+08-08 20:04:25.404  3009  4719 D ConnectivityService: requestNetwork for uid/pid:10334/26934 activeRequest: null callbackRequest: 105062 [NetworkRequest [ REQUEST id=105063, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED Uid: 10334 RequestorUid: 10334 RequestorPkg: com.emeint.android.myservices UnderlyingNetworks: Null] ]] callback flags: 0 order: 2147483647 isUidTracked: false declaredMethods: AVAIL|LOST|NC
+08-08 20:04:25.407  3009  3442 D WifiNetworkFactory: got request NetworkRequest [ REQUEST id=105063, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED Uid: 10334 RequestorUid: 10334 RequestorPkg: com.emeint.android.myservices UnderlyingNetworks: Null] ]
+08-08 20:04:25.407  3009  3442 D UntrustedWifiNetworkFactory: got request NetworkRequest [ REQUEST id=105063, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED Uid: 10334 RequestorUid: 10334 RequestorPkg: com.emeint.android.myservices UnderlyingNetworks: Null] ]
+08-08 20:04:25.408  3009  3442 D OemPaidWifiNetworkFactory: got request NetworkRequest [ REQUEST id=105063, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED Uid: 10334 RequestorUid: 10334 RequestorPkg: com.emeint.android.myservices UnderlyingNetworks: Null] ]
+08-08 20:04:25.408  3009  3442 D MultiInternetWifiNetworkFactory: got request NetworkRequest [ REQUEST id=105063, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED Uid: 10334 RequestorUid: 10334 RequestorPkg: com.emeint.android.myservices UnderlyingNetworks: Null] ]
+08-08 20:04:25.408  3009  3450 D ConnectivityService: NetReassign [105063 : null → 741] [c 0] [a 2] [i 1]
+08-08 20:04:25.408 26934 27061 D WM-NetworkStateTracker: Network capabilities changed: [ Transports: WIFI Capabilities: NOT_METERED&INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VPN&VALIDATED&NOT_ROAMING&FOREGROUND&NOT_CONGESTED&NOT_SUSPENDED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED LinkUpBandwidth>=43107Kbps LinkDnBandwidth>=38148Kbps TransportInfo: <SSID: <unknown ssid>, BSSID: 02:00:00:00:00:00, MAC: 02:00:00:00:00:00, IP: /10.145.0.24, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 11ac, RSSI: -51, Link speed: 96Mbps, Tx Link speed: 96Mbps, Max Supported Tx Link speed: 96Mbps, Calculated Tx : 71Mbps, Rx Link speed: 96Mbps, Max Supported Rx Link speed: 96Mbps, Calculated Rx : 80Mbps, Frequency: 5180MHz, Net ID: -1, Metered hint: false, score: 60, isUsable: true, CarrierMerged: false, SubscriptionId: -1, IsPrimary: -1, Trusted: true, Restricted: false, Ephemeral: false, OEM paid: false, OEM private: false, OSU AP: false, FQDN: <none>, Provider friendly name: <none>, Requesting package name: <none><none>MLO Information: , Is TID-To-Link negotiation supported by the AP: false, AP MLD Address: <none>, AP MLO Link Id: <none>, AP MLO Affiliated links: <none>, Vendor Data: <none>> SignalStrength: -51 UnderlyingNetworks: Null]
+08-08 20:04:25.410 26934 27048 D WM-PackageManagerHelper: Skipping component enablement for o.clearPreviewSurface
+08-08 20:04:25.410 26934 27054 D WM-GreedyScheduler: Constraints met: Scheduling work ID WorkGenerationalId(workSpecId=654883e7-3a31-4540-b383-0412db750876, generation=0)
+08-08 20:04:25.411 26934 27054 D WM-GreedyScheduler: Constraints met: Scheduling work ID WorkGenerationalId(workSpecId=a406d9df-f2b0-4ce6-9531-20e8bcf70272, generation=0)
+08-08 20:04:25.411 26934 27054 D WM-GreedyScheduler: Constraints met: Scheduling work ID WorkGenerationalId(workSpecId=7b29ba21-b6da-4378-97b5-a7fe15342c52, generation=0)
+08-08 20:04:25.411 26934 27054 D WM-GreedyScheduler: Constraints met: Scheduling work ID WorkGenerationalId(workSpecId=7575a36d-4ce1-4b51-8c26-c0129ce1626e, generation=0)
+08-08 20:04:25.413 26934 27054 D WM-Processor: createParentFolder: processing WorkGenerationalId(workSpecId=654883e7-3a31-4540-b383-0412db750876, generation=0)
+08-08 20:04:25.414 26934 27054 D WM-Processor: createParentFolder: processing WorkGenerationalId(workSpecId=a406d9df-f2b0-4ce6-9531-20e8bcf70272, generation=0)
+08-08 20:04:25.416 26934 27054 D WM-Processor: createParentFolder: processing WorkGenerationalId(workSpecId=7b29ba21-b6da-4378-97b5-a7fe15342c52, generation=0)
+08-08 20:04:25.417 26934 27054 D WM-Processor: createParentFolder: processing WorkGenerationalId(workSpecId=7575a36d-4ce1-4b51-8c26-c0129ce1626e, generation=0)
+08-08 20:04:25.436  1479  1567 D BatteryChargeControl: bcc get no support from charging protocol
+08-08 20:04:25.444  3935  5284 W TelephonyPermissions: reportAccessDeniedToReadIdentifiers:com.emeint.android.myservices:getActiveSubscriptionInfoList:4
+08-08 20:04:25.448  3009  3998 I OplusHansManager : uid=10488, pkg=com.instagram.android F enter(), M stay=10
+08-08 20:04:25.451  3935  5284 W TelephonyPermissions: reportAccessDeniedToReadIdentifiers:com.emeint.android.myservices:getActiveSubscriptionInfoList:4
+08-08 20:04:25.453  3009  3998 I OplusHansManager : freeze uid: 10488 com.instagram.android pids: [25654] scene: LcdOn
+08-08 20:04:25.454  3009  4015 I OplusHansManager : p_BC uid=10488 pkg=com.instagram.android
+08-08 20:04:25.454  3009  4015 I OplusBinderProxy: proxyBinder uid: 10488 pkg: com.instagram.android proxy: true calling: OFreezer
+08-08 20:04:25.455  7071 18718 D IHansComunication: HANS sendMessageToKernel: threadId = 517145082992, netLinkSetup = 1, type = PKG, targetUid = 10488, pkgCmd = ADD_ONE_UID
+08-08 20:04:25.457  3935  5287 W TelephonyPermissions: reportAccessDeniedToReadIdentifiers:com.emeint.android.myservices:getActiveSubscriptionInfoList:4
+08-08 20:04:25.458  3009  4134 I OplusHansManager : unfreeze uid: 10488 com.instagram.android pids: [25654] reason: ExecutingComponent scene: LcdOn
+08-08 20:04:25.458  3009  3998 I OplusHansManager : uid=10488, pkg=com.instagram.android F exit(), F stay=0, reason=ExecutingComponent
+08-08 20:04:25.459  3009  4015 I OplusHansManager : up_BC uid=10488 pkg=com.instagram.android
+08-08 20:04:25.459  3009  4015 I OplusBinderProxy: proxyBinder uid: 10488 pkg: com.instagram.android proxy: false calling: OFreezer
+08-08 20:04:25.463  3935  5284 W TelephonyPermissions: reportAccessDeniedToReadIdentifiers:com.emeint.android.myservices:getActiveSubscriptionInfoList:4
+08-08 20:04:25.468   896   896 E lowmemorykiller: device memory 208033 free 9804 file 202214
+08-08 20:04:25.469  3935  5284 W TelephonyPermissions: reportAccessDeniedToReadIdentifiers:com.emeint.android.myservices:getActiveSubscriptionInfoList:4
+08-08 20:04:25.475  3935  5284 W TelephonyPermissions: reportAccessDeniedToReadIdentifiers:com.emeint.android.myservices:getActiveSubscriptionInfoList:4
+08-08 20:04:25.480  3935  5284 W TelephonyPermissions: reportAccessDeniedToReadIdentifiers:com.emeint.android.myservices:getActiveSubscriptionInfoList:4
+08-08 20:04:25.485  3935  5287 W TelephonyPermissions: reportAccessDeniedToReadIdentifiers:com.emeint.android.myservices:getActiveSubscriptionInfoList:4
+08-08 20:04:25.490  3009  3712 I Osense-PsiDetector: 812,40,2978,4607,36,146,116,750,1143,382,405,0,4,5767
+08-08 20:04:25.490  3009  3705 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_RES_MEM_PSI_NORMAL, bundle: Bundle[{memLevel=4}]
+08-08 20:04:25.491   896   896 E lowmemorykiller: device memory 208069 free 10278 file 201776
+08-08 20:04:25.491  3935  5284 W TelephonyPermissions: reportAccessDeniedToReadIdentifiers:com.emeint.android.myservices:getActiveSubscriptionInfoList:4
+08-08 20:04:25.492  3009  3705 I Osense-BaseDecisionMaker: scene: SCENE_RES_MEM_PSI_NORMAL, excutingPolicy: clear
+08-08 20:04:25.492  3009  3705 D Osense-BaseDecisionMaker: invoke clear policy,type: cached
+08-08 20:04:25.493  3009  3705 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_RES_MEM_PSI_LEAK, bundle: Bundle[{memLevel=4}]
+08-08 20:04:25.494  3009  3710 I OsenseKillAction: KillAction: [atomic clean] start name=lowmem, requestId=122249, startAvail=813, startFreeMB=41, purposeAvailMB=1200, purposeFreeMB=-1, anonRssTarget=387, minBgCount=0, swapTarget=0, scene=SCENE_RES_MEM_PSI_NORMAL, type=cached, qb=false, cchOnly=true, urgency=false, hoggingCpuPids={}, invalid-cnt=7
+08-08 20:04:25.494   896   896 E lowmemorykiller: device memory 208010 free 10278 file 201717
+08-08 20:04:25.495  3009  3710 I OsenseKillAction: KillAction: [atomic clean] end: skip for no-killable-cached-process
+08-08 20:04:25.495  3009  3710 I OsenseKillAction: KillAction: 387mb more anonRss to reclaim, 0mb more swapMb to reclaim, <skip> mem guard, cur avail=0mb, bundle: Bundle[{appcareThreshold=0, triggerMemory=1000, qbmode=false, memLevel=4, type=cached, level=1, scene=SCENE_RES_MEM_PSI_NORMAL, requestId=122249, purposeMemory=1200}]
+08-08 20:04:25.532   951   951 E KeymasterUtils: rsp_header->status: -28
+08-08 20:04:25.532   951   951 E KeyMasterHalDevice: abort_operation
+08-08 20:04:25.532   951   951 E KeyMasterHalDevice: ret: -28
+08-08 20:04:25.534   951   951 E KeymasterUtils: rsp_header->status: -28
+08-08 20:04:25.534   951   951 E KeyMasterHalDevice: abort_operation
+08-08 20:04:25.534   951   951 E KeyMasterHalDevice: ret: -28
+08-08 20:04:25.564 26934 27023 E com.facebook.GraphResponse: {HttpStatus: 400, errorCode: 190, subErrorCode: -1, errorType: OAuthException, errorMessage: Invalid OAuth access token signature.}
+08-08 20:04:25.564 26934 27025 E com.facebook.GraphResponse: {HttpStatus: 400, errorCode: 190, subErrorCode: -1, errorType: OAuthException, errorMessage: Invalid OAuth access token signature.}
+08-08 20:04:25.567   896   896 E lowmemorykiller: device memory 208362 free 10996 file 201351
+08-08 20:04:25.584   951   951 E KeymasterUtils: rsp_header->status: -28
+08-08 20:04:25.584   951   951 E KeyMasterHalDevice: abort_operation
+08-08 20:04:25.584   951   951 E KeyMasterHalDevice: ret: -28
+08-08 20:04:25.594  3009  3708 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_RES_IO_PSI, bundle: Bundle[{ioLevel=3}]
+08-08 20:04:25.594  3009  3708 I Osense-BaseDecisionMaker: OSense not supported scene! SCENE_RES_IO_PSI
+08-08 20:04:25.598  1479  5654 D charge_time: type=cdp/dcp,reserve_soc=1,soc=58,ui_soc=59,current=1141,avg=1196,not_chg_cnt=0,stable_cnt=7,fcc=4423,fcc_ratio=92,delta=77,debug=0,region=12,ttf=5578(01:32:58),ui_ttf=6012(01:40:12)
+08-08 20:04:25.653 26934 27024 E com.facebook.GraphResponse: {HttpStatus: 400, errorCode: 190, subErrorCode: -1, errorType: OAuthException, errorMessage: Invalid OAuth access token signature.}
+08-08 20:04:25.666 26934 26934 I Tealium-1.6.0: Found existing session; resuming.
+08-08 20:04:25.668 26934 26934 I Tealium-1.6.0: Asset not found (tealium-settings.json)
+08-08 20:04:25.670   896   896 E lowmemorykiller: device memory 208147 free 10990 file 201181
+08-08 20:04:25.711 26934 26934 I Quality : SlowSqliteOp:executeForCursorWindow,/data/user/0/com.emeint.android.myservices/databases/AnaVodafone,false,true,14
+08-08 20:04:25.742 26934 27025 E com.facebook.GraphResponse: {HttpStatus: 400, errorCode: 190, subErrorCode: -1, errorType: OAuthException, errorMessage: Invalid OAuth access token signature.}
+08-08 20:04:25.751 26934 26934 I Quality : ActivityThread: callApplicationOnCreate delay 581 com.emeint.android.myservices 26934
+08-08 20:04:25.753  3009  4133 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10334. pid: 26934
+08-08 20:04:25.773   896   896 E lowmemorykiller: device memory 208196 free 11865 file 201058
+08-08 20:04:25.778 26934 26934 D AGC_ConfigImpl: initConfigReader
+08-08 20:04:25.780 26934 26934 D AGC_FixedDecrypt: init
+08-08 20:04:25.784  3935  3935 D CarrierSvcBindHelper: Connected to carrier app: com.emeint.android.myservices/com.vodafone.netperform.runtime.NetPerformCarrierService
+08-08 20:04:25.787 26934 26934 E AGC_LocalResource: Exception when reading the 'K&I' for 'Config'.
+08-08 20:04:25.798 26934 26934 E BridgeInstance: createInstance error
+08-08 20:04:25.799 26934 26934 I [AGC_LOG]HaConnector: init HiAnalyticsBridge SDK end.
+08-08 20:04:25.801 26934 26934 I Choreographer: Skipped 38 frames!  The application may be doing too much work on its main thread.
+08-08 20:04:25.803  3009  4718 D VRR [OPlusExternalRefreshRateManager]: isPkgTfcEnable: pkgName = com.emeint.android.myservices, enable = false
+08-08 20:04:25.803  3009  4718 D VRR [OPlusExternalRefreshRateManager]: getTfcMinFramerate: pkgName = com.emeint.android.myservices, min framerate = 0
+08-08 20:04:25.804 26934 26934 I DynamicFramerate [FRTCConfigManager]: initFrameRateConfig: 
+08-08 20:04:25.804 26934 26934 I DynamicFramerate [FRTCConfigManager]: 	levels: [120, 60]
+08-08 20:04:25.804 26934 26934 I DynamicFramerate [FRTCConfigManager]: 	thresholds: [200]
+08-08 20:04:25.804 26934 26934 I DynamicFramerate [FRTCConfigManager]: FRTCConfigManager: FRTC_CAPABILITY = 120, package name = com.emeint.android.myservices, WINDOW_ANIMATION_SPEED_RATE = 10, SCROLL_ANIMATION_SPEED_RATE = 20, PACKAGE_ENABLE = false
+08-08 20:04:25.804 26934 26934 I DynamicFramerate [DynamicFrameRateController]: init info: mPackageName = com.emeint.android.myservices, mIsEnabled = false
+08-08 20:04:25.806 26934 26934 D Ana Vodafone - UALib: PermissionsManager - Checking permission status for display_notifications
+08-08 20:04:25.807 26934 26934 D Ana Vodafone - UALib: PermissionsManager - Checking permission status for location
+08-08 20:04:25.815 26934 26934 D WM-WorkerWrapper: Starting work for com.urbanairship.job.AirshipWorker
+08-08 20:04:25.817 26934 26934 V Ana Vodafone - UALib: AirshipWorker - Running job: JobInfo{action='ACTION_UPDATE_PUSH_REGISTRATION', airshipComponentName='com.urbanairship.push.PushManager', isNetworkAccessRequired=false, minDelayMs=0, conflictStrategy=0, initialBackOffMs=30000, extras={}, rateLimitIds=[]}, work Id: 8228a572-1056-4faa-b267-da4c61332541 run attempt: 0
+08-08 20:04:25.818 26934 26934 V Ana Vodafone - UALib: JobDispatcher - Running job: JobInfo{action='ACTION_UPDATE_PUSH_REGISTRATION', airshipComponentName='com.urbanairship.push.PushManager', isNetworkAccessRequired=false, minDelayMs=0, conflictStrategy=0, initialBackOffMs=30000, extras={}, rateLimitIds=[]}, run attempt: 0
+08-08 20:04:25.819 26934 26934 D WM-WorkerWrapper: Starting work for com.urbanairship.job.AirshipWorker
+08-08 20:04:25.819 26934 26934 V Ana Vodafone - UALib: AirshipWorker - Running job: JobInfo{action='ACTION_UPDATE_CONTACT', airshipComponentName='com.urbanairship.contacts.Contact', isNetworkAccessRequired=true, minDelayMs=0, conflictStrategy=2, initialBackOffMs=30000, extras={}, rateLimitIds=[Contact.update]}, work Id: 654883e7-3a31-4540-b383-0412db750876 run attempt: 1
+08-08 20:04:25.820 26934 26934 V Ana Vodafone - UALib: JobDispatcher - Running job: JobInfo{action='ACTION_UPDATE_CONTACT', airshipComponentName='com.urbanairship.contacts.Contact', isNetworkAccessRequired=true, minDelayMs=0, conflictStrategy=2, initialBackOffMs=30000, extras={}, rateLimitIds=[Contact.update]}, run attempt: 1
+08-08 20:04:25.820 26934 26934 D WM-WorkerWrapper: Starting work for com.urbanairship.job.AirshipWorker
+08-08 20:04:25.821 26934 26934 V Ana Vodafone - UALib: AirshipWorker - Running job: JobInfo{action='ACTION_UPDATE_CHANNEL', airshipComponentName='com.urbanairship.channel.AirshipChannel', isNetworkAccessRequired=true, minDelayMs=0, conflictStrategy=2, initialBackOffMs=30000, extras={}, rateLimitIds=[]}, work Id: a406d9df-f2b0-4ce6-9531-20e8bcf70272 run attempt: 1
+08-08 20:04:25.822 26934 26934 V Ana Vodafone - UALib: JobDispatcher - Running job: JobInfo{action='ACTION_UPDATE_CHANNEL', airshipComponentName='com.urbanairship.channel.AirshipChannel', isNetworkAccessRequired=true, minDelayMs=0, conflictStrategy=2, initialBackOffMs=30000, extras={}, rateLimitIds=[]}, run attempt: 1
+08-08 20:04:25.822 26934 26934 D WM-WorkerWrapper: Starting work for com.urbanairship.job.AirshipWorker
+08-08 20:04:25.823 26934 26934 V Ana Vodafone - UALib: AirshipWorker - Running job: JobInfo{action='ACTION_REFRESH', airshipComponentName='com.urbanairship.remotedata.RemoteData', isNetworkAccessRequired=true, minDelayMs=0, conflictStrategy=0, initialBackOffMs=30000, extras={}, rateLimitIds=[]}, work Id: 7b29ba21-b6da-4378-97b5-a7fe15342c52 run attempt: 0
+08-08 20:04:25.823 26934 27037 V Ana Vodafone - UALib: JobRunner - Finished: JobInfo{action='ACTION_UPDATE_PUSH_REGISTRATION', airshipComponentName='com.urbanairship.push.PushManager', isNetworkAccessRequired=false, minDelayMs=0, conflictStrategy=0, initialBackOffMs=30000, extras={}, rateLimitIds=[]} with result: SUCCESS
+08-08 20:04:25.823 26934 27037 V Ana Vodafone - UALib: JobDispatcher - Job finished. Job info: JobInfo{action='ACTION_UPDATE_PUSH_REGISTRATION', airshipComponentName='com.urbanairship.push.PushManager', isNetworkAccessRequired=false, minDelayMs=0, conflictStrategy=0, initialBackOffMs=30000, extras={}, rateLimitIds=[]}, result: SUCCESS
+08-08 20:04:25.823 26934 26934 V Ana Vodafone - UALib: JobDispatcher - Running job: JobInfo{action='ACTION_REFRESH', airshipComponentName='com.urbanairship.remotedata.RemoteData', isNetworkAccessRequired=true, minDelayMs=0, conflictStrategy=0, initialBackOffMs=30000, extras={}, rateLimitIds=[]}, run attempt: 0
+08-08 20:04:25.823 26934 26934 D WM-WorkerWrapper: Starting work for com.urbanairship.job.AirshipWorker
+08-08 20:04:25.824 26934 26934 V Ana Vodafone - UALib: AirshipWorker - Running job: JobInfo{action='MeteredUsage.upload', airshipComponentName='com.urbanairship.meteredusage.AirshipMeteredUsage', isNetworkAccessRequired=true, minDelayMs=15, conflictStrategy=2, initialBackOffMs=30000, extras={}, rateLimitIds=[]}, work Id: 7575a36d-4ce1-4b51-8c26-c0129ce1626e run attempt: 0
+08-08 20:04:25.824 26934 26934 V Ana Vodafone - UALib: JobDispatcher - Running job: JobInfo{action='MeteredUsage.upload', airshipComponentName='com.urbanairship.meteredusage.AirshipMeteredUsage', isNetworkAccessRequired=true, minDelayMs=15, conflictStrategy=2, initialBackOffMs=30000, extras={}, rateLimitIds=[]}, run attempt: 0
+08-08 20:04:25.824   951   951 E KeymasterUtils: rsp_header->status: -28
+08-08 20:04:25.825   951   951 E KeyMasterHalDevice: abort_operation
+08-08 20:04:25.825   951   951 E KeyMasterHalDevice: ret: -28
+08-08 20:04:25.833   951   951 E KeymasterUtils: rsp_header->status: -28
+08-08 20:04:25.833   951   951 E KeyMasterHalDevice: abort_operation
+08-08 20:04:25.833   951   951 E KeyMasterHalDevice: ret: -28
+08-08 20:04:25.833 26934 26934 I oplus.android.OplusFrameworkFactoryImpl: Unknow feature:IOplusTextViewRTLUtilForUG
+08-08 20:04:25.834 26934 27040 V Ana Vodafone - UALib: PreferenceDataStore - Preference updated: com.urbanairship.contacts.OPERATIONS
+08-08 20:04:25.840  1416 10610 I WifiHAL : event received NL80211_CMD_VENDOR, vendor_id = 0x1374, subcmd = 0xd
+08-08 20:04:25.842 26934 27085 V Ana Vodafone - UALib: PreferenceDataStore - Saving preference: com.urbanairship.contacts.OPERATIONS value: [{"identifier":"adb72524-f1a2-4c14-b3de-46904537130d","operation":{"PAYLOAD_KEY":{"REQUIRED":false,"DATE":1786208665826},"TYPE_KEY":"VERIFY"},"timestamp":1786208665827}]
+08-08 20:04:25.843  2259  2259 I cnss-daemon: nl80211 response handler invoked
+08-08 20:04:25.843  2259  2259 I cnss-daemon: nl80211_response_handler: cmd 103, vendorID 4980, subcmd 13  received
+08-08 20:04:25.859 26934 27037 V Ana Vodafone - UALib: AirshipMeteredUsage - No events, skipping upload.
+08-08 20:04:25.859 26934 27037 V Ana Vodafone - UALib: JobRunner - Finished: JobInfo{action='MeteredUsage.upload', airshipComponentName='com.urbanairship.meteredusage.AirshipMeteredUsage', isNetworkAccessRequired=true, minDelayMs=15, conflictStrategy=2, initialBackOffMs=30000, extras={}, rateLimitIds=[]} with result: SUCCESS
+08-08 20:04:25.860 26934 27037 V Ana Vodafone - UALib: JobDispatcher - Job finished. Job info: JobInfo{action='MeteredUsage.upload', airshipComponentName='com.urbanairship.meteredusage.AirshipMeteredUsage', isNetworkAccessRequired=true, minDelayMs=15, conflictStrategy=2, initialBackOffMs=30000, extras={}, rateLimitIds=[]}, result: SUCCESS
+08-08 20:04:25.862   951   951 E KeymasterUtils: rsp_header->status: -28
+08-08 20:04:25.862   951   951 E KeyMasterHalDevice: abort_operation
+08-08 20:04:25.862   951   951 E KeyMasterHalDevice: ret: -28
+08-08 20:04:25.868 26934 27083 V Ana Vodafone - UALib: JobRunner - Finished: JobInfo{action='ACTION_REFRESH', airshipComponentName='com.urbanairship.remotedata.RemoteData', isNetworkAccessRequired=true, minDelayMs=0, conflictStrategy=0, initialBackOffMs=30000, extras={}, rateLimitIds=[]} with result: SUCCESS
+08-08 20:04:25.868 26934 27083 V Ana Vodafone - UALib: JobDispatcher - Job finished. Job info: JobInfo{action='ACTION_REFRESH', airshipComponentName='com.urbanairship.remotedata.RemoteData', isNetworkAccessRequired=true, minDelayMs=0, conflictStrategy=0, initialBackOffMs=30000, extras={}, rateLimitIds=[]}, result: SUCCESS
+08-08 20:04:25.870 26934 26934 I WebViewFactory: Loading com.google.android.webview version 150.0.7871.181 (code 787118103)
+08-08 20:04:25.875   896   896 E lowmemorykiller: device memory 207870 free 12054 file 200607
+08-08 20:04:25.877 26934 26934 D ApplicationLoaders: Returning zygote-cached class loader: /system/framework/android.test.base.jar
+08-08 20:04:25.877 26934 26934 D ApplicationLoaders: Returning zygote-cached class loader: /system_ext/framework/androidx.window.extensions.jar
+08-08 20:04:25.894 26934 26934 D nativeloader: Configuring clns-10 for other apk /data/app/~~6_vWP-H8oiiLGYKJrmOO8Q==/com.google.android.webview-WtPIq48MlCVq2Yiv2qngkg==/base.apk. target_sdk_version=36, uses_libraries=, library_path=/data/app/~~6_vWP-H8oiiLGYKJrmOO8Q==/com.google.android.webview-WtPIq48MlCVq2Yiv2qngkg==/lib/arm64:/data/app/~~6_vWP-H8oiiLGYKJrmOO8Q==/com.google.android.webview-WtPIq48MlCVq2Yiv2qngkg==/base.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand
+08-08 20:04:25.906 22186 22186 I adbd    : adbd service requested 'shell,v2,TERM=xterm-256color,raw:pidof com.hypernova.phone'
+08-08 20:04:25.922 26934 27024 E com.facebook.GraphResponse: {HttpStatus: 400, errorCode: 190, subErrorCode: -1, errorType: OAuthException, errorMessage: Invalid OAuth access token signature.}
+08-08 20:04:25.975   896   896 E lowmemorykiller: device memory 207164 free 10183 file 201658
+08-08 20:04:25.997 22186 22186 I adbd    : adbd service requested 'shell,v2,TERM=xterm-256color,raw:dumpsys window'
+08-08 20:04:26.046 26934 27083 D Ana Vodafone - UALib: ContactApiClient - Identifying contact for channel 6764f84a-ef47-4cf8-af05-ecc076e6af77 request: Request(url=https://device-api.urbanairship.com/api/contacts/identify/v2, method=POST, auth=GeneratedChannelToken(channelId=6764f84a-ef47-4cf8-af05-ecc076e6af77), body=Json(json={"action":{"contact_id":"82ad54e4-5bb5-4345-b0c4-f3848b616e5d","type":"resolve","possibly_orphaned_contact_id":"82ad54e4-5bb5-4345-b0c4-f3848b616e5d"},"device_info":{"device_type":"android"}}), headers={Accept=application/vnd.urbanairship+json; version=3;}, followRedirects=true)
+08-08 20:04:26.077   896   896 E lowmemorykiller: device memory 207889 free 10317 file 202131
+08-08 20:04:26.097 26934 26934 I cr_WVCFactoryProvider: version=150.0.7871.181 (787118103) minSdkVersion=29 multiprocess=true packageId=2 splits=config.arm64_v8a,config.xhdpi
+08-08 20:04:26.111 26934 26934 D nativeloader: Load /data/app/~~6_vWP-H8oiiLGYKJrmOO8Q==/com.google.android.webview-WtPIq48MlCVq2Yiv2qngkg==/base.apk!/lib/arm64-v8a/libwebviewchromium.so using class loader ns clns-10 (caller=/data/app/~~6_vWP-H8oiiLGYKJrmOO8Q==/com.google.android.webview-WtPIq48MlCVq2Yiv2qngkg==/base.apk): ok
+08-08 20:04:26.139  4047  4047 D SubsysEventListenerManager-SubsysTelephonyCallback[0]: onCellInfoChanged
+08-08 20:04:26.146  3935  3935 W Settings: Setting airplane_mode_on has moved from android.provider.Settings.System to android.provider.Settings.Global, returning read-only value.
+08-08 20:04:26.150 26934 26934 D nativeloader: Load /system/lib64/libwebviewchromium_plat_support.so using class loader ns clns-10 (caller=/data/app/~~6_vWP-H8oiiLGYKJrmOO8Q==/com.google.android.webview-WtPIq48MlCVq2Yiv2qngkg==/base.apk): ok
+08-08 20:04:26.177 26934 27101 I chromium: [0808/200426.162187:INFO:android_webview/browser/variations/variations_seed_loader.cc:67] Failed to open file for reading.: No such file or directory (2)
+08-08 20:04:26.177   896   896 E lowmemorykiller: device memory 207690 free 8426 file 203785
+08-08 20:04:26.180 26934 26934 D nativeloader: Load liboplushwui_jni.so using system ns (caller=/system/framework/oplus-framework.jar): ok
+08-08 20:04:26.208  1299  1346 E TetherController: property_get sys.radio.data.modem_share_flag return 0, 1!
+08-08 20:04:26.211  3009  3998 I OplusHansManager : uid=10329, pkg=com.ziipin.softkeyboard.saudi cannot transition from R to M, importance=input
+08-08 20:04:26.218 22186 22186 I adbd    : adbd service requested 'shell,v2,TERM=xterm-256color:export ANDROID_LOG_TAGS=''; exec logcat '-d' '-v' 'threadtime''
+08-08 20:04:26.234  3979  4446 D CommonApp-741-10120: DefaultState EVENT_SCENARIOS_CHANGE
+08-08 20:04:26.234  3979  4446 D CommonApp-741-10120: scene=COMMON pn=com.android.mms
+08-08 20:04:26.278   896   896 E lowmemorykiller: device memory 207671 free 7185 file 204941
+08-08 20:04:26.289 26934 26934 I cr_LibraryLoader: Successfully loaded native library
+08-08 20:04:26.298  3979  4446 V MonthTrafficAlert: getWarningNotification subId:4 numWarningNotificaion:0
+08-08 20:04:26.300  3979  4446 V MonthTrafficAlert: getWarningNotification subId:3 numWarningNotificaion:0
+08-08 20:04:26.342 26934 26934 I cr_CachingUmaRecorder: Flushed 50 samples from 23 histograms, 0 samples were dropped.
+08-08 20:04:26.351 26934 26934 I cr_ChildProcLH: ScopedServiceBindingBatch.tryActivate: false
+08-08 20:04:26.359 26934 26934 I cr_CombinedPProvider: #registerProvider() provider:WV.wk@5084ca1 isPolicyCacheEnabled:false policyProvidersSize:0
+08-08 20:04:26.360 26934 26934 I cr_PolicyProvider: #setManagerAndSource() 0
+08-08 20:04:26.366 26934 26934 I cr_DisplayManager: Is Display Topology available: false
+08-08 20:04:26.372 26934 27100 I cr_policy: registerReceiver succeeded after 12ms
+08-08 20:04:26.382   896   896 E lowmemorykiller: device memory 210087 free 8900 file 204114
+08-08 20:04:26.392  3009  4718 D OplusAppStartupConfigExt: StartService prevent pkg com.emeint.android.myservices result = false
+08-08 20:04:26.406  3009  4718 V GrammaticalInflectionUtils: AttributionSource: android.content.AttributionSource@fe52568c does not have READ_SYSTEM_GRAMMATICAL_GENDER permission.
+08-08 20:04:26.416  3009  3570 D OplusAppStartupConfigExt: StartService prevent pkg com.emeint.android.myservices result = false

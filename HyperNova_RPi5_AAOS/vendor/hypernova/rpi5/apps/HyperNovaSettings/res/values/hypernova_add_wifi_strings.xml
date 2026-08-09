@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2026 HyperNova. Licensed under the Apache License, Version 2.0. -->
+
+<resources>
+
+    <string name="hypernova_add_network_title">Add Network</string>
+    <string name="hypernova_add_network_subtitle">Connect to a Wi-Fi network manually</string>
+
+    <string name="hypernova_network_name">Network Name</string>
+    <string name="hypernova_network_name_hint">Enter network name</string>
+
+    <string name="hypernova_security">Security</string>
+    <string name="hypernova_security_open">Open</string>
+    <string name="hypernova_security_wpa2">WPA2</string>
+    <string name="hypernova_security_wpa3">WPA3</string>
+
+    <string name="hypernova_wifi_password">Password</string>
+    <string name="hypernova_wifi_password_hint">Enter network password</string>
+
+    <string name="hypernova_connect">Connect</string>
+    <string name="hypernova_connecting">Connecting…</string>
+
+    <string name="hypernova_wifi_turning_on_connect">Turning on Wi-Fi…</string>
+
+    <string name="hypernova_wifi_name_required">Enter a network name</string>
+    <string name="hypernova_wifi_password_required">Password must contain at least 8 characters</string>
+
+    <string name="hypernova_wifi_connection_started">Connecting to network…</string>
+    <string name="hypernova_wifi_connection_failed">Unable to connect to this network</string>
+
+</resources>

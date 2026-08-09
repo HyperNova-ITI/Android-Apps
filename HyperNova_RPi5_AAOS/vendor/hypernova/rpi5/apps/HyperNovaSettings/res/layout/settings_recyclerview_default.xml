@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Copyright (C) 2021 The Android Open Source Project
+  Copyright (C) 2026 HyperNova
+  Licensed under the Apache License, Version 2.0.
+-->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.android.car.ui.FocusArea
+        android:id="@+id/settings_car_ui_focus_area"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <com.android.car.ui.recyclerview.CarUiRecyclerView
+            android:id="@+id/settings_recycler_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/hypernova_background"
+            android:clipToPadding="false"
+            android:paddingStart="@dimen/hypernova_page_margin"
+            android:paddingEnd="@dimen/hypernova_page_margin"
+            android:paddingBottom="@dimen/hypernova_space_32"
+            android:tag="carUiPreferenceRecyclerView"
+            app:carUiSize="large"
+            app:enableDivider="false" />
+    </com.android.car.ui.FocusArea>
+</merge>

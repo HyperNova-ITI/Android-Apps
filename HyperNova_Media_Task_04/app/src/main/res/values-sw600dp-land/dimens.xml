@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tuned for the 1024x600 RPi5 cockpit while remaining width-responsive. -->
+    <dimen name="hn_page_margin">18dp</dimen>
+    <dimen name="hn_header_height">56dp</dimen>
+    <dimen name="hn_source_height">68dp</dimen>
+    <dimen name="hn_hero_height">188dp</dimen>
+    <dimen name="hn_radio_list_height">196dp</dimen>
+    <dimen name="hn_library_list_height">220dp</dimen>
+</resources>

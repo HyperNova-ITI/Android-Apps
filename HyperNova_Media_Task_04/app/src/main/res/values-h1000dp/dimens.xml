@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+        HyperNova tall portrait display profile.
+
+        The ARZOPA panel runs as a 1920x1080 HDMI scanout and Android
+        rotates the logical UI to portrait.
+
+        At 240 dpi the usable portrait display is roughly 1280dp tall.
+        A ~980dp hero allows the Media home screen to occupy almost the
+        complete vertical canvas while keeping the source selector and
+        state panel visible.
+
+        Smaller displays continue to use the normal 270dp hero value
+        from res/values/dimens.xml.
+    -->
+    <dimen name="hn_hero_height">980dp</dimen>
+
+</resources>

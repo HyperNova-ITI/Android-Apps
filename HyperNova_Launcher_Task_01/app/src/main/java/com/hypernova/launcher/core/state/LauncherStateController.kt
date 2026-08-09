@@ -581,7 +581,7 @@ class LauncherStateController(
         val appState = createIntegratedAppState(
             availability = availability,
             reportedConnection = snapshot?.connectionState,
-            active = false,
+            active = snapshot?.phoneConnected == true,
         )
         val status = createAvailabilityStatus(availability, getAppName(destination))
             ?: when {

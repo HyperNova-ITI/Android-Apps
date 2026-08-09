@@ -1,35 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Pressed state -->
     <item android:state_pressed="true">
-
         <shape android:shape="oval">
 
-            <solid android:color="@color/hypernova_cyan" />
-
-            <stroke
-                android:width="2dp"
-                android:color="@color/hypernova_control_filled_icon" />
-
-        </shape>
-
-    </item>
-
-    <!-- Normal state -->
-    <item>
-
-        <shape android:shape="oval">
-
-            <solid android:color="@color/hypernova_control_filled_background" />
+            <solid android:color="@color/hypernova_cyan_pressed" />
 
             <stroke
                 android:width="1dp"
-                android:color="@color/hypernova_control_filled_border" />
+                android:color="@color/hypernova_cyan_bright" />
 
         </shape>
+    </item>
 
+    <item>
+        <shape android:shape="oval">
+
+            <solid android:color="@color/hypernova_selected" />
+
+            <stroke
+                android:width="1dp"
+                android:color="@color/hypernova_cyan_bright" />
+
+        </shape>
     </item>
 
 </selector>

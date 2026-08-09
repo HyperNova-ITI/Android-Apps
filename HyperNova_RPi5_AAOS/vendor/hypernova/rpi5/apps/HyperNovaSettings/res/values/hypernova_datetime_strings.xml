@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2026 HyperNova. Licensed under the Apache License, Version 2.0. -->
+
+<resources>
+
+    <string name="hypernova_auto_date_time">Automatic Date &amp; Time</string>
+    <string name="hypernova_auto_time_zone">Automatic Time Zone</string>
+
+    <string name="hypernova_time_zone">Time Zone</string>
+    <string name="hypernova_date">Date</string>
+    <string name="hypernova_time">Time</string>
+    <string name="hypernova_time_format">Time Format</string>
+
+    <string name="hypernova_time_format_12">12-Hour</string>
+    <string name="hypernova_time_format_24">24-Hour</string>
+
+    <string name="hypernova_datetime_section">Date &amp; Time</string>
+
+</resources>

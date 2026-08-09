@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2026 HyperNova. Licensed under the Apache License, Version 2.0. -->
+<resources>
+    <style name="Theme.HyperNova" parent="@style/Base.Theme.HyperNova">
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowLightStatusBar">false</item>
+    
+        <item name="android:alertDialogTheme">
+            @style/Theme.HyperNova.AlertDialog
+        </item>
+</style>
+</resources>

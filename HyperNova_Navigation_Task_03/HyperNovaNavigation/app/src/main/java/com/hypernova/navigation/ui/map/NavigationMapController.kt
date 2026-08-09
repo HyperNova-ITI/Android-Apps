@@ -134,8 +134,9 @@ class NavigationMapController(
         this.selectedResultId = selectedResultId
         this.destination = destination
         this.routePlan = routePlan
-        this.vehiclePosition = vehiclePosition
-        this.followVehicle = followVehicle
+        // Static-route mode: never retain a moving vehicle position.
+        this.vehiclePosition = null
+        this.followVehicle = false
         activeRoutePoints = routePlan?.selected?.points.orEmpty()
         lastPassedDistanceBucket = -1
         if (!followVehicle) {
@@ -149,16 +150,22 @@ class NavigationMapController(
         position: VehiclePosition?,
         followCamera: Boolean
     ) {
-        vehiclePosition = position
-        followVehicle = followCamera
+        /*
+         * Static-route mode.
+         *
+         * Keep this API for future real GPS integration, but intentionally
+         * ignore position/progress input in the current HyperNova demo.
+         */
+        vehiclePosition = null
+        followVehicle = false
+        lastFollowCameraUpdateMs = 0L
+        lastPassedDistanceBucket = -1
+
         val style = map?.style ?: return
         if (!styleReady) return
 
-        updateVehicleStyle(style, position)
-        updatePassedRoute(style, position)
-        if (followCamera && position != null) {
-            followVehicle(position)
-        }
+        updateVehicleStyle(style, null)
+        updatePassedRoute(style, null, force = true)
     }
 
     fun centerOnOrigin() {
@@ -191,7 +198,8 @@ class NavigationMapController(
     }
 
     fun fitRoute(
-        overview: Boolean = false
+        overview: Boolean = false,
+        active: Boolean = false
     ) {
         val points =
             routePlan?.selected?.points
@@ -202,10 +210,14 @@ class NavigationMapController(
                     }
                 }
 
+        /*
+         * MainActivity now gives MapView the real unobstructed viewport.
+         * Only a small visual breathing space is needed inside that viewport.
+         */
         fitPoints(
             points = points,
-            topPaddingDp = if (overview) 110 else 180,
-            bottomPaddingDp = if (overview) 400 else 260
+            topPaddingDp = if (overview) 32 else 24,
+            bottomPaddingDp = if (overview) 32 else 24
         )
     }
 
@@ -505,14 +517,12 @@ class NavigationMapController(
             alternativeRoutes.map { lineFeature(it.points) }
         )
 
-        updateVehicleStyle(style, vehiclePosition)
-        updatePassedRoute(style, vehiclePosition, force = true)
-
-        if (followVehicle) {
-            vehiclePosition?.let {
-                followVehicle(it, force = true)
-            }
-        }
+        /*
+         * Static-route mode: selected route remains visible, but vehicle,
+         * passed-route and follow-camera simulation are intentionally absent.
+         */
+        updateVehicleStyle(style, null)
+        updatePassedRoute(style, null, force = true)
 
         val calculationLine =
             if (calculating) {

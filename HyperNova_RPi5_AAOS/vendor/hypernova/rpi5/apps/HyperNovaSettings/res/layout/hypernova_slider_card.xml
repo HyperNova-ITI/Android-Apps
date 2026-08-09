@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2026 HyperNova. Licensed under the Apache License, Version 2.0. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/hypernova_slider_card_height"
+    android:layout_marginBottom="@dimen/hypernova_space_8"
+    android:background="@drawable/hypernova_card_elevated_background"
+    android:gravity="center_vertical"
+    android:orientation="vertical"
+    android:paddingStart="@dimen/hypernova_space_16"
+    android:paddingTop="@dimen/hypernova_space_10"
+    android:paddingEnd="@dimen/hypernova_space_16"
+    android:paddingBottom="@dimen/hypernova_space_8"
+    android:tag="carUiPreference">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <com.android.car.ui.uxr.DrawableStateImageView
+            android:id="@android:id/icon"
+            android:layout_width="@dimen/hypernova_icon_important"
+            android:layout_height="@dimen/hypernova_icon_important"
+            android:layout_marginEnd="@dimen/hypernova_space_12"
+            android:scaleType="fitCenter"
+            android:tint="@color/hypernova_cyan" />
+
+        <com.android.car.ui.uxr.DrawableStateTextView
+            android:id="@android:id/title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="@style/HyperNovaText.RowTitle" />
+
+        <com.android.car.ui.uxr.DrawableStateTextView
+            android:id="@android:id/summary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/hypernova_space_12"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="@style/HyperNovaText.Value" />
+    </LinearLayout>
+
+    <androidx.preference.UnPressableLinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/hypernova_touch_target"
+        android:layout_marginTop="@dimen/hypernova_space_4"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <FrameLayout
+            android:layout_width="@dimen/hypernova_touch_target"
+            android:layout_height="@dimen/hypernova_touch_target">
+
+            <ImageButton
+                android:id="@+id/hypernova_slider_decrease"
+                android:layout_width="@dimen/hypernova_slider_button_size"
+                android:layout_height="@dimen/hypernova_slider_button_size"
+                android:layout_gravity="center"
+                android:background="@drawable/hypernova_round_control_background"
+                android:clickable="true"
+                android:contentDescription="@string/hypernova_decrease"
+                android:focusable="false"
+                android:padding="@dimen/hypernova_space_10"
+                android:src="@drawable/hypernova_ic_minus"
+                android:tint="@color/hypernova_text_primary" />
+        </FrameLayout>
+
+        <SeekBar
+            android:id="@+id/seekbar"
+            style="@style/Widget.CarUi.SeekbarPreference.Seekbar"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/hypernova_touch_target"
+            android:layout_marginStart="@dimen/hypernova_space_10"
+            android:layout_marginEnd="@dimen/hypernova_space_10"
+            android:layout_weight="1" />
+
+        <FrameLayout
+            android:layout_width="@dimen/hypernova_touch_target"
+            android:layout_height="@dimen/hypernova_touch_target">
+
+            <ImageButton
+                android:id="@+id/hypernova_slider_increase"
+                android:layout_width="@dimen/hypernova_slider_button_size"
+                android:layout_height="@dimen/hypernova_slider_button_size"
+                android:layout_gravity="center"
+                android:background="@drawable/hypernova_round_control_background"
+                android:clickable="true"
+                android:contentDescription="@string/hypernova_increase"
+                android:focusable="false"
+                android:padding="@dimen/hypernova_space_10"
+                android:src="@drawable/hypernova_ic_plus"
+                android:tint="@color/hypernova_text_primary" />
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/seekbar_value"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone" />
+    </androidx.preference.UnPressableLinearLayout>
+
+    <FrameLayout
+        android:id="@android:id/widget_frame"
+        android:layout_width="0dp"
+        android:layout_height="0dp" />
+</LinearLayout>

@@ -1,0 +1,16 @@
+android_app_import {
+    name: "HyperNovaPhone",
+
+    apk: "HyperNovaPhone.apk",
+
+    certificate: "platform",
+
+    privileged: true,
+    system_ext_specific: true,
+
+    enforce_uses_libs: false,
+
+    dex_preopt: {
+        enabled: false,
+    },
+}
