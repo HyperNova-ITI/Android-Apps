@@ -31,10 +31,20 @@ Save the returned LAN address for the rest of the session:
 
 ```bash
 PI_IP=192.168.10.20
+NOVA_LINK_TOKEN="$(openssl rand -hex 32)"
 ```
 
 Replace the example address if DHCP assigned a different one. Android should use the IPv4 address,
 not `.local`.
+
+Put the same temporary token in the Pi service environment without committing it:
+
+```bash
+ssh -i ~/.ssh/id_ed25519_hypernova_nova nova@hnc-ai30.local
+install -d -m 700 ~/.config/nova
+umask 077
+printf 'NOVA_LINK_TOKEN=%s\n' '<paste NOVA_LINK_TOKEN>' > ~/.config/nova/security.env
+```
 
 ## 2. Verify the Pi microphone
 
@@ -85,6 +95,7 @@ cd ~
 NOVA_MIC="plughw:CARD=Device,DEV=0" \
 NOVA_ANDROID_SPEAKER=1 \
 NOVA_ANDROID_COMMANDS=1 \
+NOVA_LINK_TOKEN="<same temporary token>" \
 NOVA_WAKE_THRESHOLD=0.5 \
 NOVA_WAKE=1 \
 NOVA_EVENTS=1 \
@@ -159,6 +170,7 @@ NOVA_HOST=10.0.2.2
 
 cd HyperNova_NOVA_AI_Task_02
 ./gradlew -PnovaHost="$NOVA_HOST" -PnovaAssistantVolume=12 \
+  -PnovaLinkToken="$NOVA_LINK_TOKEN" \
   testDebugUnitTest :app:assembleDebug
 "$ADB" shell pm clear com.hypernova.ai
 "$ADB" install -r app/build/outputs/apk/debug/app-debug.apk

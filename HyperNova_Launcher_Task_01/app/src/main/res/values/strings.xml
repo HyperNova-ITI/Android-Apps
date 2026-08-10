@@ -52,7 +52,7 @@
     <!-- NOVA branding -->
     <string name="nova_name">NOVA</string>
     <string name="nova_ai_suffix">AI</string>
-    <string name="nova_artwork_description">NOVA AI energy orb</string>
+    <string name="nova_artwork_description">NOVA assistant face</string>
 
     <!-- NOVA states -->
     <string name="assistant_unavailable_title">Assistant unavailable</string>

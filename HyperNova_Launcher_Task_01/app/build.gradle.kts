@@ -62,6 +62,8 @@ android {
 }
 
 dependencies {
+    implementation(project(":nova-visuals"))
+
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.constraintlayout)

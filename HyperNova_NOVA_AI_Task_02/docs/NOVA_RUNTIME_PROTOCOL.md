@@ -30,7 +30,7 @@ Each line is one JSON object terminated by `\n`. Every message contains `type`, 
 Android → Pi:
 
 ```json
-{"type":"hello","v":1,"seq":1,"client":"nova-android","app_version":"0.1.0"}
+{"type":"hello","v":1,"seq":1,"client":"nova-android","app_version":"0.1.0","auth":"deployment-token"}
 {"type":"command","v":1,"seq":2,"turn_id":"optional-uuid","text":"turn on the AC"}
 {"type":"cancel","v":1,"seq":3,"turn_id":"uuid"}
 {"type":"playback","v":1,"seq":4,"turn_id":"uuid","value":"started"}
@@ -57,6 +57,13 @@ Pi → Android:
 ```
 
 Allowed state values are `idle`, `listening`, `processing`, `executing`, `success`, `error`, `speaking`, and `unavailable`. Unknown message fields are ignored. Unknown protocol versions are rejected with `UNSUPPORTED_VERSION`.
+
+When `NOVA_LINK_TOKEN` is configured on the Pi, both sockets reject all traffic until `HELLO`
+contains an exact matching `auth` value. Android receives the same demo token at build time through
+`-PnovaLinkToken=...`; the value must never be committed. A control line is capped at 64 KiB and an
+audio payload at 256 KiB. This pre-shared token is minimum demo peer authentication on the private
+wired LAN, not production transport security. The vehicle build still requires mutually
+authenticated encryption, freshness/replay protection, and managed device credentials.
 
 For a follow-up capture window, the Pi emits exactly one `listening` state with `followup=true` and a
 positive `window_ms`. Android renders this as a distinct conversational window and derives its local
@@ -130,7 +137,7 @@ Frame types:
 
 | Value | Name | Direction | Payload |
 |---:|---|---|---|
-| 1 | `HELLO` | Android → Pi | UTF-8 JSON: client and format capabilities |
+| 1 | `HELLO` | Android → Pi | UTF-8 JSON: client, format capabilities, and optional `auth` token |
 | 2 | `HELLO_ACK` | Pi → Android | UTF-8 JSON: selected formats |
 | 16 | `MIC_START` | Reserved | Disabled in the approved Pi-microphone topology |
 | 17 | `MIC_PCM` | Reserved | Disabled in the approved Pi-microphone topology |

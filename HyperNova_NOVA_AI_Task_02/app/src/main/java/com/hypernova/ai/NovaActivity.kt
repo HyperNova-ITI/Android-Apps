@@ -1,17 +1,12 @@
 package com.hypernova.ai
 
-import android.animation.ObjectAnimator
-import android.animation.PropertyValuesHolder
 import android.content.Intent
 import android.content.res.ColorStateList
-import android.graphics.ColorMatrix
-import android.graphics.ColorMatrixColorFilter
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.view.View
-import android.view.animation.LinearInterpolator
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -28,8 +23,6 @@ import com.hypernova.ai.ui.NovaVisibleState
 class NovaActivity : AppCompatActivity() {
     private lateinit var binding: ActivityNovaBinding
     private val viewModel: NovaViewModel by viewModels()
-    private var orbAnimator: ObjectAnimator? = null
-    private var animatedState: NovaVisibleState? = null
     private val countdownHandler = Handler(Looper.getMainLooper())
     private var followUpDeadlineElapsedRealtimeMs: Long? = null
     private val followUpCountdownTick = object : Runnable {
@@ -106,13 +99,15 @@ class NovaActivity : AppCompatActivity() {
         stateProgress.visibility = if (state.showActivityProgress) View.VISIBLE else View.GONE
 
         val unavailable = state.visibleState == NovaVisibleState.UNAVAILABLE
-        orbRing.imageAlpha = if (unavailable) 88 else 255
-        orbRing.colorFilter = if (unavailable) {
-            ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0f) })
-        } else {
-            null
-        }
-        animateOrb(state.visibleState)
+        novaFace.alpha = if (unavailable) 0.44f else 1f
+        novaFace.setPalette(
+            accent = ContextCompat.getColor(this@NovaActivity, R.color.hypernova_cyan),
+            secondaryAccent = ContextCompat.getColor(this@NovaActivity, R.color.hypernova_purple),
+            success = ContextCompat.getColor(this@NovaActivity, R.color.hypernova_success),
+            warning = ContextCompat.getColor(this@NovaActivity, R.color.hypernova_warning),
+            error = ContextCompat.getColor(this@NovaActivity, R.color.hypernova_error),
+        )
+        novaFace.setStateName(state.visibleState.name)
 
         buttonSecondary.visibility = if (unavailable) View.VISIBLE else View.GONE
         buttonSecondary.isEnabled = unavailable
@@ -127,45 +122,8 @@ class NovaActivity : AppCompatActivity() {
         }
     }
 
-    private fun animateOrb(state: NovaVisibleState) {
-        if (animatedState == state) return
-        animatedState = state
-        orbAnimator?.cancel()
-        binding.orbRing.rotation = 0f
-        binding.orbRing.scaleX = 1f
-        binding.orbRing.scaleY = 1f
-        binding.orbRing.alpha = 1f
-
-        orbAnimator = when (state) {
-            NovaVisibleState.LISTENING, NovaVisibleState.SPEAKING -> ObjectAnimator.ofPropertyValuesHolder(
-                binding.orbRing,
-                PropertyValuesHolder.ofFloat(View.SCALE_X, 0.97f, 1.04f),
-                PropertyValuesHolder.ofFloat(View.SCALE_Y, 0.97f, 1.04f),
-                PropertyValuesHolder.ofFloat(View.ALPHA, 0.82f, 1f),
-            ).apply {
-                duration = if (state == NovaVisibleState.SPEAKING) 620L else 920L
-                repeatCount = ObjectAnimator.INFINITE
-                repeatMode = ObjectAnimator.REVERSE
-                start()
-            }
-            NovaVisibleState.PROCESSING, NovaVisibleState.EXECUTING -> ObjectAnimator.ofFloat(
-                binding.orbRing,
-                View.ROTATION,
-                0f,
-                360f,
-            ).apply {
-                duration = if (state == NovaVisibleState.PROCESSING) 7_000L else 4_500L
-                interpolator = LinearInterpolator()
-                repeatCount = ObjectAnimator.INFINITE
-                start()
-            }
-            else -> null
-        }
-    }
-
     override fun onDestroy() {
         countdownHandler.removeCallbacks(followUpCountdownTick)
-        orbAnimator?.cancel()
         super.onDestroy()
     }
 

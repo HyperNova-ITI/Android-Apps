@@ -1,6 +1,7 @@
 package com.hypernova.ai.network
 
 import android.util.Log
+import com.hypernova.ai.BuildConfig
 import com.hypernova.ai.command.CommandResult
 import com.hypernova.ai.command.CommandWireCodec
 import com.hypernova.ai.runtime.NovaEndpoint
@@ -74,6 +75,7 @@ class NovaControlClient(
         var backoffMs = 250L
         while (isCurrent(generation)) {
             var connectedSocket: Socket? = null
+            var authenticated = false
             try {
                 connectedSocket = Socket().apply {
                     tcpNoDelay = true
@@ -92,8 +94,7 @@ class NovaControlClient(
                     }
                 }
                 if (!accepted) break
-                listener.onControlConnectionChanged(true)
-                sendHello()
+                if (!sendHello()) throw IllegalStateException("control hello send failed")
                 backoffMs = 250L
 
                 BufferedReader(InputStreamReader(connectedSocket.getInputStream(), Charsets.UTF_8)).use { reader ->
@@ -101,8 +102,17 @@ class NovaControlClient(
                         val line = reader.readLine() ?: break
                         if (line.isBlank()) continue
                         try {
-                            listener.onControlMessage(JSONObject(line))
+                            val message = JSONObject(line)
+                            when (message.optString("type")) {
+                                "hello_ack" -> if (!authenticated) {
+                                    authenticated = true
+                                    listener.onControlConnectionChanged(true)
+                                }
+                                "hello_nack" -> throw SecurityException("Pi rejected NOVA control authentication")
+                                else -> if (authenticated) listener.onControlMessage(message)
+                            }
                         } catch (error: Exception) {
+                            if (error is SecurityException) throw error
                             Log.w(TAG, "Ignored invalid control message", error)
                         }
                     }
@@ -113,7 +123,9 @@ class NovaControlClient(
                 }
             } finally {
                 closeConnection(connectedSocket)
-                if (isCurrent(generation)) listener.onControlConnectionChanged(false)
+                if (authenticated && isCurrent(generation)) {
+                    listener.onControlConnectionChanged(false)
+                }
             }
 
             if (isCurrent(generation)) {
@@ -130,15 +142,17 @@ class NovaControlClient(
     private fun isCurrent(generation: Long): Boolean =
         running && lifecycleGeneration.get() == generation
 
-    private fun sendHello() {
+    private fun sendHello(): Boolean =
         send(JSONObject().apply {
             put("type", "hello")
             put("v", 1)
             put("seq", sequence.incrementAndGet())
             put("client", "nova-android")
             put("app_version", "0.1.0")
+            if (BuildConfig.NOVA_LINK_TOKEN.isNotBlank()) {
+                put("auth", BuildConfig.NOVA_LINK_TOKEN)
+            }
         })
-    }
 
     private fun send(message: JSONObject): Boolean = synchronized(writerLock) {
         val activeWriter = writer ?: return@synchronized false

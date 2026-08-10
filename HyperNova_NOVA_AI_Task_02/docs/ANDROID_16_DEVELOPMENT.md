@@ -68,7 +68,8 @@ adb shell am start -a com.hypernova.ai.action.OPEN -p com.hypernova.ai
 If the Pi receives a different IPv4 address, select it at build time:
 
 ```bash
-./gradlew -PnovaHost=192.168.1.50 testDebugUnitTest assembleDebug
+./gradlew -PnovaHost=192.168.1.50 -PnovaLinkToken="$NOVA_LINK_TOKEN" \
+  testDebugUnitTest assembleDebug
 ```
 
 Clear existing app data before testing a changed default, because the runtime intentionally persists

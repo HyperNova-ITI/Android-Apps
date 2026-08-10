@@ -24,4 +24,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "HyperNovaLauncher"
 include(":app")
- 
+include(":nova-visuals")
+project(":nova-visuals").projectDir = file("../HyperNova_Nova_Visuals")

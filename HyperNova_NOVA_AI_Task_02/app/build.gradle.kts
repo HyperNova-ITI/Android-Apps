@@ -4,6 +4,7 @@ plugins {
 
 val novaHost = providers.gradleProperty("novaHost").orElse("192.168.10.20")
 val novaAssistantVolume = providers.gradleProperty("novaAssistantVolume").orElse("-1")
+val novaLinkToken = providers.gradleProperty("novaLinkToken").orElse("")
 
 android {
     namespace = "com.hypernova.ai"
@@ -23,6 +24,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "NOVA_DEFAULT_HOST", "\"${novaHost.get()}\"")
         buildConfigField("int", "NOVA_ASSISTANT_VOLUME_INDEX", novaAssistantVolume.get())
+        buildConfigField("String", "NOVA_LINK_TOKEN", "\"${novaLinkToken.get()}\"")
     }
 
     buildTypes {
@@ -47,6 +49,7 @@ android {
 
 dependencies {
     implementation(project(":hypernova-contracts"))
+    implementation(project(":nova-visuals"))
 
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.appcompat)

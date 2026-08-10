@@ -10,6 +10,8 @@ import android.util.Log
 import com.hypernova.ai.BuildConfig
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 class NovaPcmPlayer(
     context: Context,
@@ -36,6 +38,8 @@ class NovaPcmPlayer(
     private var turnId: String? = null
     private var sampleRate = 0
     private var pendingPcm: ByteArrayOutputStream? = null
+    private var playbackStarted = false
+    private var playbackDone: CountDownLatch? = null
 
     @Synchronized
     fun start(streamId: Long, metadata: ByteArray) {
@@ -95,51 +99,80 @@ class NovaPcmPlayer(
         pendingPcm?.write(pcm)
     }
 
-    @Synchronized
     fun end(streamId: Long) {
-        if (this.streamId != streamId) return
-        val pcm = pendingPcm?.toByteArray() ?: byteArrayOf()
-        if (pcm.isEmpty() || sampleRate <= 0) {
-            stop()
-            return
+        val session = synchronized(this) {
+            if (this.streamId != streamId) return
+            val pcm = pendingPcm?.toByteArray() ?: byteArrayOf()
+            if (pcm.isEmpty() || sampleRate <= 0) {
+                stopLocked()
+                return
+            }
+
+            try {
+                val activeTrack = AudioTrack.Builder()
+                    .setAudioAttributes(attributes)
+                    .setAudioFormat(AudioFormat.Builder()
+                        .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                        .setSampleRate(sampleRate)
+                        .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                        .build())
+                    .setBufferSizeInBytes(pcm.size)
+                    .setTransferMode(AudioTrack.MODE_STATIC)
+                    .build()
+                track = activeTrack
+                val written = activeTrack.write(pcm, 0, pcm.size, AudioTrack.WRITE_BLOCKING)
+                if (written <= 0) {
+                    Log.w(TAG, "Static AudioTrack write failed: $written")
+                    stopLocked()
+                    return
+                }
+                val done = CountDownLatch(1)
+                playbackDone = done
+                activeTrack.setVolume(1f)
+                activeTrack.play()
+                playbackStarted = true
+                // This callback is the Pi's time-to-first-word marker. TTS_START means only that
+                // buffering began; the cockpit enters SPEAKING only after AudioTrack.play().
+                listener.onPlaybackChanged(true, turnId)
+                PlaybackSession(
+                    track = activeTrack,
+                    done = done,
+                    durationMs = (
+                        written.toLong() / BYTES_PER_SAMPLE * 1_000L / sampleRate
+                    ) + PLAYBACK_TAIL_MS,
+                )
+            } catch (error: RuntimeException) {
+                Log.e(TAG, "Could not start assistant PCM playback", error)
+                stopLocked()
+                return
+            }
         }
 
-        val activeTrack = AudioTrack.Builder()
-            .setAudioAttributes(attributes)
-            .setAudioFormat(AudioFormat.Builder()
-                .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-                .setSampleRate(sampleRate)
-                .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
-                .build())
-            .setBufferSizeInBytes(pcm.size)
-            .setTransferMode(AudioTrack.MODE_STATIC)
-            .build()
-        track = activeTrack
-        val written = activeTrack.write(pcm, 0, pcm.size, AudioTrack.WRITE_BLOCKING)
-        if (written < 0) {
-            Log.w(TAG, "Static AudioTrack write failed: $written")
-            stop()
-            return
-        }
-        activeTrack.setVolume(1f)
-        activeTrack.play()
-        // This callback is the Pi's time-to-first-word marker. TTS_START means only that buffering
-        // began; reporting "started" before AudioTrack.play() produced optimistic latency numbers
-        // and showed SPEAKING while the cockpit was still silent.
-        listener.onPlaybackChanged(true, turnId)
-
-        val playbackMs = (written.toLong() / BYTES_PER_SAMPLE * 1_000L / sampleRate) + PLAYBACK_TAIL_MS
+        // Do not hold the player monitor while audio drains. Audio-focus loss, service shutdown,
+        // or a reconnect can now call stop() immediately instead of blocking for up to 30 seconds.
         try {
-            Thread.sleep(playbackMs.coerceAtMost(MAX_PLAYBACK_MS))
+            session.done.await(
+                session.durationMs.coerceAtMost(MAX_PLAYBACK_MS),
+                TimeUnit.MILLISECONDS,
+            )
         } catch (_: InterruptedException) {
             Thread.currentThread().interrupt()
         }
-        stop()
+        synchronized(this) {
+            if (track === session.track) stopLocked()
+        }
     }
 
     @Synchronized
     fun stop() {
-        val wasPlaying = streamId != 0L
+        stopLocked()
+    }
+
+    private fun stopLocked() {
+        val endedTurnId = turnId
+        val reportEnded = playbackStarted
+        playbackDone?.countDown()
+        playbackDone = null
         try {
             track?.stop()
         } catch (_: Exception) {
@@ -150,9 +183,10 @@ class NovaPcmPlayer(
         streamId = 0L
         sampleRate = 0
         pendingPcm = null
+        playbackStarted = false
         audioManager.abandonAudioFocusRequest(focusRequest)
-        if (wasPlaying) listener.onPlaybackChanged(false, turnId)
         turnId = null
+        if (reportEnded) listener.onPlaybackChanged(false, endedTurnId)
     }
 
     private companion object {
@@ -161,4 +195,10 @@ class NovaPcmPlayer(
         const val PLAYBACK_TAIL_MS = 80L
         const val MAX_PLAYBACK_MS = 30_000L
     }
+
+    private data class PlaybackSession(
+        val track: AudioTrack,
+        val done: CountDownLatch,
+        val durationMs: Long,
+    )
 }

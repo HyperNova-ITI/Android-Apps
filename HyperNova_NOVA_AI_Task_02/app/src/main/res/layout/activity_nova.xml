@@ -10,7 +10,7 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/topBar"
         android:layout_width="0dp"
-        android:layout_height="64dp"
+        android:layout_height="58dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -33,7 +33,7 @@
             android:layout_height="32dp"
             android:layout_marginStart="8dp"
             android:contentDescription="@null"
-            android:src="@drawable/ic_nova"
+            android:src="@drawable/nova_face_mark"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toEndOf="@id/buttonBack"
             app:layout_constraintTop_toTopOf="parent" />
@@ -95,11 +95,11 @@
         android:id="@+id/textGreeting"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="34dp"
+        android:layout_marginTop="18dp"
         android:gravity="center"
         android:text="@string/greeting"
         android:textColor="@color/hypernova_text_primary"
-        android:textSize="28sp"
+        android:textSize="26sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/topDivider" />
@@ -117,18 +117,12 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/textGreeting" />
 
-    <ImageView
-        android:id="@+id/orbRing"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="18dp"
-        android:layout_marginEnd="8dp"
-        android:adjustViewBounds="true"
+    <com.hypernova.visuals.NovaFaceView
+        android:id="@+id/novaFace"
+        android:layout_width="190dp"
+        android:layout_height="190dp"
+        android:layout_marginTop="10dp"
         android:contentDescription="@string/nova_artwork"
-        android:scaleType="fitCenter"
-        android:src="@drawable/nova_ai_orb"
-        app:layout_constraintDimensionRatio="3:2"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/textGreetingSubtitle" />
@@ -138,16 +132,16 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:layout_marginBottom="12dp"
+        android:layout_marginBottom="8dp"
         android:background="@drawable/bg_nova_card"
         android:gravity="center_vertical"
-        android:minHeight="156dp"
+        android:minHeight="132dp"
         android:orientation="vertical"
-        android:padding="22dp"
+        android:padding="18dp"
         app:layout_constraintBottom_toTopOf="@id/commandBar"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/orbRing"
+        app:layout_constraintTop_toBottomOf="@id/novaFace"
         app:layout_constraintVertical_bias="0">
 
         <TextView
@@ -167,7 +161,7 @@
             android:layout_marginTop="8dp"
             android:text="@string/unavailable_message"
             android:textColor="@color/hypernova_text_primary"
-            android:textSize="21sp"
+            android:textSize="19sp"
             android:textStyle="bold" />
 
         <TextView
@@ -195,8 +189,8 @@
     <LinearLayout
         android:id="@+id/commandBar"
         android:layout_width="0dp"
-        android:layout_height="64dp"
-        android:layout_marginBottom="18dp"
+        android:layout_height="58dp"
+        android:layout_marginBottom="12dp"
         android:background="@drawable/bg_nova_bottom_bar"
         android:gravity="center_vertical"
         android:orientation="horizontal"

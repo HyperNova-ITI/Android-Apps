@@ -1,6 +1,7 @@
 package com.hypernova.ai.network
 
 import android.util.Log
+import com.hypernova.ai.BuildConfig
 import com.hypernova.ai.protocol.AudioFrame
 import com.hypernova.ai.protocol.AudioFrameCodec
 import com.hypernova.ai.protocol.AudioFrameType
@@ -86,6 +87,7 @@ class NovaAudioClient(
         var backoffMs = 250L
         while (isCurrent(generation)) {
             var connectedSocket: Socket? = null
+            var authenticated = false
             try {
                 connectedSocket = Socket().apply {
                     tcpNoDelay = true
@@ -102,14 +104,22 @@ class NovaAudioClient(
                     }
                 }
                 if (!accepted) break
-                listener.onAudioConnectionChanged(true)
-                sendHello()
+                if (!sendHello()) throw IllegalStateException("audio hello send failed")
                 backoffMs = 250L
 
                 BufferedInputStream(connectedSocket.getInputStream()).use { input ->
                     while (isCurrent(generation)) {
                         val frame = AudioFrameCodec.read(input) ?: break
-                        if (frame.type == AudioFrameType.PING) {
+                        if (frame.type == AudioFrameType.HELLO_ACK) {
+                            if (!authenticated) {
+                                authenticated = true
+                                listener.onAudioConnectionChanged(true)
+                            }
+                        } else if (frame.type == AudioFrameType.AUDIO_ERROR && !authenticated) {
+                            throw SecurityException("Pi rejected NOVA audio authentication")
+                        } else if (!authenticated) {
+                            Log.w(TAG, "Ignored audio frame before authenticated hello: ${frame.type}")
+                        } else if (frame.type == AudioFrameType.PING) {
                             send(AudioFrame(AudioFrameType.PONG))
                         } else {
                             try {
@@ -128,7 +138,9 @@ class NovaAudioClient(
                 }
             } finally {
                 closeConnection(connectedSocket)
-                if (isCurrent(generation)) listener.onAudioConnectionChanged(false)
+                if (authenticated && isCurrent(generation)) {
+                    listener.onAudioConnectionChanged(false)
+                }
             }
 
             if (isCurrent(generation)) {
@@ -145,16 +157,18 @@ class NovaAudioClient(
     private fun isCurrent(generation: Long): Boolean =
         running && lifecycleGeneration.get() == generation
 
-    private fun sendHello() {
+    private fun sendHello(): Boolean =
         send(AudioFrame(
             type = AudioFrameType.HELLO,
             payload = JSONObject().apply {
                 put("client", "nova-android")
                 put("mic", "none")
                 put("tts", "pcm_s16le/mono")
+                if (BuildConfig.NOVA_LINK_TOKEN.isNotBlank()) {
+                    put("auth", BuildConfig.NOVA_LINK_TOKEN)
+                }
             }.toString().toByteArray(Charsets.UTF_8),
         ))
-    }
 
     private fun closeConnection(expectedSocket: Socket? = null) {
         synchronized(writerLock) {

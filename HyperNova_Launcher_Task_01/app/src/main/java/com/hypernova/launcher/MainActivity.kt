@@ -1,14 +1,11 @@
 package com.hypernova.launcher
 
-import android.animation.ObjectAnimator
-import android.animation.PropertyValuesHolder
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.view.animation.LinearInterpolator
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.Toast
@@ -70,8 +67,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var availabilityMonitor: AppAvailabilityMonitor
     private lateinit var themeController: LauncherThemeController
     private lateinit var latestUiState: LauncherUiState
-    private var novaOrbAnimator: ObjectAnimator? = null
-    private var animatedNovaState: AssistantRuntimeState? = null
     private var previousAssistantRuntimeState: AssistantRuntimeState? = null
     private var navigationMapView: MapView? = null
     private var navigationMapController: LauncherNavigationMapController? = null
@@ -328,8 +323,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        novaOrbAnimator?.cancel()
-
         if (::binding.isInitialized) {
             binding.textNovaQuestion.removeCallbacks(
                 resetFeedbackRunnable
@@ -609,7 +602,7 @@ class MainActivity : AppCompatActivity() {
         )
 
         configureDestinationClick(
-            view = binding.imageNovaOrb,
+            view = binding.novaFace,
             destination = AppDestination.NOVA_AI
         )
     }
@@ -907,56 +900,26 @@ class MainActivity : AppCompatActivity() {
             )
         )
 
-        binding.imageNovaOrb.visibility =
+        binding.novaFace.visibility =
             if (state.assistant.artworkVisible) {
                 View.VISIBLE
             } else {
                 View.INVISIBLE
             }
 
-        binding.imageNovaOrb.alpha =
+        binding.novaFace.alpha =
             alphaForConnectionState(
                 state.assistant.connectionState
             )
 
-        animateNovaOrb(state.assistant.runtimeState)
-    }
-
-    /** Keep the launcher widget visually synchronized with NOVA. */
-    private fun animateNovaOrb(state: AssistantRuntimeState) {
-        if (animatedNovaState == state) return
-        animatedNovaState = state
-        novaOrbAnimator?.cancel()
-        binding.imageNovaOrb.rotation = 0f
-        binding.imageNovaOrb.scaleX = 1f
-        binding.imageNovaOrb.scaleY = 1f
-
-        novaOrbAnimator = when (state) {
-            AssistantRuntimeState.LISTENING,
-            AssistantRuntimeState.SPEAKING -> ObjectAnimator.ofPropertyValuesHolder(
-                binding.imageNovaOrb,
-                PropertyValuesHolder.ofFloat(View.SCALE_X, 0.96f, 1.05f),
-                PropertyValuesHolder.ofFloat(View.SCALE_Y, 0.96f, 1.05f),
-            ).apply {
-                duration = if (state == AssistantRuntimeState.SPEAKING) 620L else 920L
-                repeatCount = ObjectAnimator.INFINITE
-                repeatMode = ObjectAnimator.REVERSE
-                start()
-            }
-            AssistantRuntimeState.PROCESSING,
-            AssistantRuntimeState.EXECUTING -> ObjectAnimator.ofFloat(
-                binding.imageNovaOrb,
-                View.ROTATION,
-                0f,
-                360f,
-            ).apply {
-                duration = if (state == AssistantRuntimeState.PROCESSING) 7_000L else 4_500L
-                interpolator = LinearInterpolator()
-                repeatCount = ObjectAnimator.INFINITE
-                start()
-            }
-            else -> null
-        }
+        binding.novaFace.setPalette(
+            accent = ContextCompat.getColor(this, R.color.hypernova_cyan),
+            secondaryAccent = ContextCompat.getColor(this, R.color.hypernova_purple),
+            success = ContextCompat.getColor(this, R.color.hypernova_success),
+            warning = ContextCompat.getColor(this, R.color.hypernova_warning),
+            error = ContextCompat.getColor(this, R.color.hypernova_error),
+        )
+        binding.novaFace.setStateName(state.assistant.runtimeState.name)
     }
 
     /**
