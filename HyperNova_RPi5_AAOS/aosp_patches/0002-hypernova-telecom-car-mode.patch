@@ -1,0 +1,70 @@
+diff --git a/res/values/config.xml b/res/values/config.xml
+index 8ebbd86..fe34322 100644
+--- a/res/values/config.xml
++++ b/res/values/config.xml
+@@ -92,4 +92,17 @@
+         <!-- Used for internal targets -->
+         <item>com.google.android.bluetooth</item>
+     </string-array>
++
++    <!--
++         Optional product-configured car-mode InCallService.
++
++         Empty by default so generic AOSP behavior is unchanged.
++         Automotive products may override these resources using a
++         product resource overlay.
++    -->
++    <string name="default_car_mode_incall_service_package"
++            translatable="false"></string>
++
++    <integer name="default_car_mode_incall_service_priority">0</integer>
++
+ </resources>
+diff --git a/src/com/android/server/telecom/InCallController.java b/src/com/android/server/telecom/InCallController.java
+index 3f8f579..a62d823 100644
+--- a/src/com/android/server/telecom/InCallController.java
++++ b/src/com/android/server/telecom/InCallController.java
+@@ -1330,6 +1330,7 @@ public class InCallController extends CallsManagerListenerBase implements
+         mEmergencyCallHelper = emergencyCallHelper;
+         mCarModeTracker = carModeTracker;
+         mSystemStateHelper.addListener(mSystemStateListener);
++        initializeConfiguredCarModeInCallService();
+         mClockProxy = clockProxy;
+         restrictPhoneCallOps();
+         IntentFilter userAddedFilter = new IntentFilter(Intent.ACTION_USER_ADDED);
+@@ -1338,6 +1339,35 @@ public class InCallController extends CallsManagerListenerBase implements
+         mFeatureFlags = featureFlags;
+     }
+ 
++    /**
++     * Seeds the car-mode InCallService from product configuration.
++     *
++     * Generic AOSP leaves the package resource empty, which preserves the
++     * existing behavior. Automotive products can provide a package and
++     * priority through a product resource overlay.
++     */
++    private void initializeConfiguredCarModeInCallService() {
++        String packageName = mContext.getString(
++                R.string.default_car_mode_incall_service_package);
++
++        if (TextUtils.isEmpty(packageName)) {
++            return;
++        }
++
++        int priority = mContext.getResources().getInteger(
++                R.integer.default_car_mode_incall_service_priority);
++
++        priority = Math.max(0, priority);
++
++        Log.i(this,
++                "initializeConfiguredCarModeInCallService: "
++                        + "packageName=%s, priority=%d",
++                packageName,
++                priority);
++
++        mCarModeTracker.handleEnterCarMode(priority, packageName);
++    }
++
+     private void restrictPhoneCallOps() {
+         PackageTagsList packageRestriction = new PackageTagsList.Builder()
+                 .add(mContext.getPackageName())

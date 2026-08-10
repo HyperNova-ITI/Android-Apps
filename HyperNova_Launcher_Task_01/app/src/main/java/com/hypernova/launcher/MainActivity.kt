@@ -1,30 +1,50 @@
 package com.hypernova.launcher
 
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.FrameLayout
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.hypernova.launcher.core.assistant.NovaAssistantStateParser
+import com.hypernova.launcher.core.assistant.NovaStatusClient
+import com.hypernova.launcher.core.climate.ClimateStatusClient
+import com.hypernova.launcher.core.dashboard.DashboardCard
+import com.hypernova.launcher.core.dashboard.DashboardLayoutOrder
+import com.hypernova.launcher.core.integration.AppAvailability
+import com.hypernova.launcher.core.integration.AppAvailabilityMonitor
 import com.hypernova.launcher.core.integration.AppDestination
 import com.hypernova.launcher.core.integration.AppLaunchResult
 import com.hypernova.launcher.core.integration.AppLauncher
 import com.hypernova.launcher.core.integration.AppRegistry
 import com.hypernova.launcher.core.media.MediaSessionClient
 import com.hypernova.launcher.core.media.MediaSessionSnapshot
+import com.hypernova.launcher.core.navigation.NavigationStatusClient
+import com.hypernova.launcher.core.phone.PhoneStatusClient
+import com.hypernova.launcher.core.settings.SystemSettingsClient
 import com.hypernova.launcher.core.state.AppConnectionState
+import com.hypernova.launcher.core.state.AssistantRuntimeState
+import com.hypernova.launcher.core.state.ClimateUiState
+import com.hypernova.launcher.core.state.IntegratedAppState
 import com.hypernova.launcher.core.state.LauncherStateController
 import com.hypernova.launcher.core.state.LauncherUiState
 import com.hypernova.launcher.core.state.MediaUiState
-import com.hypernova.launcher.core.state.SimpleAppUiState
-import com.hypernova.launcher.core.state.WeatherUiState
+import com.hypernova.launcher.core.state.PhoneUiState
+import com.hypernova.launcher.core.state.RuntimeConnectionState
+import com.hypernova.launcher.core.state.SettingsUiState
 import com.hypernova.launcher.core.theme.LauncherThemeController
 import com.hypernova.launcher.databinding.ActivityMainBinding
+import com.hypernova.launcher.ui.LauncherNavigationMapController
+import org.maplibre.android.MapLibre
+import org.maplibre.android.maps.MapView
 import kotlin.math.roundToInt
 
 class MainActivity : AppCompatActivity() {
@@ -32,14 +52,27 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val TAG = "HyperNovaLauncher"
         private const val FEEDBACK_DURATION_MS = 4000L
+        private const val OPTIONAL_INTEGRATION_DELAY_MS = 250L
     }
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var appLauncher: AppLauncher
     private lateinit var stateController: LauncherStateController
     private lateinit var mediaSessionClient: MediaSessionClient
+    private lateinit var novaStatusClient: NovaStatusClient
+    private lateinit var navigationStatusClient: NavigationStatusClient
+    private lateinit var climateStatusClient: ClimateStatusClient
+    private lateinit var phoneStatusClient: PhoneStatusClient
+    private lateinit var systemSettingsClient: SystemSettingsClient
+    private lateinit var availabilityMonitor: AppAvailabilityMonitor
     private lateinit var themeController: LauncherThemeController
     private lateinit var latestUiState: LauncherUiState
+    private var previousAssistantRuntimeState: AssistantRuntimeState? = null
+    private var navigationMapView: MapView? = null
+    private var navigationMapController: LauncherNavigationMapController? = null
+    private var cockpitIntegrationsReady = false
+    private var activityStarted = false
+    private var activityResumed = false
 
     private val resetFeedbackRunnable = Runnable {
         if (
@@ -56,6 +89,9 @@ class MainActivity : AppCompatActivity() {
         // Create ViewBinding from activity_main.xml.
         binding =
             ActivityMainBinding.inflate(layoutInflater)
+
+        // Arrange the existing approved cards in the production driving order.
+        configureResponsiveDashboardLayout()
 
         // Display the launcher interface.
         setContentView(binding.root)
@@ -90,17 +126,85 @@ class MainActivity : AppCompatActivity() {
                 }
             )
 
+        navigationStatusClient =
+            NavigationStatusClient(this, appLauncher) { snapshot ->
+                runOnUiThread {
+                    stateController.updateNavigationSnapshot(snapshot)
+                    refreshAndRenderState()
+                }
+            }
+
+        climateStatusClient =
+            ClimateStatusClient(this, appLauncher) { snapshot ->
+                runOnUiThread {
+                    stateController.updateClimateSnapshot(snapshot)
+                    refreshAndRenderState()
+                }
+            }
+
+        phoneStatusClient =
+            PhoneStatusClient(this) { snapshot ->
+                runOnUiThread {
+                    stateController.updatePhoneSnapshot(snapshot)
+                    refreshAndRenderState()
+                }
+            }
+
+        systemSettingsClient =
+            SystemSettingsClient(this) { snapshot ->
+                runOnUiThread {
+                    stateController.updateSettingsSnapshot(snapshot)
+                    refreshAndRenderState()
+                }
+            }
+
+        availabilityMonitor =
+            AppAvailabilityMonitor(this, ::handlePackageChanged)
+
+        novaStatusClient =
+            NovaStatusClient(this) { snapshot ->
+                runOnUiThread {
+                    val runtimeState = NovaAssistantStateParser.parse(snapshot.state)
+                    stateController.updateAssistantSnapshot(snapshot)
+                    refreshAndRenderState()
+                    // Climate exposes a frozen one-shot status query rather than a status
+                    // observer. Refresh after a completed NOVA action so the Launcher card and
+                    // the spoken confirmation always describe the same cockpit state.
+                    if (
+                        runtimeState == AssistantRuntimeState.SUCCESS &&
+                        previousAssistantRuntimeState != AssistantRuntimeState.SUCCESS
+                    ) {
+                        climateStatusClient.refresh()
+                    }
+                    previousAssistantRuntimeState = runtimeState
+                }
+            }
+
         configureFullScreenMode()
         configureThemeToggle()
         configureNovaActions()
         configureNavigationCard()
         configureMediaCard()
         configurePhoneAndClimateActions()
-        configureProfileActions()
-        configureQuickCardActions()
+        configureSettingsCard()
         configureBottomNavigation()
 
         refreshAndRenderState()
+
+        /*
+         * Commit a usable HyperNova frame before loading MapLibre or touching
+         * optional cockpit services. Android dispatches onStart/onResume before
+         * the first draw, so those external connections are gated as well.
+         */
+        binding.root.postDelayed(
+            {
+                if (isFinishing || isDestroyed) return@postDelayed
+                initializeNavigationMap(savedInstanceState)
+                cockpitIntegrationsReady = true
+                if (activityStarted) connectCockpitIntegrations()
+            },
+            OPTIONAL_INTEGRATION_DELAY_MS,
+        )
 
         Log.d(
             TAG,
@@ -110,43 +214,112 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
+        activityStarted = true
 
-        if (::mediaSessionClient.isInitialized) {
-            Log.d(
-                TAG,
-                "Connecting to HyperNova MediaSession"
-            )
-
-            mediaSessionClient.connect()
+        /*
+         * MapView lifecycle must mirror Activity lifecycle.
+         * onStop() already stops it, so returning to HOME must call onStart()
+         * before onResume(). Missing this transition is what leaves the
+         * Launcher MapLibre surface black after returning from Navigation.
+         */
+        runOptionalIntegration("start Navigation map") {
+            navigationMapView?.onStart()
         }
+        if (cockpitIntegrationsReady) connectCockpitIntegrations()
     }
 
     override fun onResume() {
         super.onResume()
+        activityResumed = true
+        runOptionalIntegration("resume Navigation map") {
+            navigationMapView?.onResume()
+            navigationMapView?.post {
+                navigationMapController?.refreshScene()
+            }
+        }
 
         if (::themeController.isInitialized) {
             renderThemeToggle()
         }
 
         if (
+            cockpitIntegrationsReady &&
             ::appLauncher.isInitialized &&
             ::stateController.isInitialized
         ) {
+            runOptionalIntegration("refresh Navigation") { navigationStatusClient.refresh() }
+            runOptionalIntegration("refresh Climate") { climateStatusClient.refresh() }
+            runOptionalIntegration("refresh Phone") { phoneStatusClient.refresh() }
+            runOptionalIntegration("refresh Settings") { systemSettingsClient.refresh() }
             refreshAndRenderState()
         }
     }
 
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus && ::binding.isInitialized) {
+            runOptionalIntegration("restore immersive cockpit mode") {
+                configureFullScreenMode()
+            }
+        }
+    }
+
     override fun onStop() {
+        activityStarted = false
+        if (::availabilityMonitor.isInitialized) {
+            runOptionalIntegration("stop package monitor") { availabilityMonitor.stop() }
+        }
+
+        if (::systemSettingsClient.isInitialized) {
+            runOptionalIntegration("disconnect Settings") { systemSettingsClient.disconnect() }
+        }
+
+        if (::phoneStatusClient.isInitialized) {
+            runOptionalIntegration("disconnect Phone") { phoneStatusClient.disconnect() }
+        }
+
+        if (::climateStatusClient.isInitialized) {
+            runOptionalIntegration("disconnect Climate") { climateStatusClient.disconnect() }
+        }
+
+        if (::navigationStatusClient.isInitialized) {
+            runOptionalIntegration("disconnect Navigation") { navigationStatusClient.disconnect() }
+        }
+
+        if (::novaStatusClient.isInitialized) {
+            runOptionalIntegration("disconnect NOVA") { novaStatusClient.disconnect() }
+        }
+
         if (::mediaSessionClient.isInitialized) {
             Log.d(
                 TAG,
                 "Releasing HyperNova MediaController"
             )
 
-            mediaSessionClient.disconnect()
+            runOptionalIntegration("disconnect Media") { mediaSessionClient.disconnect() }
         }
 
+        runOptionalIntegration("stop Navigation map") { navigationMapView?.onStop() }
+
         super.onStop()
+    }
+
+    override fun onPause() {
+        activityResumed = false
+        runOptionalIntegration("pause Navigation map") { navigationMapView?.onPause() }
+        super.onPause()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        runOptionalIntegration("save Navigation map state") {
+            navigationMapView?.onSaveInstanceState(outState)
+        }
+        super.onSaveInstanceState(outState)
+    }
+
+    override fun onLowMemory() {
+        super.onLowMemory()
+        runOptionalIntegration("trim Navigation map") { navigationMapView?.onLowMemory() }
     }
 
     override fun onDestroy() {
@@ -156,8 +329,170 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
+
+        runOptionalIntegration("destroy Navigation map controller") {
+            navigationMapController?.destroy()
+        }
+        navigationMapController = null
+        runOptionalIntegration("destroy Navigation map") { navigationMapView?.onDestroy() }
+        navigationMapView = null
+
         super.onDestroy()
     }
+
+    /**
+     * Reuse the approved card implementations while placing them in the final
+     * hierarchy. The weighted Navigation row consumes the remaining viewport;
+     * the surrounding NestedScrollView provides controlled overflow only when
+     * a smaller portrait display cannot satisfy the Navigation minimum height.
+     */
+    private fun configureResponsiveDashboardLayout() {
+        val cards = mapOf(
+            DashboardCard.CLIMATE to binding.climateCard,
+            DashboardCard.MEDIA to binding.mediaCard,
+            DashboardCard.SETTINGS to binding.settingsCard,
+            DashboardCard.PHONE to binding.phoneCard,
+            DashboardCard.NAVIGATION to binding.navigationCard,
+        )
+
+        binding.climateMediaRow.removeAllViews()
+        binding.settingsPhoneRow.removeAllViews()
+        binding.navigationDashboardRow.removeAllViews()
+
+        addHalfWidthRow(binding.climateMediaRow, DashboardLayoutOrder.firstRow, cards)
+        addHalfWidthRow(binding.settingsPhoneRow, DashboardLayoutOrder.secondRow, cards)
+        binding.navigationDashboardRow.addView(
+            requireNotNull(cards[DashboardLayoutOrder.dominantRow.single()]),
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT,
+            ),
+        )
+    }
+
+    private fun addHalfWidthRow(
+        row: LinearLayout,
+        order: List<DashboardCard>,
+        cards: Map<DashboardCard, View>,
+    ) {
+        order.forEachIndexed { index, card ->
+            row.addView(
+                requireNotNull(cards[card]),
+                halfWidthCardParams(isLeft = index == 0),
+            )
+        }
+    }
+
+    private fun halfWidthCardParams(isLeft: Boolean): LinearLayout.LayoutParams =
+        LinearLayout.LayoutParams(
+            0,
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            1f,
+        ).apply {
+            if (isLeft) rightMargin = dp(4) else leftMargin = dp(4)
+        }
+
+    private fun initializeNavigationMap(savedInstanceState: Bundle?) {
+        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_VULKAN_HARDWARE_VERSION)) {
+            Log.i(TAG, "Vulkan is not advertised; retaining Canvas Navigation fallback")
+            stateController.updateNavigationMapAvailability(false)
+            return
+        }
+
+        runCatching {
+            MapLibre.getInstance(this)
+            val mapView = MapView(this).also { view ->
+                view.contentDescription = getString(R.string.navigation_map_description)
+                view.isClickable = true
+                view.isFocusable = true
+                view.setOnClickListener {
+                    openHyperNovaApp(AppDestination.NAVIGATION)
+                }
+                binding.navigationMapContainer.addView(
+                    view,
+                    0,
+                    FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                    ),
+                )
+                view.onCreate(savedInstanceState)
+            }
+            navigationMapView = mapView
+            navigationMapController =
+                LauncherNavigationMapController(this, mapView).also { controller ->
+                    controller.initialize(
+                        isNightMode = themeController.isNightModeActive(),
+                    ) { available ->
+                        runOnUiThread {
+                            stateController.updateNavigationMapAvailability(available)
+                            if (::latestUiState.isInitialized) refreshAndRenderState()
+                        }
+                    }
+                }
+            /*
+             * Transparent touch target above MapLibre.
+             * MapLibre owns an internal renderer hierarchy, so relying only
+             * on parent/card clicks is not deterministic.
+             */
+            binding.navigationMapContainer
+                .findViewWithTag<View>("hypernova_navigation_map_click_overlay")
+                ?.let { oldOverlay ->
+                    binding.navigationMapContainer.removeView(oldOverlay)
+                }
+
+            val navigationClickOverlay =
+                View(this).apply {
+                    tag = "hypernova_navigation_map_click_overlay"
+                    isClickable = true
+                    isFocusable = true
+                    setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                    setOnClickListener {
+                        openHyperNovaApp(AppDestination.NAVIGATION)
+                    }
+                }
+
+            binding.navigationMapContainer.addView(
+                navigationClickOverlay,
+                FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                ),
+            )
+
+            if (activityStarted) mapView.onStart()
+            if (activityResumed) mapView.onResume()
+        }.onFailure { failure ->
+            Log.w(TAG, "Read-only Navigation map unavailable; retaining Canvas fallback", failure)
+            stateController.updateNavigationMapAvailability(false)
+        }
+    }
+
+    /** Connect each optional integration independently so one failure cannot take down HOME. */
+    private fun connectCockpitIntegrations() {
+        runOptionalIntegration("start package monitor") { availabilityMonitor.start() }
+        runOptionalIntegration("connect Navigation") { navigationStatusClient.connect() }
+        runOptionalIntegration("connect Climate") { climateStatusClient.connect() }
+        runOptionalIntegration("connect Phone") { phoneStatusClient.connect() }
+        runOptionalIntegration("connect Settings") { systemSettingsClient.connect() }
+        runOptionalIntegration("connect Media") {
+            Log.d(TAG, "Connecting to HyperNova MediaSession")
+            mediaSessionClient.connect()
+        }
+        runOptionalIntegration("connect NOVA") { novaStatusClient.connect() }
+    }
+
+    /** Catch runtime and optional native renderer failures at the integration boundary. */
+    private inline fun runOptionalIntegration(operation: String, block: () -> Unit) {
+        try {
+            block()
+        } catch (failure: Throwable) {
+            Log.w(TAG, "Could not $operation; keeping Launcher available", failure)
+        }
+    }
+
+    private fun dp(value: Int): Int =
+        (value * resources.displayMetrics.density).roundToInt()
 
     /**
      * Hide Android system bars for the full-screen cockpit UI.
@@ -267,7 +602,7 @@ class MainActivity : AppCompatActivity() {
         )
 
         configureDestinationClick(
-            view = binding.imageNovaOrb,
+            view = binding.novaFace,
             destination = AppDestination.NOVA_AI
         )
     }
@@ -280,6 +615,10 @@ class MainActivity : AppCompatActivity() {
             view = binding.navigationCard,
             destination = AppDestination.NAVIGATION
         )
+
+        navigationMapView?.setOnClickListener {
+            openHyperNovaApp(AppDestination.NAVIGATION)
+        }
     }
 
     /**
@@ -355,40 +694,8 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    /**
-     * Configure Driver Profile actions.
-     */
-    private fun configureProfileActions() {
-        configureDestinationClick(
-            view = binding.imageDriverAvatar,
-            destination = AppDestination.DRIVER_PROFILE
-        )
-
-        configureDestinationClick(
-            view = binding.profileGroup,
-            destination = AppDestination.DRIVER_PROFILE
-        )
-
-        configureDestinationClick(
-            view = binding.driverCard,
-            destination = AppDestination.DRIVER_PROFILE
-        )
-
-        configureDestinationClick(
-            view = binding.imageDriverQuickAvatar,
-            destination = AppDestination.DRIVER_PROFILE
-        )
-    }
-
-    /**
-     * Configure Weather and Settings quick cards.
-     */
-    private fun configureQuickCardActions() {
-        configureDestinationClick(
-            view = binding.weatherCard,
-            destination = AppDestination.WEATHER
-        )
-
+    /** Configure the Settings dashboard card. */
+    private fun configureSettingsCard() {
         configureDestinationClick(
             view = binding.settingsCard,
             destination = AppDestination.SETTINGS
@@ -495,6 +802,37 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Refresh availability immediately after an adb/package-manager change. */
+    private fun handlePackageChanged(packageName: String) {
+        runOnUiThread {
+            val destination = AppRegistry.getAll()
+                .firstOrNull { it.packageName == packageName }
+                ?.destination
+
+            when (destination) {
+                AppDestination.NAVIGATION -> {
+                    navigationStatusClient.disconnect()
+                    navigationStatusClient.connect()
+                }
+                AppDestination.MEDIA -> mediaSessionClient.connect()
+                AppDestination.CLIMATE -> {
+                    climateStatusClient.disconnect()
+                    climateStatusClient.connect()
+                }
+                AppDestination.PHONE -> phoneStatusClient.refresh()
+                AppDestination.SETTINGS -> systemSettingsClient.refresh()
+                AppDestination.NOVA_AI -> {
+                    novaStatusClient.disconnect()
+                    novaStatusClient.connect()
+                }
+                else -> Unit
+            }
+
+            refreshAndRenderState()
+            Log.d(TAG, "Package state changed: $packageName")
+        }
+    }
+
     /**
      * Request a fresh state and render the complete launcher.
      */
@@ -524,8 +862,6 @@ class MainActivity : AppCompatActivity() {
         renderMediaState(state.media)
         renderPhoneState(state.phone)
         renderClimateState(state.climate)
-        renderWeatherState(state.weather)
-        renderDriverState(state)
         renderSettingsState(state.settings)
     }
 
@@ -564,17 +900,26 @@ class MainActivity : AppCompatActivity() {
             )
         )
 
-        binding.imageNovaOrb.visibility =
+        binding.novaFace.visibility =
             if (state.assistant.artworkVisible) {
                 View.VISIBLE
             } else {
                 View.INVISIBLE
             }
 
-        binding.imageNovaOrb.alpha =
+        binding.novaFace.alpha =
             alphaForConnectionState(
                 state.assistant.connectionState
             )
+
+        binding.novaFace.setPalette(
+            accent = ContextCompat.getColor(this, R.color.hypernova_cyan),
+            secondaryAccent = ContextCompat.getColor(this, R.color.hypernova_purple),
+            success = ContextCompat.getColor(this, R.color.hypernova_success),
+            warning = ContextCompat.getColor(this, R.color.hypernova_warning),
+            error = ContextCompat.getColor(this, R.color.hypernova_error),
+        )
+        binding.novaFace.setStateName(state.assistant.runtimeState.name)
     }
 
     /**
@@ -602,8 +947,8 @@ class MainActivity : AppCompatActivity() {
             state.navigation
 
         binding.navigationCard.alpha =
-            alphaForConnectionState(
-                navigation.connectionState
+            alphaForIntegratedApp(
+                navigation.appState
             )
 
         binding.textRouteDestination.text =
@@ -621,19 +966,29 @@ class MainActivity : AppCompatActivity() {
         binding.textRouteArrival.text =
             navigation.arrivalTime
 
-        binding.imageNavigationMap.visibility =
-            if (navigation.previewVisible) {
-                View.VISIBLE
-            } else {
-                View.INVISIBLE
-            }
+        if (navigation.routePoints.size >= 2) {
+            binding.navigationRoutePreview.setRoute(
+                navigation.routePoints,
+                null,
+                null,
+            )
+            navigationMapController?.setNavigation(
+                navigation.routeId,
+                navigation.routeVersion,
+                navigation.routePoints,
+                null,
+                null,
+            )
+        } else {
+            binding.navigationRoutePreview.clearRoute()
+            navigationMapController?.clearNavigation()
+        }
 
-        binding.imageVehicleMarker.visibility =
-            if (navigation.vehicleMarkerVisible) {
-                View.VISIBLE
-            } else {
-                View.GONE
-            }
+
+        val showMap = navigation.mapAvailable && navigation.routePoints.size >= 2
+        navigationMapView?.visibility = if (showMap) View.VISIBLE else View.INVISIBLE
+        binding.navigationRoutePreview.visibility =
+            if (showMap) View.INVISIBLE else View.VISIBLE
     }
 
     /**
@@ -643,8 +998,8 @@ class MainActivity : AppCompatActivity() {
         media: MediaUiState
     ) {
         binding.mediaCard.alpha =
-            alphaForConnectionState(
-                media.connectionState
+            alphaForIntegratedApp(
+                media.appState
             )
 
         binding.textMediaTrackTitle.text =
@@ -711,11 +1066,11 @@ class MainActivity : AppCompatActivity() {
      * The launcher must not show a fake contact or fake call.
      */
     private fun renderPhoneState(
-        phone: SimpleAppUiState
+        phone: PhoneUiState
     ) {
         binding.phoneCard.alpha =
-            alphaForConnectionState(
-                phone.connectionState
+            alphaForIntegratedApp(
+                phone.appState
             )
 
         binding.textPhoneTitle.text =
@@ -725,29 +1080,14 @@ class MainActivity : AppCompatActivity() {
             phone.statusMessage
 
         binding.imagePhoneConnection.alpha =
-            alphaForConnectionState(
-                phone.connectionState
-            )
-
-        /*
-         * A real contact avatar becomes visible only after
-         * PhoneClient provides a real contact snapshot.
-         */
-        binding.imagePhoneContactAvatar.visibility =
-            View.INVISIBLE
+            if (phone.bluetoothEnabled == true) 1.0f else 0.35f
 
         binding.imagePhonePlaceholder.visibility =
             View.VISIBLE
 
-        /*
-         * Do not claim that a recent contact exists yet.
-         */
-        binding.textPhonePreviewLabel.visibility =
-            View.GONE
-
         val actionAlpha =
-            actionAlphaForConnectionState(
-                phone.connectionState
+            actionAlphaForIntegratedApp(
+                phone.appState
             )
 
         binding.buttonOpenPhone.alpha =
@@ -764,102 +1104,54 @@ class MainActivity : AppCompatActivity() {
      * until ClimateClient supplies real vehicle data.
      */
     private fun renderClimateState(
-        climate: SimpleAppUiState
+        climate: ClimateUiState
     ) {
         binding.climateCard.alpha =
-            alphaForConnectionState(
-                climate.connectionState
+            alphaForIntegratedApp(
+                climate.appState
             )
 
         binding.textClimateTemperature.text =
-            getString(
-                R.string.climate_temperature_unavailable
-            )
+            climate.temperature
 
         binding.textClimateFan.text =
-            getString(
-                R.string.climate_fan_unavailable
-            )
+            climate.fan
 
         binding.textClimateStatus.text =
             climate.statusMessage
 
         val controlAlpha =
-            actionAlphaForConnectionState(
-                climate.connectionState
+            actionAlphaForIntegratedApp(
+                climate.appState
             )
 
         binding.textClimateAuto.alpha =
-            controlAlpha
+            if (climate.autoModeEnabled == true) 1.0f else 0.45f
 
         binding.buttonOpenClimate.alpha =
             controlAlpha
     }
 
     /**
-     * Render Weather quick-card state.
-     */
-    private fun renderWeatherState(
-        weather: WeatherUiState
-    ) {
-        binding.weatherCard.alpha =
-            alphaForConnectionState(
-                weather.connectionState
-            )
-
-        binding.textWeatherTemperature.text =
-            weather.temperature
-
-        binding.textWeatherLocation.text =
-            weather.location
-    }
-
-    /**
-     * Render Driver Profile information.
-     */
-    private fun renderDriverState(
-        state: LauncherUiState
-    ) {
-        binding.textDriverName.text =
-            state.driver.displayName
-
-        binding.textDriverQuickName.text =
-            state.driver.displayName
-
-        val avatarVisibility =
-            if (state.driver.avatarVisible) {
-                View.VISIBLE
-            } else {
-                View.INVISIBLE
-            }
-
-        binding.imageDriverAvatar.visibility =
-            avatarVisibility
-
-        binding.imageDriverQuickAvatar.visibility =
-            avatarVisibility
-    }
-
-    /**
      * Render Settings application state.
      */
     private fun renderSettingsState(
-        settings: SimpleAppUiState
+        settings: SettingsUiState
     ) {
         binding.settingsCard.alpha =
-            alphaForConnectionState(
-                settings.connectionState
+            alphaForIntegratedApp(
+                settings.appState
             )
 
         binding.textSettingsPrimary.text =
-            settings.title
+            settings.primaryText
 
         binding.textSettingsSecondary.text =
-            settings.statusMessage
+            settings.secondaryText
 
         binding.imageSettingsQuick.alpha =
-            alphaForConnectionState(
-                settings.connectionState
+            alphaForIntegratedApp(
+                settings.appState
             )
     }
 
@@ -977,6 +1269,28 @@ class MainActivity : AppCompatActivity() {
 
             AppConnectionState.ERROR ->
                 0.60f
+        }
+    }
+
+    private fun alphaForIntegratedApp(appState: IntegratedAppState): Float {
+        return when (appState.availability) {
+            AppAvailability.NOT_INSTALLED -> 0.60f
+            AppAvailability.NO_LAUNCHABLE_ACTIVITY -> 0.65f
+            AppAvailability.ERROR -> 0.60f
+            AppAvailability.AVAILABLE -> when (appState.connectionState) {
+                RuntimeConnectionState.CONNECTED -> 1.0f
+                RuntimeConnectionState.CONNECTING -> 0.85f
+                RuntimeConnectionState.DISCONNECTED -> 0.75f
+                RuntimeConnectionState.ERROR -> 0.60f
+            }
+        }
+    }
+
+    private fun actionAlphaForIntegratedApp(appState: IntegratedAppState): Float {
+        return if (appState.availability == AppAvailability.AVAILABLE) {
+            1.0f
+        } else {
+            0.45f
         }
     }
 

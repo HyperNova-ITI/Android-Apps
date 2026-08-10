@@ -1198,6 +1198,30 @@ setAudioRoute()
 
 ---
 
+# Implementation status
+
+The starter project has been implemented as a standalone, real-state HyperNova Phone foundation. It uses Kotlin, XML Views, ViewBinding, MVVM, immutable `StateFlow` UI state, public Bluetooth monitoring, provider-backed contacts/call history, and Android Telecom/InCallService foundations.
+
+The default standalone experience is a designed Bluetooth-disconnected screen. It never simulates a paired phone, HFP/PBAP readiness, contacts, recents, or calls. Grant access contextually from the relevant screen to view real platform data.
+
+## Build and launch
+
+```bash
+./gradlew clean assembleDebug
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+adb shell am start -a com.hypernova.phone.action.OPEN -p com.hypernova.phone
+```
+
+The debug artifact is copied to `artifacts/apk/HyperNovaPhone-debug.apk` after a successful build. To capture an attached device render only inside this repository:
+
+```bash
+tools/capture_ui_screenshots.sh
+```
+
+See [architecture](docs/ARCHITECTURE.md), [Bluetooth/Telecom behavior](docs/BLUETOOTH_TELECOM_FLOW.md), [permissions](docs/PERMISSIONS.md), [UI states](docs/UI_STATES.md), and the [AOSP integration plan](docs/AOSP_INTEGRATION.md).
+
+---
+
 # 37. Phone State Model
 
 Suggested state:

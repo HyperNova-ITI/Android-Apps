@@ -3,6 +3,17 @@ package com.hypernova.launcher.core.media
 import android.net.Uri
 import com.hypernova.launcher.core.state.AppConnectionState
 
+enum class MediaPlaybackState {
+    NO_SESSION,
+    IDLE,
+    BUFFERING,
+    PLAYING,
+    PAUSED,
+    STOPPED,
+    ENDED,
+    ERROR,
+}
+
 /**
  * A read-only snapshot received from HyperNova Media.
  *
@@ -10,6 +21,7 @@ import com.hypernova.launcher.core.state.AppConnectionState
  */
 data class MediaSessionSnapshot(
     val connectionState: AppConnectionState,
+    val playbackState: MediaPlaybackState,
     val hasActiveSession: Boolean,
     val hasActiveMediaItem: Boolean,
     val title: String?,
@@ -35,6 +47,11 @@ data class MediaSessionSnapshot(
         ): MediaSessionSnapshot {
             return MediaSessionSnapshot(
                 connectionState = connectionState,
+                playbackState = if (connectionState == AppConnectionState.ERROR) {
+                    MediaPlaybackState.ERROR
+                } else {
+                    MediaPlaybackState.NO_SESSION
+                },
                 hasActiveSession = false,
                 hasActiveMediaItem = false,
                 title = null,

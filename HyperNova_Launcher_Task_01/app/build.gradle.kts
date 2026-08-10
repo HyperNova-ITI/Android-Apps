@@ -24,6 +24,17 @@ android {
             "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // Compile against the frozen sibling contracts without building or writing
+    // inside the read-only HyperNova_Contracts repository.
+    sourceSets.getByName("main") {
+        java.directories.add(
+            rootProject.file("../HyperNova_Contracts/contracts/src/main/java").absolutePath
+        )
+        aidl.directories.add(
+            rootProject.file("../HyperNova_Contracts/contracts/src/main/aidl").absolutePath
+        )
+    }
+
     buildTypes {
         debug {
             // Install the development app beside the system launcher.
@@ -39,6 +50,7 @@ android {
     }
 
     buildFeatures {
+        aidl = true
         // Generate binding classes for XML layout files.
         viewBinding = true
     }
@@ -50,11 +62,15 @@ android {
 }
 
 dependencies {
+    implementation(project(":nova-visuals"))
+
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.core.ktx)
     implementation(libs.material)
+    // Read-only map renderer; version matches HyperNova Navigation.
+    implementation(libs.maplibre.android.sdk)
 
     // Connect to the future HyperNova MediaSessionService.
     implementation("androidx.media3:media3-session:1.10.1")

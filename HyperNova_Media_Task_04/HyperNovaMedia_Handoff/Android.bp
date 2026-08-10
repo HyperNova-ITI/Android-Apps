@@ -1,0 +1,26 @@
+android_app_import {
+    name: "HyperNovaMedia",
+
+    apk: "HyperNovaMedia.apk",
+
+    certificate: "platform",
+
+    privileged: true,
+    system_ext_specific: true,
+
+    required: [
+        "privapp-permissions-com.hypernova.media",
+    ],
+}
+
+prebuilt_etc {
+    name: "privapp-permissions-com.hypernova.media",
+
+    src: "privapp-permissions-com.hypernova.media.xml",
+
+    filename: "privapp-permissions-com.hypernova.media.xml",
+
+    sub_dir: "permissions",
+
+    system_ext_specific: true,
+}

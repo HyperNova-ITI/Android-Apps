@@ -1,0 +1,49 @@
+package {
+    default_applicable_licenses: ["Android-Apache-2.0"],
+}
+
+android_app {
+    name: "HyperNovaMedia",
+
+    srcs: ["src/**/*.java"],
+    resource_dirs: ["res"],
+    manifest: "AndroidManifest.xml",
+
+    platform_apis: true,
+
+    static_libs: [
+        "com.google.android.material_material",
+        "androidx.media3.media3-common",
+        "androidx.media3.media3-exoplayer",
+    ],
+
+    libs: [
+        "android.car",
+    ],
+
+    certificate: "platform",
+    privileged: true,
+    system_ext_specific: true,
+
+    required: [
+        "allowed_privapp_com.hypernova.media",
+    ],
+
+    optimize: {
+        enabled: false,
+    },
+
+    dex_preopt: {
+        enabled: false,
+    },
+
+    java_version: "11",
+}
+
+prebuilt_etc {
+    name: "allowed_privapp_com.hypernova.media",
+    system_ext_specific: true,
+    sub_dir: "permissions",
+    src: "privapp-permissions-com.hypernova.media.xml",
+    filename_from_src: true,
+}

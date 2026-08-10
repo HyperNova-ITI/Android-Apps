@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2026 HyperNova. Licensed under the Apache License, Version 2.0. -->
+<PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:settings="http://schemas.android.com/apk/res-auto"
+    android:title="@string/hypernova_sound">
+
+    <PreferenceCategory android:title="@string/hypernova_audio_group_volume">
+        <com.android.car.settings.hypernova.HyperNovaSliderPreference
+            android:icon="@drawable/hypernova_ic_volume"
+            android:key="@string/pk_hypernova_audio_group_slider"
+            android:title="@string/hypernova_audio_group_volume"
+            settings:controller="com.android.car.settings.hypernova.HyperNovaAudioGroupDetailPreferenceController"
+            settings:showSeekBarValue="false" />
+    </PreferenceCategory>
+</PreferenceScreen>

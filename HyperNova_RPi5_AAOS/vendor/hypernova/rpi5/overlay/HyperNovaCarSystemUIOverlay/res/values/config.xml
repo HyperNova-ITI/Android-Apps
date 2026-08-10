@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- CarSystemUI remains responsible for system dialogs and services, without cockpit chrome. -->
+    <bool name="config_enableTopSystemBar">false</bool>
+    <bool name="config_enableLeftSystemBar">false</bool>
+    <bool name="config_enableRightSystemBar">false</bool>
+    <bool name="config_enableBottomSystemBar">false</bool>
+
+    <!-- No active bar means no display-compat rail and no app-grid/recents entry points. -->
+    <integer name="config_showDisplayCompatToolbarOnSystemBar">0</integer>
+    <integer name="config_systemBarPersistency">1</integer>
+    <bool name="config_enableRecentsEntryPoint">false</bool>
+
+    <!-- Keep the mediator valid while preventing a disabled top/bottom bar requirement. -->
+    <string name="config_notificationPanelViewMediator" translatable="false">com.android.systemui.car.notification.NotificationPanelViewMediator</string>
+
+    <!-- Any legacy app-drawer request resolves to the only supported HOME activity. -->
+    <string name="config_appGridComponentName" translatable="false">com.hypernova.launcher/.MainActivity</string>
+    <string name="system_bar_app_drawer_intent" translatable="false">intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.HOME;package=com.hypernova.launcher;launchFlags=0x24000000;end</string>
+</resources>

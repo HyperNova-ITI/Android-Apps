@@ -1,5 +1,16 @@
 # HyperNova Cockpit — Task 02: NOVA AI Android App
 
+Project guides:
+
+- [Android 16 laptop environment](docs/ANDROID_16_DEVELOPMENT.md)
+- [End-to-end Android + Raspberry Pi test runbook](docs/NOVA_END_TO_END_TEST_RUNBOOK.md)
+- [Full-demo readiness and temporary TC397 bridge](docs/FULL_DEMO_READINESS.md)
+- [Command bridge vertical-slice runbook](docs/NOVA_COMMAND_BRIDGE_RUNBOOK.md)
+- [NOVA code guide](docs/NOVA_CODE_GUIDE.md)
+- [Navigation and Climate command-integration handoff](docs/NAVIGATION_CLIMATE_COMMAND_HANDOFF.md)
+- [Frozen shared AIDL contract source](../HyperNova_Contracts/README.md)
+- [Android ↔ Raspberry Pi runtime protocol](docs/NOVA_RUNTIME_PROTOCOL.md)
+
 > **Project:** HyperNova Cockpit  
 > **Task:** Task 02 — NOVA AI  
 > **Package:** `com.hypernova.ai`  
@@ -11,7 +22,7 @@
 > **Architecture:** Single Activity + MVVM + State Machine + Service Clients  
 > **AI policy:** On-device first, no cloud dependency  
 > **Data policy:** Real state and real command results only  
-> **Status:** Ready for implementation  
+> **Status:** Android 16 integration baseline in progress
 
 ---
 

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2026 HyperNova. Licensed under the Apache License, Version 2.0. -->
+
+<resources>
+
+    <string name="hypernova_bluetooth_paired_devices">Connected &amp; Paired Devices</string>
+    <string name="hypernova_bluetooth_available_devices">Available Devices</string>
+
+    <string name="hypernova_bluetooth_scanning">Scanning…</string>
+    <string name="hypernova_bluetooth_no_devices">No nearby devices found</string>
+
+    <string name="hypernova_bluetooth_connected">Connected</string>
+    <string name="hypernova_bluetooth_paired">Paired</string>
+    <string name="hypernova_bluetooth_pairing">Pairing…</string>
+    <string name="hypernova_bluetooth_connecting">Connecting…</string>
+    <string name="hypernova_bluetooth_tap_to_pair">Tap to pair</string>
+
+    <string name="hypernova_bluetooth_unknown_device">Bluetooth Device</string>
+
+    <string name="hypernova_bluetooth_connect">Connect</string>
+    <string name="hypernova_bluetooth_disconnect">Disconnect</string>
+    <string name="hypernova_bluetooth_forget">Forget Device</string>
+
+    <string name="hypernova_bluetooth_pair_started">Pairing with %1$s…</string>
+    <string name="hypernova_bluetooth_pair_failed">Could not start pairing with %1$s</string>
+
+</resources>

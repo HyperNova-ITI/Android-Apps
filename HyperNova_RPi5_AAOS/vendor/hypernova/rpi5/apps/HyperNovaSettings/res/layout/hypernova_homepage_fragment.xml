@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/hypernova_background"
+    android:clipToPadding="false"
+    android:fillViewport="true"
+    android:overScrollMode="never"
+    android:paddingStart="@dimen/hypernova_page_margin"
+    android:paddingEnd="@dimen/hypernova_page_margin"
+    android:paddingBottom="@dimen/hypernova_space_32">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="142dp"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/hypernova_hero_background"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="22dp"
+            android:paddingTop="18dp"
+            android:paddingEnd="22dp"
+            android:paddingBottom="18dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/hypernova_ready_chip_background"
+                    android:fontFamily="sans-serif-medium"
+                    android:letterSpacing="0.12"
+                    android:text="@string/hypernova_system_ready"
+                    android:textColor="@color/hypernova_cyan"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="@string/hypernova_system_control"
+                    android:textColor="@color/hypernova_text_primary"
+                    android:textSize="23sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:fontFamily="sans-serif"
+                    android:maxLines="2"
+                    android:text="@string/hypernova_system_control_summary"
+                    android:textColor="@color/hypernova_text_secondary"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="150dp"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical|end"
+                android:orientation="vertical">
+
+                <TextClock
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-light"
+                    android:format12Hour="h:mm"
+                    android:format24Hour="HH:mm"
+                    android:textColor="@color/hypernova_text_primary"
+                    android:textSize="34sp" />
+
+                <TextClock
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:format12Hour="EEE, d MMM"
+                    android:format24Hour="EEE, d MMM"
+                    android:textColor="@color/hypernova_cyan"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:layout_marginBottom="12dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" android:background="@color/hypernova_divider" />
+            <TextView
+                style="@style/HyperNovaText.Section"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:layout_marginEnd="14dp"
+                android:text="@string/hypernova_quick_status" />
+            <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" android:background="@color/hypernova_divider" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:baselineAligned="false"
+            android:orientation="horizontal">
+            <include
+                android:id="@+id/hypernova_wifi_status"
+                layout="@layout/hypernova_status_card"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/hypernova_status_height"
+                android:layout_marginEnd="5dp"
+                android:layout_weight="1" />
+            <include
+                android:id="@+id/hypernova_bluetooth_status"
+                layout="@layout/hypernova_status_card"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/hypernova_status_height"
+                android:layout_marginStart="5dp"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:baselineAligned="false"
+            android:orientation="horizontal">
+            <include
+                android:id="@+id/hypernova_brightness_status"
+                layout="@layout/hypernova_status_card"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/hypernova_status_height"
+                android:layout_marginEnd="5dp"
+                android:layout_weight="1" />
+            <include
+                android:id="@+id/hypernova_volume_status"
+                layout="@layout/hypernova_status_card"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/hypernova_status_height"
+                android:layout_marginStart="5dp"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <TextView
+            style="@style/HyperNovaText.Section"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="26dp"
+            android:layout_marginBottom="11dp"
+            android:text="@string/hypernova_settings_categories" />
+
+        <include android:id="@+id/hypernova_display_row" layout="@layout/hypernova_setting_row" android:layout_width="match_parent" android:layout_height="@dimen/hypernova_row_min_height" />
+        <include android:id="@+id/hypernova_sound_row" layout="@layout/hypernova_setting_row" android:layout_width="match_parent" android:layout_height="@dimen/hypernova_row_min_height" android:layout_marginTop="9dp" />
+        <include android:id="@+id/hypernova_wifi_row" layout="@layout/hypernova_setting_row" android:layout_width="match_parent" android:layout_height="@dimen/hypernova_row_min_height" android:layout_marginTop="9dp" />
+        <include android:id="@+id/hypernova_bluetooth_row" layout="@layout/hypernova_setting_row" android:layout_width="match_parent" android:layout_height="@dimen/hypernova_row_min_height" android:layout_marginTop="9dp" />
+        <include android:id="@+id/hypernova_date_time_row" layout="@layout/hypernova_setting_row" android:layout_width="match_parent" android:layout_height="@dimen/hypernova_row_min_height" android:layout_marginTop="9dp" />
+
+        <Space android:layout_width="1dp" android:layout_height="@dimen/hypernova_space_32" />
+    </LinearLayout>
+</ScrollView>

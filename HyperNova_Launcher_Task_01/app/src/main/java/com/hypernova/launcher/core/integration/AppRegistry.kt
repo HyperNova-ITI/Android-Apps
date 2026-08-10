@@ -31,9 +31,12 @@ object AppRegistry {
             openAction = "com.hypernova.media.action.OPEN",
             displayNameResourceId = R.string.app_name_media,
 
-            // Contract expected from HyperNova Media.
+            /*
+             * Media3 MediaSessionService exported by the current
+             * HyperNova Media Android Studio application.
+             */
             serviceClassName =
-                "com.hypernova.media.playback.HyperNovaMediaSessionService"
+                "com.hypernova.media.playback.HyperNovaPlaybackService"
         ),
 
         AppDestination.PHONE to AppSpec(

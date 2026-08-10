@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Keyboard">
+        <item name="fontFamily">sans-serif-medium</item>
+        <item name="textStyle">normal</item>
+        <item name="keyTextSize">@dimen/keyboard_key_letter_height</item>
+        <item name="labelTextSize">@dimen/keyboard_key_letter_height</item>
+
+        <!-- Literal colors avoid introducing any new overlay resource IDs. -->
+        <item name="keyTextColorPrimary">#F5FAFF</item>
+        <item name="keyTextColorSecondary">#B8CBD8</item>
+
+        <item name="keyBackground">@drawable/keyboard_key_background</item>
+    </style>
+</resources>

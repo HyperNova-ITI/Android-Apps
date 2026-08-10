@@ -1,7 +1,12 @@
 package com.hypernova.launcher.core.state
 
 import android.net.Uri
+import com.hypernova.launcher.core.climate.ClimateAvailability
+import com.hypernova.launcher.core.integration.AppAvailability
 import com.hypernova.launcher.core.integration.AppDestination
+import com.hypernova.launcher.core.media.MediaPlaybackState
+import com.hypernova.launcher.core.navigation.NavigationRuntimeState
+import com.hypernova.launcher.core.navigation.NavigationPreviewPoint
 
 /**
  * Complete state displayed by the HyperNova Launcher.
@@ -19,12 +24,40 @@ data class LauncherUiState(
     val assistant: AssistantUiState,
     val navigation: NavigationUiState,
     val media: MediaUiState,
-    val phone: SimpleAppUiState,
-    val climate: SimpleAppUiState,
-    val weather: WeatherUiState,
-    val driver: DriverUiState,
-    val settings: SimpleAppUiState
+    val phone: PhoneUiState,
+    val climate: ClimateUiState,
+    val settings: SettingsUiState
 )
+
+/** Runtime connection is intentionally separate from package availability. */
+enum class RuntimeConnectionState {
+    DISCONNECTED,
+    CONNECTING,
+    CONNECTED,
+    ERROR,
+}
+
+/**
+ * Shared installed/available/connected/active/error dimensions for integrated
+ * applications. No one boolean is used as a substitute for another.
+ */
+data class IntegratedAppState(
+    val availability: AppAvailability,
+    val connectionState: RuntimeConnectionState,
+    val active: Boolean,
+    val errorMessage: String? = null,
+) {
+    val installed: Boolean?
+        get() = when (availability) {
+            AppAvailability.NOT_INSTALLED -> false
+            AppAvailability.AVAILABLE,
+            AppAvailability.NO_LAUNCHABLE_ACTIVITY -> true
+            AppAvailability.ERROR -> null
+        }
+
+    val available: Boolean
+        get() = availability == AppAvailability.AVAILABLE
+}
 
 /**
  * Information displayed in the top status area.
@@ -40,10 +73,22 @@ data class SystemUiState(
  */
 data class AssistantUiState(
     val connectionState: AppConnectionState,
+    val runtimeState: AssistantRuntimeState,
     val headline: String,
     val subtitle: String,
     val artworkVisible: Boolean
 )
+
+enum class AssistantRuntimeState {
+    UNAVAILABLE,
+    IDLE,
+    LISTENING,
+    PROCESSING,
+    EXECUTING,
+    SUCCESS,
+    ERROR,
+    SPEAKING,
+}
 
 /**
  * State displayed by the Navigation card.
@@ -51,15 +96,21 @@ data class AssistantUiState(
  * HyperNova Navigation owns all route information.
  */
 data class NavigationUiState(
-    val connectionState: AppConnectionState,
+    val appState: IntegratedAppState,
+    val runtimeState: NavigationRuntimeState,
     val hasActiveRoute: Boolean,
+    val routeId: String,
+    val routeVersion: Long,
     val destination: String,
     val routeName: String,
     val eta: String,
     val distance: String,
     val arrivalTime: String,
-    val previewVisible: Boolean,
-    val vehicleMarkerVisible: Boolean
+    val routePoints: List<NavigationPreviewPoint>,
+    val currentPosition: NavigationPreviewPoint?,
+    val currentBearingDegrees: Float?,
+    val positionAvailable: Boolean,
+    val mapAvailable: Boolean,
 )
 
 /**
@@ -69,7 +120,8 @@ data class NavigationUiState(
  * The launcher does not own media playback or metadata.
  */
 data class MediaUiState(
-    val connectionState: AppConnectionState,
+    val appState: IntegratedAppState,
+    val playbackState: MediaPlaybackState,
     val hasActiveSession: Boolean,
     val hasActiveMediaItem: Boolean,
     val title: String,
@@ -85,40 +137,27 @@ data class MediaUiState(
     val artworkVisible: Boolean
 )
 
-/**
- * State displayed by the Weather quick card.
- *
- * HyperNova Weather owns temperature, location and condition data.
- */
-data class WeatherUiState(
-    val connectionState: AppConnectionState,
-    val temperature: String,
-    val location: String,
-    val condition: String
-)
-
-/**
- * State displayed by the Driver Profile areas.
- */
-data class DriverUiState(
-    val connectionState: AppConnectionState,
-    val displayName: String,
-    val avatarVisible: Boolean
-)
-
-/**
- * Basic state for applications whose detailed service
- * contracts will be connected later.
- *
- * Currently used by:
- *
- * - Phone
- * - Climate
- * - Settings
- */
-data class SimpleAppUiState(
-    val destination: AppDestination,
-    val connectionState: AppConnectionState,
+/** Safe Phone availability and non-privileged Bluetooth state. */
+data class PhoneUiState(
+    val appState: IntegratedAppState,
     val title: String,
-    val statusMessage: String
+    val statusMessage: String,
+    val bluetoothEnabled: Boolean?,
+)
+
+/** Real Climate contract state, when the app exposes its read-only service. */
+data class ClimateUiState(
+    val appState: IntegratedAppState,
+    val availability: ClimateAvailability,
+    val temperature: String,
+    val fan: String,
+    val statusMessage: String,
+    val autoModeEnabled: Boolean?,
+)
+
+/** Real Android framework values displayed by the Settings card. */
+data class SettingsUiState(
+    val appState: IntegratedAppState,
+    val primaryText: String,
+    val secondaryText: String,
 )

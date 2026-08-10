@@ -1,0 +1,15 @@
+android_app_import {
+    name: "HyperNovaMedia",
+
+    apk: "HyperNovaMedia.apk",
+
+    certificate: "platform",
+
+    system_ext_specific: true,
+
+    enforce_uses_libs: false,
+
+    dex_preopt: {
+        enabled: false,
+    },
+}

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Wide cockpit layout: source selection and playback remain visible above the fold. -->
+    <dimen name="hn_page_margin">14dp</dimen>
+    <dimen name="hn_header_height">52dp</dimen>
+    <dimen name="hn_source_height">64dp</dimen>
+    <dimen name="hn_hero_height">176dp</dimen>
+    <dimen name="hn_radio_list_height">176dp</dimen>
+    <dimen name="hn_library_list_height">200dp</dimen>
+</resources>

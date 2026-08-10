@@ -1,0 +1,482 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_screen"
+    tools:context=".MainActivity">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/header"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/hn_header_height"
+        android:paddingStart="8dp"
+        android:paddingEnd="12dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageButton
+            android:id="@+id/button_back"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/back"
+            android:padding="11dp"
+            android:src="@drawable/ic_back"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <View
+            android:id="@+id/header_divider"
+            android:layout_width="1dp"
+            android:layout_height="26dp"
+            android:background="@color/hn_border_soft"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@id/button_back"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:id="@+id/header_icon"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginStart="14dp"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_music"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@id/header_divider"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/header_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:letterSpacing="0.08"
+            android:text="@string/media"
+            android:textColor="@color/hn_text_primary"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@id/header_icon"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <View
+            android:id="@+id/status_dot"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:layout_marginStart="12dp"
+            android:background="@drawable/bg_status_dot"
+            app:layout_constraintBottom_toBottomOf="@id/header_state"
+            app:layout_constraintStart_toEndOf="@id/header_title"
+            app:layout_constraintTop_toTopOf="@id/header_state" />
+
+        <TextView
+            android:id="@+id/header_state"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="6dp"
+            android:ellipsize="end"
+            android:gravity="end"
+            android:maxLines="1"
+            android:text="SELECT SOURCE"
+            android:textColor="@color/hn_text_secondary"
+            android:textSize="11sp"
+            app:layout_constraintEnd_toStartOf="@id/header_time"
+            app:layout_constraintStart_toEndOf="@id/status_dot"
+            app:layout_constraintTop_toTopOf="@id/header_title"
+            app:layout_constraintBottom_toBottomOf="@id/header_title" />
+
+        <TextView
+            android:id="@+id/header_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:textColor="@color/hn_text_primary"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="19:28" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <View
+        android:id="@+id/separator"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:background="@color/hn_border_soft"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/header" />
+
+    <LinearLayout
+        android:id="@+id/source_selector"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/hn_source_height"
+        android:layout_marginStart="@dimen/hn_page_margin"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="@dimen/hn_page_margin"
+        android:baselineAligned="false"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/separator">
+
+        <LinearLayout
+            android:id="@+id/card_radio"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="5dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_card"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="10dp">
+            <ImageView android:id="@+id/source_icon_radio" android:layout_width="30dp" android:layout_height="30dp" android:contentDescription="@null" android:src="@drawable/ic_radio" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:layout_weight="1" android:orientation="vertical">
+                <TextView android:id="@+id/source_title_radio" android:layout_width="match_parent" android:layout_height="wrap_content" android:maxLines="1" android:text="@string/radio" android:textColor="@color/hn_text_primary" android:textSize="14sp" />
+                <TextView android:id="@+id/source_subtitle_radio" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="1" android:text="@string/internet_streams" android:textColor="@color/hn_text_secondary" android:textSize="11sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/card_bluetooth"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginHorizontal="5dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_card"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="10dp">
+            <ImageView android:id="@+id/source_icon_bluetooth" android:layout_width="28dp" android:layout_height="28dp" android:contentDescription="@null" android:src="@drawable/ic_bluetooth" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:layout_weight="1" android:orientation="vertical">
+                <TextView android:id="@+id/source_title_bluetooth" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="1" android:text="@string/bluetooth" android:textColor="@color/hn_text_primary" android:textSize="14sp" />
+                <TextView android:id="@+id/source_subtitle_bluetooth" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="1" android:text="@string/audio_output" android:textColor="@color/hn_text_secondary" android:textSize="11sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/card_library"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="5dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_card"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="10dp">
+            <ImageView android:id="@+id/source_icon_library" android:layout_width="28dp" android:layout_height="28dp" android:contentDescription="@null" android:src="@drawable/ic_library" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:layout_weight="1" android:orientation="vertical">
+                <TextView android:id="@+id/source_title_library" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="1" android:text="@string/library" android:textColor="@color/hn_text_primary" android:textSize="14sp" />
+                <TextView android:id="@+id/source_subtitle_library" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="1" android:text="@string/local_usb" android:textColor="@color/hn_text_secondary" android:textSize="11sp" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/content_scroll"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        android:paddingBottom="12dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/source_selector">
+
+        <LinearLayout
+            android:id="@+id/content_stack"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/hn_page_margin"
+            android:paddingTop="12dp"
+            android:paddingEnd="@dimen/hn_page_margin">
+
+            <FrameLayout
+                android:id="@+id/hero_card"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/hn_hero_height"
+                android:background="@drawable/bg_hero"
+                android:clipToOutline="true">
+
+                <com.hypernova.media.visualizer.HyperNovaImmersiveVisualizerView
+                    android:id="@+id/visualizer"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+
+                <FrameLayout
+                    android:id="@+id/video_host"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+                    <androidx.media3.ui.PlayerView
+                        android:id="@+id/player_view"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="#FF000000"
+                        android:visibility="gone"
+                        app:resize_mode="fit"
+                        app:show_buffering="always"
+                        app:use_artwork="false"
+                        app:use_controller="false" />
+                </FrameLayout>
+
+                <ImageButton
+                    android:id="@+id/button_fullscreen"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="top|end"
+                    android:layout_margin="6dp"
+                    android:background="@drawable/bg_icon"
+                    android:contentDescription="@string/fullscreen"
+                    android:padding="12dp"
+                    android:src="@drawable/ic_fullscreen"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/demo_badge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="top|start"
+                    android:layout_margin="12dp"
+                    android:background="@drawable/bg_demo"
+                    android:text="@string/demo"
+                    android:textColor="@android:color/white"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:id="@+id/hero_copy"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom"
+                    android:background="@color/hn_scrim"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+                    <TextView android:id="@+id/hero_eyebrow" style="@style/Text.HyperNova.Eyebrow" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/immersive_audio" />
+                    <TextView android:id="@+id/hero_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="1" android:text="@string/choose_source_title" android:textColor="@android:color/white" android:textSize="25sp" />
+                    <TextView android:id="@+id/hero_subtitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:ellipsize="end" android:maxLines="2" android:text="@string/choose_source_body" android:textColor="#C5D3DC" android:textSize="13sp" />
+                </LinearLayout>
+            </FrameLayout>
+
+            <LinearLayout
+                android:id="@+id/state_panel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_card"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="16dp">
+                <ImageView android:id="@+id/state_icon" android:layout_width="44dp" android:layout_height="44dp" android:contentDescription="@null" android:src="@drawable/ic_music" />
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="14dp" android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:id="@+id/state_eyebrow" style="@style/Text.HyperNova.Eyebrow" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="READY" />
+                    <TextView android:id="@+id/state_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:textColor="@color/hn_text_primary" android:textSize="19sp" tools:text="Choose a source" />
+                    <TextView android:id="@+id/state_message" style="@style/Text.HyperNova.Body" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:maxLines="3" tools:text="Real source state appears here." />
+                </LinearLayout>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/state_action"
+                    style="@style/Widget.HyperNova.Action"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/retry"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/radio_panel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_card"
+                android:orientation="vertical"
+                android:padding="12dp"
+                android:visibility="gone">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="INTERNET RADIO · RADIO BROWSER"
+                    android:textColor="@color/hn_cyan"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+                <EditText
+                    android:id="@+id/radio_search"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_input"
+                    android:drawableStart="@drawable/ic_search"
+                    android:drawablePadding="10dp"
+                    android:hint="@string/search_stations"
+                    android:imeOptions="actionDone"
+                    android:inputType="text"
+                    android:singleLine="true"
+                    android:textColor="@color/hn_text_primary"
+                    android:textColorHint="@color/hn_text_muted" />
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:overScrollMode="never"
+                    android:scrollbars="none">
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <com.google.android.material.button.MaterialButton android:id="@+id/radio_chip_popular" style="@style/Widget.HyperNova.Chip" android:layout_width="wrap_content" android:layout_height="42dp" android:text="Popular" />
+                        <com.google.android.material.button.MaterialButton android:id="@+id/radio_chip_top_voted" style="@style/Widget.HyperNova.Chip" android:layout_width="wrap_content" android:layout_height="42dp" android:layout_marginStart="6dp" android:text="Top voted" />
+                        <com.google.android.material.button.MaterialButton android:id="@+id/radio_chip_trending" style="@style/Widget.HyperNova.Chip" android:layout_width="wrap_content" android:layout_height="42dp" android:layout_marginStart="6dp" android:text="Trending" />
+                        <com.google.android.material.button.MaterialButton android:id="@+id/radio_chip_egypt" style="@style/Widget.HyperNova.Chip" android:layout_width="wrap_content" android:layout_height="42dp" android:layout_marginStart="6dp" android:text="Egypt" />
+                        <com.google.android.material.button.MaterialButton android:id="@+id/radio_chip_arabic" style="@style/Widget.HyperNova.Chip" android:layout_width="wrap_content" android:layout_height="42dp" android:layout_marginStart="6dp" android:text="Arabic" />
+                        <com.google.android.material.button.MaterialButton android:id="@+id/radio_chip_english" style="@style/Widget.HyperNova.Chip" android:layout_width="wrap_content" android:layout_height="42dp" android:layout_marginStart="6dp" android:text="English" />
+                        <com.google.android.material.button.MaterialButton android:id="@+id/radio_chip_genre" style="@style/Widget.HyperNova.Chip" android:layout_width="wrap_content" android:layout_height="42dp" android:layout_marginStart="6dp" android:text="Genre" />
+                        <com.google.android.material.button.MaterialButton android:id="@+id/radio_chip_favorites" style="@style/Widget.HyperNova.Chip" android:layout_width="wrap_content" android:layout_height="42dp" android:layout_marginStart="6dp" android:text="Favorites" />
+                        <com.google.android.material.button.MaterialButton android:id="@+id/radio_chip_recent" style="@style/Widget.HyperNova.Chip" android:layout_width="wrap_content" android:layout_height="42dp" android:layout_marginStart="6dp" android:text="Recent" />
+                    </LinearLayout>
+                </HorizontalScrollView>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="7dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+                    <TextView
+                        android:id="@+id/radio_catalog_status"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:ellipsize="end"
+                        android:maxLines="2"
+                        android:textColor="@color/hn_text_secondary"
+                        android:textSize="11sp"
+                        tools:text="Finding healthy stations…" />
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/button_radio_refresh"
+                        style="@style/Widget.HyperNova.Chip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="42dp"
+                        android:text="Refresh" />
+                </LinearLayout>
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/radio_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/hn_radio_list_height"
+                    android:layout_marginTop="8dp"
+                    android:nestedScrollingEnabled="false" />
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:orientation="horizontal">
+                    <com.google.android.material.button.MaterialButton android:id="@+id/button_add_station" style="@style/Widget.HyperNova.Action" android:layout_width="0dp" android:layout_height="48dp" android:layout_marginEnd="5dp" android:layout_weight="1" android:text="@string/add_station" />
+                    <com.google.android.material.button.MaterialButton android:id="@+id/button_manage_stations" style="@style/Widget.HyperNova.Action" android:layout_width="0dp" android:layout_height="48dp" android:layout_marginStart="5dp" android:layout_weight="1" android:text="@string/manage" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/now_playing_panel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_card"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:visibility="gone">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                    <TextView android:id="@+id/media_badge" android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/bg_demo" android:paddingHorizontal="9dp" android:paddingVertical="5dp" android:text="MEDIA" android:textColor="@android:color/white" android:textSize="11sp" android:textStyle="bold" />
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:layout_weight="1" android:orientation="vertical">
+                        <TextView android:id="@+id/media_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="1" android:textColor="@color/hn_text_primary" android:textSize="20sp" tools:text="Track title" />
+                        <TextView android:id="@+id/media_subtitle" style="@style/Text.HyperNova.Body" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="1" tools:text="Artist · Album" />
+                    </LinearLayout>
+                    <ImageButton android:id="@+id/button_favorite" android:layout_width="48dp" android:layout_height="48dp" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="@string/favorite" android:padding="12dp" android:src="@drawable/ic_star" />
+                </LinearLayout>
+                <SeekBar
+                    android:id="@+id/seek_bar"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:layout_marginTop="6dp"
+                    android:max="1000"
+                    android:minHeight="44dp"
+                    android:maxHeight="44dp"
+                    android:paddingStart="3dp"
+                    android:paddingEnd="3dp"
+                    android:splitTrack="false"
+                    android:thumbOffset="0dp"
+                    android:progressDrawable="@drawable/hn_seekbar_progress"
+                    android:thumb="@drawable/hn_seekbar_thumb" />
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                    <TextView android:id="@+id/time_elapsed" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="0:00" android:textColor="@color/hn_text_secondary" android:textSize="11sp" />
+                    <TextView android:id="@+id/time_duration" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--:--" android:textColor="@color/hn_text_secondary" android:textSize="11sp" />
+                </LinearLayout>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="64dp" android:layout_marginTop="6dp" android:gravity="center" android:orientation="horizontal">
+                    <ImageButton android:id="@+id/button_previous" android:layout_width="52dp" android:layout_height="52dp" android:background="@drawable/bg_icon" android:contentDescription="@string/previous" android:padding="13dp" android:src="@drawable/ic_previous" />
+                    <ImageButton android:id="@+id/button_rewind" android:layout_width="52dp" android:layout_height="52dp" android:layout_marginStart="10dp" android:background="@drawable/bg_icon" android:contentDescription="@string/rewind" android:padding="13dp" android:src="@drawable/ic_replay_10" />
+                    <ImageButton android:id="@+id/button_play_pause" android:layout_width="62dp" android:layout_height="62dp" android:layout_marginHorizontal="14dp" android:background="@drawable/bg_play" android:contentDescription="@string/play_pause" android:padding="14dp" android:src="@drawable/ic_play" />
+                    <ImageButton android:id="@+id/button_forward" android:layout_width="52dp" android:layout_height="52dp" android:layout_marginEnd="10dp" android:background="@drawable/bg_icon" android:contentDescription="@string/forward" android:padding="13dp" android:src="@drawable/ic_forward_10" />
+                    <ImageButton android:id="@+id/button_next" android:layout_width="52dp" android:layout_height="52dp" android:background="@drawable/bg_icon" android:contentDescription="@string/next" android:padding="13dp" android:src="@drawable/ic_next" />
+                </LinearLayout>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:orientation="horizontal">
+                    <com.google.android.material.button.MaterialButton android:id="@+id/button_shuffle" style="@style/Widget.HyperNova.Chip" android:layout_width="0dp" android:layout_height="48dp" android:layout_marginEnd="4dp" android:layout_weight="1" android:text="@string/shuffle" app:icon="@drawable/ic_shuffle" app:iconGravity="textStart" />
+                    <com.google.android.material.button.MaterialButton android:id="@+id/button_repeat" style="@style/Widget.HyperNova.Chip" android:layout_width="0dp" android:layout_height="48dp" android:layout_marginHorizontal="4dp" android:layout_weight="1" android:text="@string/repeat" app:icon="@drawable/ic_repeat" app:iconGravity="textStart" />
+                    <com.google.android.material.button.MaterialButton android:id="@+id/button_more" style="@style/Widget.HyperNova.Chip" android:layout_width="0dp" android:layout_height="48dp" android:layout_marginStart="4dp" android:layout_weight="1" android:text="@string/queue" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/library_panel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_card"
+                android:orientation="vertical"
+                android:padding="12dp"
+                android:visibility="gone">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                    <com.google.android.material.button.MaterialButton android:id="@+id/button_select_folder" style="@style/Widget.HyperNova.Action" android:layout_width="0dp" android:layout_height="48dp" android:layout_marginEnd="4dp" android:layout_weight="1" android:singleLine="true" android:text="Select USB folder" android:textSize="11sp" />
+                    <com.google.android.material.button.MaterialButton android:id="@+id/button_device_media" style="@style/Widget.HyperNova.Action" android:layout_width="0dp" android:layout_height="48dp" android:layout_marginHorizontal="4dp" android:layout_weight="1" android:singleLine="true" android:text="Allow media" android:textSize="11sp" />
+                    <com.google.android.material.button.MaterialButton android:id="@+id/button_rescan" style="@style/Widget.HyperNova.Action" android:layout_width="wrap_content" android:layout_height="48dp" android:layout_marginStart="4dp" android:singleLine="true" android:text="@string/rescan" android:textSize="12sp" />
+                </LinearLayout>
+                <EditText android:id="@+id/library_search" android:layout_width="match_parent" android:layout_height="48dp" android:layout_marginTop="9dp" android:background="@drawable/bg_input" android:drawableStart="@drawable/ic_search" android:drawablePadding="10dp" android:hint="@string/search_library" android:imeOptions="actionDone" android:inputType="text" android:singleLine="true" android:textColor="@color/hn_text_primary" android:textColorHint="@color/hn_text_muted" />
+                <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:overScrollMode="never" android:scrollbars="none">
+                    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal">
+                        <com.google.android.material.button.MaterialButton android:id="@+id/chip_tracks" style="@style/Widget.HyperNova.Chip" android:layout_width="wrap_content" android:layout_height="42dp" android:text="@string/tracks" />
+                        <com.google.android.material.button.MaterialButton android:id="@+id/chip_artists" style="@style/Widget.HyperNova.Chip" android:layout_width="wrap_content" android:layout_height="42dp" android:layout_marginStart="6dp" android:text="@string/artists" />
+                        <com.google.android.material.button.MaterialButton android:id="@+id/chip_albums" style="@style/Widget.HyperNova.Chip" android:layout_width="wrap_content" android:layout_height="42dp" android:layout_marginStart="6dp" android:text="@string/albums" />
+                        <com.google.android.material.button.MaterialButton android:id="@+id/chip_genres" style="@style/Widget.HyperNova.Chip" android:layout_width="wrap_content" android:layout_height="42dp" android:layout_marginStart="6dp" android:text="@string/genres" />
+                        <com.google.android.material.button.MaterialButton android:id="@+id/chip_videos" style="@style/Widget.HyperNova.Chip" android:layout_width="wrap_content" android:layout_height="42dp" android:layout_marginStart="6dp" android:text="@string/videos" />
+                        <com.google.android.material.button.MaterialButton android:id="@+id/chip_folders" style="@style/Widget.HyperNova.Chip" android:layout_width="wrap_content" android:layout_height="42dp" android:layout_marginStart="6dp" android:text="@string/folders" />
+                        <com.google.android.material.button.MaterialButton android:id="@+id/chip_recent" style="@style/Widget.HyperNova.Chip" android:layout_width="wrap_content" android:layout_height="42dp" android:layout_marginStart="6dp" android:text="@string/recent" />
+                        <com.google.android.material.button.MaterialButton android:id="@+id/chip_favorites" style="@style/Widget.HyperNova.Chip" android:layout_width="wrap_content" android:layout_height="42dp" android:layout_marginStart="6dp" android:text="@string/favorites" />
+                    </LinearLayout>
+                </HorizontalScrollView>
+                <TextView android:id="@+id/library_count" style="@style/Text.HyperNova.Eyebrow" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" tools:text="12 ITEMS · DEVICE MEDIA" />
+                <androidx.recyclerview.widget.RecyclerView android:id="@+id/library_list" android:layout_width="match_parent" android:layout_height="@dimen/hn_library_list_height" android:layout_marginTop="6dp" android:nestedScrollingEnabled="false" />
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <FrameLayout
+        android:id="@+id/fullscreen_panel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#FF000000"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+        <FrameLayout android:id="@+id/fullscreen_video_host" android:layout_width="match_parent" android:layout_height="match_parent" />
+        <ImageButton android:id="@+id/button_exit_fullscreen" android:layout_width="52dp" android:layout_height="52dp" android:layout_gravity="top|start" android:layout_margin="16dp" android:background="@drawable/bg_icon" android:contentDescription="@string/back" android:padding="13dp" android:src="@drawable/ic_back" />
+    </FrameLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
+

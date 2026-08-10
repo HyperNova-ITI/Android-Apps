@@ -1,0 +1,49 @@
+package {
+    default_applicable_licenses: [
+        "Android-Apache-2.0",
+    ],
+}
+
+android_app {
+    name: "HyperNovaConnectivityService",
+
+    srcs: [
+        "src/**/*.java",
+    ],
+
+    static_libs: [
+        "HyperNovaConnectivityContracts",
+    ],
+
+    platform_apis: true,
+
+    certificate: "platform",
+
+    privileged: true,
+
+    system_ext_specific: true,
+
+    optimize: {
+        enabled: false,
+    },
+
+    dex_preopt: {
+        enabled: false,
+    },
+
+    required: [
+        "privapp-permissions-com.hypernova.connectivity",
+    ],
+}
+
+prebuilt_etc {
+    name: "privapp-permissions-com.hypernova.connectivity",
+
+    src: "permissions/privapp-permissions-com.hypernova.connectivity.xml",
+
+    filename: "privapp-permissions-com.hypernova.connectivity.xml",
+
+    sub_dir: "permissions",
+
+    system_ext_specific: true,
+}

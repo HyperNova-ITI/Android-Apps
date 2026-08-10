@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2026 HyperNova. Licensed under the Apache License, Version 2.0. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/hypernova_header"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/hypernova_header_height"
+    android:background="@color/hypernova_background"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/hypernova_header_content_height"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/hypernova_space_12"
+        android:paddingEnd="@dimen/hypernova_page_margin">
+
+        <FrameLayout
+            android:id="@+id/hypernova_header_back"
+            android:layout_width="@dimen/hypernova_touch_target"
+            android:layout_height="@dimen/hypernova_touch_target"
+            android:background="@drawable/hypernova_icon_button_background"
+            android:clickable="true"
+            android:contentDescription="@string/hypernova_back"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="@dimen/hypernova_header_back_icon_size"
+                android:layout_height="@dimen/hypernova_header_back_icon_size"
+                android:layout_gravity="center"
+                android:contentDescription="@null"
+                android:src="@drawable/hypernova_ic_back"
+                android:tint="@color/hypernova_text_primary" />
+        </FrameLayout>
+
+        <ImageView
+            android:id="@+id/hypernova_header_icon"
+            android:layout_width="@dimen/hypernova_header_icon_size"
+            android:layout_height="@dimen/hypernova_header_icon_size"
+            android:layout_marginStart="@dimen/hypernova_space_12"
+            android:contentDescription="@null"
+            android:src="@drawable/hypernova_ic_settings"
+            android:tint="@color/hypernova_text_secondary" />
+
+        <TextView
+            android:id="@+id/hypernova_header_title"
+            style="@style/HyperNovaText.ScreenTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/hypernova_space_12"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="@string/hypernova_settings"
+            android:textAllCaps="true" />
+
+        <TextClock
+            android:id="@+id/hypernova_header_time"
+            style="@style/HyperNovaText.Value"
+            android:layout_width="@dimen/hypernova_header_time_width"
+            android:layout_height="wrap_content"
+            android:format12Hour="h:mm"
+            android:format24Hour="HH:mm"
+            android:gravity="end|center_vertical"
+            android:importantForAccessibility="no"
+            android:textColor="@color/hypernova_text_primary" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/hypernova_divider" />
+</LinearLayout>

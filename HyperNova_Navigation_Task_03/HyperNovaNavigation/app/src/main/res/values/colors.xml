@@ -9,6 +9,8 @@
     <color name="hypernova_card">#FFFFFFFF</color>
     <color name="hypernova_card_elevated">#F1F5F9</color>
     <color name="hypernova_selected">#DDF8FB</color>
+    <color name="hypernova_overlay">#F2FFFFFF</color>
+    <color name="hypernova_map_scrim">#26020A13</color>
 
     <!-- Borders and dividers -->
     <color name="hypernova_border">#B7C5D3</color>
@@ -28,6 +30,8 @@
     <color name="hypernova_success">#168A32</color>
     <color name="hypernova_warning">#B86E00</color>
     <color name="hypernova_error">#C62835</color>
+    <color name="hypernova_on_cyan">#020A13</color>
+    <color name="hypernova_focus">#0B9EAC</color>
 
     <!-- Standard colors -->
     <color name="white">#FFFFFFFF</color>

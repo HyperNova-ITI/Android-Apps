@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.HyperNovaNova" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowBackground">@drawable/bg_nova_screen</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="colorPrimary">@color/hypernova_cyan</item>
+        <item name="colorOnPrimary">@color/hypernova_text_dark</item>
+        <item name="colorSecondary">@color/hypernova_purple</item>
+        <item name="colorSurface">@color/hypernova_card</item>
+        <item name="colorOnSurface">@color/hypernova_text_primary</item>
+        <item name="colorOutline">@color/hypernova_border</item>
+    </style>
+
+    <style name="Widget.HyperNovaNova.PrimaryButton" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/hypernova_cyan</item>
+        <item name="android:textColor">@color/hypernova_text_dark</item>
+        <item name="cornerRadius">24dp</item>
+        <item name="android:minHeight">48dp</item>
+    </style>
+
+    <style name="Widget.HyperNovaNova.OutlineButton" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:textColor">@color/hypernova_cyan</item>
+        <item name="strokeColor">@color/hypernova_cyan</item>
+        <item name="cornerRadius">24dp</item>
+        <item name="android:minHeight">48dp</item>
+    </style>
+</resources>

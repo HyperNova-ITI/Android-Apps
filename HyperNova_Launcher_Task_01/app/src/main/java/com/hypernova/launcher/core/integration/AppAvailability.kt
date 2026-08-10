@@ -18,5 +18,8 @@ enum class AppAvailability {
     /**
      * The package exists, but it does not expose a launchable Activity.
      */
-    NO_LAUNCHABLE_ACTIVITY
+    NO_LAUNCHABLE_ACTIVITY,
+
+    /** Android could not determine package availability. */
+    ERROR
 }

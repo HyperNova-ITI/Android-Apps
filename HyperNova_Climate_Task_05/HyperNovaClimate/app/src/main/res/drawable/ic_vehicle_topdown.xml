@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Functional top-down vehicle placeholder for the central visualization.
+     Swap for a richer VectorDrawable / AnimatedVectorDrawable / Lottie asset later. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp" android:height="320dp"
+    android:viewportWidth="200" android:viewportHeight="320">
+
+    <!-- Body -->
+    <path android:fillColor="#0E2135"
+        android:strokeColor="#25D9E8" android:strokeWidth="2"
+        android:pathData="M40,40 C40,18 60,10 100,10 C140,10 160,18 160,40 L164,250 C164,290 150,308 100,308 C50,308 36,290 36,250 Z" />
+
+    <!-- Hood -->
+    <path android:fillColor="#0B1B2C"
+        android:pathData="M52,40 C52,28 70,24 100,24 C130,24 148,28 148,40 L150,74 L50,74 Z" />
+
+    <!-- Windshield -->
+    <path android:fillColor="#12304A"
+        android:pathData="M56,78 L144,78 L150,120 L50,120 Z" />
+
+    <!-- Driver seat (cyan) -->
+    <path android:fillColor="#123A47"
+        android:strokeColor="#25D9E8" android:strokeWidth="1.5"
+        android:pathData="M58,138 h34 a8,8 0,0 1,8 8 v56 a8,8 0,0 1,-8 8 h-34 a8,8 0,0 1,-8 -8 v-56 a8,8 0,0 1,8 -8 z" />
+    <!-- Passenger seat (amber) -->
+    <path android:fillColor="#3A2E12"
+        android:strokeColor="#F5A623" android:strokeWidth="1.5"
+        android:pathData="M108,138 h34 a8,8 0,0 1,8 8 v56 a8,8 0,0 1,-8 8 h-34 a8,8 0,0 1,-8 -8 v-56 a8,8 0,0 1,8 -8 z" />
+
+    <!-- Rear window -->
+    <path android:fillColor="#12304A"
+        android:pathData="M52,240 L148,240 L142,270 L58,270 Z" />
+</vector>

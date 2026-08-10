@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="@dimen/hypernova_touch_target"
+    android:layout_height="@dimen/hypernova_touch_target">
+
+    <ImageView
+        android:layout_width="22dp"
+        android:layout_height="22dp"
+        android:layout_gravity="center"
+        android:contentDescription="@null"
+        android:src="@drawable/hypernova_ic_info"
+        android:tint="@color/hypernova_text_primary" />
+
+</FrameLayout>

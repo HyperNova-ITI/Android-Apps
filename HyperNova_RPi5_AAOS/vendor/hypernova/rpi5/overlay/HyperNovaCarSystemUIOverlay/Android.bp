@@ -1,0 +1,10 @@
+// Product-specific HyperNova automotive chrome configuration.
+// CarSystemUI stays installed; this resource-only RRO removes only its persistent bars.
+runtime_resource_overlay {
+    name: "HyperNovaCarSystemUIOverlay",
+    manifest: "AndroidManifest.xml",
+    resource_dirs: ["res"],
+    sdk_version: "current",
+    certificate: "platform",
+    system_ext_specific: true,
+}

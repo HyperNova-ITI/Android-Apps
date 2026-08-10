@@ -97,7 +97,7 @@ ClimateViewModel
 ClimateRepository
     |
     v
-ClimateService
+Climate domain service/repository
     |
     v
 ClimateBackend
@@ -121,7 +121,8 @@ ClimateBackend
 
 The UI must never access vehicle hardware directly.
 
-The Launcher and NOVA AI communicate through `ClimateService`.
+Launcher reads through `ClimateStatusService`. NOVA mutates state through
+`ClimateCommandService`. Both adapters use the same Climate repository.
 
 ---
 
@@ -259,7 +260,8 @@ Never hard-code dual-zone support.
 | `ClimateViewModel` | Exposes immutable UI state |
 | `ClimateRepository` | Combines backend state and capabilities |
 | `ClimateCommandManager` | Serializes, tracks, and times out commands |
-| `ClimateService` | Cross-app command/state API |
+| `ClimateStatusService` | Read-only Launcher state API |
+| `ClimateCommandService` | Signature-protected NOVA command API |
 | `ClimateBackend` | Vehicle implementation abstraction |
 | `CarPropertyClimateBackend` | AAOS/VHAL integration |
 | `VehicleGatewayClimateBackend` | Custom gateway integration |
@@ -1242,7 +1244,7 @@ Requested values are rendered separately.
 
 ---
 
-# 37. Climate Commands
+# 37. Internal Climate Commands
 
 Suggested command types:
 
@@ -1279,6 +1281,11 @@ UNAVAILABLE
 
 `ACCEPTED` is not equal to `COMPLETED`.
 
+The list above is the Climate app's full internal capability model. The frozen NOVA Demo API v1
+exposes only power, target temperature, fan level, A/C, AUTO, and recirculation, plus capability and
+current-state queries. Other controls remain inside Climate until a later cross-app contract
+version.
+
 ---
 
 # 38. Climate Backend Interface
@@ -1304,52 +1311,70 @@ The UI does not know which backend is active.
 
 ---
 
-# 39. Climate Service
+# 39. Climate Services
 
-Service:
-
-```text
-com.hypernova.climate.service.ClimateService
-```
-
-Contracts:
+Keep read-only status and privileged commands separate:
 
 ```text
-IClimateService
-IClimateCallback
-ClimateState
-ClimateCapabilities
-ClimateCommand
-ClimateCommandResult
+Launcher status:
+com.hypernova.climate.service.ClimateStatusService
+com.hypernova.climate.action.BIND_STATUS
+
+NOVA commands:
+com.hypernova.climate.service.ClimateCommandService
+com.hypernova.climate.action.BIND_COMMAND
 ```
 
-Required methods:
+The NOVA command ABI is frozen in
+[HyperNova_Contracts](../HyperNova_Contracts/README.md). Climate must consume that module rather than
+keeping a private AIDL copy.
 
-```text
-getApiVersion()
-getServiceVersion()
-getCapabilities()
-getCurrentState()
-registerCallback()
-unregisterCallback()
+Follow the exact
+[Climate AIDL generation and TC397 service implementation guide](../HyperNova_Contracts/docs/MAHGOUB_CLIMATE_SERVICE_GUIDE.md).
 
-setPowerEnabled()
-setDriverTargetTemperature()
-setPassengerTargetTemperature()
-setZoneSyncEnabled()
-setFanLevel()
-setAcEnabled()
-setAutoModeEnabled()
-setAirflowMode()
-setFreshAirEnabled()
-setRecirculationEnabled()
-setFrontDefrostEnabled()
-setRearDefrostEnabled()
-setMaxDefrostEnabled()
-setDriverSeatHeatingLevel()
-setPassengerSeatHeatingLevel()
-refreshState()
+Frozen Demo API v1:
+
+```aidl
+interface IClimateCommandService {
+    int getApiVersion();
+    void getCapabilities(String requestId, IClimateCommandCallback callback);
+    void getCurrentState(String requestId, IClimateCommandCallback callback);
+    void setPowerEnabled(
+        String requestId,
+        boolean enabled,
+        IClimateCommandCallback callback
+    );
+    void setTargetTemperature(
+        String requestId,
+        int zone,
+        float temperatureC,
+        IClimateCommandCallback callback
+    );
+    void setFanLevel(
+        String requestId,
+        int fanLevel,
+        IClimateCommandCallback callback
+    );
+    void setAcEnabled(
+        String requestId,
+        boolean enabled,
+        IClimateCommandCallback callback
+    );
+    void setAutoModeEnabled(
+        String requestId,
+        boolean enabled,
+        IClimateCommandCallback callback
+    );
+    void setRecirculationEnabled(
+        String requestId,
+        boolean enabled,
+        IClimateCommandCallback callback
+    );
+}
 ```
+
+Every mutating call returns confirmed only after TC397 acknowledgement or authoritative property
+readback.
 
 ---
 
@@ -1396,26 +1421,28 @@ must wait for confirmation.
 
 # 41. NOVA AI Integration
 
-Supported commands:
+Frozen Demo API v1 phrases:
 
 ```text
-Set climate to 22 degrees
-Set driver temperature to 22 degrees
-Set passenger temperature to 24 degrees
-Sync climate zones
-Increase temperature
-Decrease temperature
-Turn on A/C
-Enable AUTO
+What is the climate set to?
+Set the climate to 22 degrees
+Set my side to 21 degrees
+Turn the climate on/off
 Set fan to level 3
-Set airflow to face and feet
-Enable fresh air
-Enable recirculation
-Turn on front defrost
-Turn on max defrost
-Set driver seat heating to level 2
-Turn off climate
+Turn A/C on/off
+Enable/disable automatic climate
+Enable/disable recirculation
 ```
+
+NOVA calls `getCapabilities` after binding and backend reconnection. It must not advertise or call
+unsupported controls, zones, values, or fan levels.
+
+State/capability queries time out after two seconds and mutations after five seconds.
+`setTargetTemperature(ZONE_ALL, value)` targets all available cabin zones and turns Climate on when
+needed as part of the same confirmed high-level command.
+
+Airflow, fresh air, zone sync, defrost, and seat heating remain Climate app features but are not in
+the frozen NOVA Demo API v1.
 
 Flow:
 
@@ -1423,7 +1450,7 @@ Flow:
 NOVA AI
     |
     v
-IClimateService
+IClimateCommandService
     |
     v
 Climate Backend
@@ -1448,7 +1475,7 @@ Use a signature-level permission:
 
 ```xml
 <permission
-    android:name="com.hypernova.permission.ACCESS_COCKPIT_SERVICES"
+    android:name="com.hypernova.permission.CONTROL_COCKPIT_APPS"
     android:protectionLevel="signature" />
 ```
 
@@ -1456,11 +1483,11 @@ Service:
 
 ```xml
 <service
-    android:name=".service.ClimateService"
+    android:name=".service.ClimateCommandService"
     android:exported="true"
-    android:permission="com.hypernova.permission.ACCESS_COCKPIT_SERVICES">
+    android:permission="com.hypernova.permission.CONTROL_COCKPIT_APPS">
     <intent-filter>
-        <action android:name="com.hypernova.action.BIND_CLIMATE_SERVICE" />
+        <action android:name="com.hypernova.climate.action.BIND_COMMAND" />
     </intent-filter>
 </service>
 ```
@@ -1889,11 +1916,11 @@ Service:
 
 ```xml
 <service
-    android:name=".service.ClimateService"
+    android:name=".service.ClimateCommandService"
     android:exported="true"
-    android:permission="com.hypernova.permission.ACCESS_COCKPIT_SERVICES">
+    android:permission="com.hypernova.permission.CONTROL_COCKPIT_APPS">
     <intent-filter>
-        <action android:name="com.hypernova.action.BIND_CLIMATE_SERVICE" />
+        <action android:name="com.hypernova.climate.action.BIND_COMMAND" />
     </intent-filter>
 </service>
 ```
@@ -2001,7 +2028,7 @@ Service:
 17. Implement ClimateState
 18. Implement ClimateCommandManager
 19. Implement ClimateBackend interface
-20. Implement ClimateService
+20. Implement ClimateStatusService and ClimateCommandService
 21. Implement CarPropertyClimateBackend or VehicleGatewayClimateBackend
 22. Implement command confirmation
 23. Implement rejection and timeout handling
@@ -2097,7 +2124,7 @@ HyperNovaClimate-release.apk
 - [ ] ClimateBackend abstraction exists.
 - [ ] Single-zone fallback works.
 - [ ] Dual-zone mode works.
-- [ ] ClimateService is implemented.
+- [ ] ClimateStatusService and ClimateCommandService are implemented.
 - [ ] Command manager tracks pending requests.
 - [ ] Confirmed state remains visible while pending.
 - [ ] Rejection restores confirmed state.
@@ -2155,11 +2182,11 @@ No. It communicates through Climate Service and the selected backend.
 
 ## Can Launcher control Climate?
 
-Yes, through the protected `IClimateService`.
+Yes, through the protected Launcher status/quick-action contract when that contract is implemented.
 
 ## Can NOVA AI control Climate?
 
-Yes, through the same service and real command results.
+Yes, through the frozen `IClimateCommandService` and real command results.
 
 ## Why is Max Defrost one command?
 
