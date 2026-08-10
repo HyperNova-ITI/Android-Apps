@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Copyright (C) 2021 The Android Open Source Project
+  Copyright (C) 2026 HyperNova
+  Licensed under the Apache License, Version 2.0.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/hypernova_space_8"
+    android:background="@drawable/hypernova_card_background"
+    android:minHeight="@dimen/hypernova_row_min_height"
+    android:tag="carUiPreference">
+
+    <com.android.car.ui.uxr.DrawableStateConstraintLayout
+        android:id="@+id/multi_action_preference_first_action_container"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@android:color/transparent"
+        android:paddingStart="@dimen/hypernova_space_16"
+        android:paddingEnd="@dimen/hypernova_space_10"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/multi_action_preference_second_action_container"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <com.android.car.ui.uxr.DrawableStateImageView
+            android:id="@android:id/icon"
+            android:layout_width="@dimen/hypernova_icon_size"
+            android:layout_height="@dimen/hypernova_icon_size"
+            android:scaleType="fitCenter"
+            android:tint="@color/hypernova_cyan"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.android.car.ui.uxr.DrawableStateTextView
+            android:id="@android:id/title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/hypernova_space_14"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="@style/TextAppearance.CarUi.PreferenceTitle"
+            app:layout_constraintBottom_toTopOf="@android:id/summary"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@android:id/icon"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_chainStyle="packed" />
+
+        <com.android.car.ui.uxr.DrawableStateTextView
+            android:id="@android:id/summary"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/hypernova_space_14"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textAppearance="@style/TextAppearance.CarUi.PreferenceSummary"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@android:id/icon"
+            app:layout_constraintTop_toBottomOf="@android:id/title" />
+    </com.android.car.ui.uxr.DrawableStateConstraintLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/multi_action_preference_second_action_container"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:paddingStart="@dimen/hypernova_space_4"
+        android:paddingEnd="@dimen/hypernova_space_6"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/multi_action_preference_first_action_container"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <View
+            android:id="@+id/multi_action_preference_divider"
+            android:layout_width="1dp"
+            android:layout_height="0dp"
+            android:layout_marginTop="@dimen/hypernova_space_10"
+            android:layout_marginEnd="@dimen/hypernova_space_4"
+            android:layout_marginBottom="@dimen/hypernova_space_10"
+            android:background="@color/hypernova_divider"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/multi_action_preference_item_container1"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.android.car.ui.uxr.DrawableStateFrameLayout
+            android:id="@+id/multi_action_preference_item_container1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:focusable="false"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/multi_action_preference_item_container2"
+            app:layout_constraintStart_toEndOf="@id/multi_action_preference_divider"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.android.car.ui.uxr.DrawableStateFrameLayout
+            android:id="@+id/multi_action_preference_item_container2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:focusable="false"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/multi_action_preference_item_container3"
+            app:layout_constraintStart_toEndOf="@id/multi_action_preference_item_container1"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.android.car.ui.uxr.DrawableStateFrameLayout
+            android:id="@+id/multi_action_preference_item_container3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:focusable="false"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@android:id/widget_frame"
+            app:layout_constraintStart_toEndOf="@id/multi_action_preference_item_container2"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <FrameLayout
+            android:id="@android:id/widget_frame"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

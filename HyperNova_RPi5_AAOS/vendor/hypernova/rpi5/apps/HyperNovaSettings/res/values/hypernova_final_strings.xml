@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="hypernova_system_control">Cockpit systems</string>
+    <string name="hypernova_system_control_summary">Live controls for your Android Automotive cockpit</string>
+    <string name="hypernova_system_ready">SYSTEM READY</string>
+    <string name="hypernova_live_now">LIVE NOW</string>
+    <string name="hypernova_audio_center">Audio Center</string>
+    <string name="hypernova_audio_center_summary">Master listening level and active Android audio route</string>
+    <string name="hypernova_audio_level">Listening level</string>
+    <string name="hypernova_audio_test_summary">Play a short tone through the active output</string>
+    <string name="hypernova_datetime_live">Local cockpit time</string>
+    <string name="hypernova_datetime_live_summary">Network time with a manually anchored time zone</string>
+    <string name="hypernova_egypt_zone">Africa/Cairo</string>
+    <string name="hypernova_brightness_fallback_summary">Display luminance</string>
+</resources>

@@ -1,0 +1,7 @@
+runtime_resource_overlay {
+    name: "HyperNovaFrameworkOverlay",
+    resource_dirs: ["res"],
+    manifest: "AndroidManifest.xml",
+    sdk_version: "current",
+    vendor: true,
+}

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2026 HyperNova. Licensed under the Apache License, Version 2.0. -->
+<resources>
+
+    <dimen name="hypernova_space_2">2dp</dimen>
+    <dimen name="hypernova_space_4">4dp</dimen>
+    <dimen name="hypernova_space_6">6dp</dimen>
+    <dimen name="hypernova_space_8">8dp</dimen>
+    <dimen name="hypernova_space_10">10dp</dimen>
+    <dimen name="hypernova_space_12">12dp</dimen>
+    <dimen name="hypernova_space_14">14dp</dimen>
+    <dimen name="hypernova_space_16">16dp</dimen>
+    <dimen name="hypernova_space_20">20dp</dimen>
+    <dimen name="hypernova_space_24">24dp</dimen>
+    <dimen name="hypernova_space_28">28dp</dimen>
+    <dimen name="hypernova_space_32">32dp</dimen>
+
+    <!-- Main page geometry -->
+    <dimen name="hypernova_page_margin">24dp</dimen>
+    <dimen name="hypernova_touch_target">48dp</dimen>
+
+    <!-- Shared header -->
+    <dimen name="hypernova_header_height">76dp</dimen>
+    <dimen name="hypernova_header_content_height">75dp</dimen>
+    <dimen name="hypernova_header_icon_size">26dp</dimen>
+    <dimen name="hypernova_header_back_icon_size">20dp</dimen>
+    <dimen name="hypernova_header_time_width">72dp</dimen>
+
+    <!-- Cards -->
+    <dimen name="hypernova_card_radius">15dp</dimen>
+    <dimen name="hypernova_card_stroke">1dp</dimen>
+
+    <!-- Home -->
+    <dimen name="hypernova_status_height">100dp</dimen>
+    <dimen name="hypernova_row_min_height">76dp</dimen>
+
+    <!-- Shared settings rows -->
+    <dimen name="hypernova_compact_row_height">68dp</dimen>
+    <dimen name="hypernova_switch_row_height">72dp</dimen>
+    <dimen name="hypernova_slider_card_height">120dp</dimen>
+    <dimen name="hypernova_seekbar_min_height">88dp</dimen>
+
+    <!-- Icons -->
+    <dimen name="hypernova_icon_size">24dp</dimen>
+    <dimen name="hypernova_icon_important">26dp</dimen>
+    <dimen name="hypernova_icon_small">20dp</dimen>
+    <dimen name="hypernova_chevron_size">18dp</dimen>
+
+    <!-- Slider -->
+    <dimen name="hypernova_slider_track_height">4dp</dimen>
+    <dimen name="hypernova_slider_thumb_size">16dp</dimen>
+    <dimen name="hypernova_slider_button_size">40dp</dimen>
+
+    <!-- Switch -->
+    <dimen name="hypernova_switch_visual_width">44dp</dimen>
+    <dimen name="hypernova_switch_visual_height">24dp</dimen>
+    <dimen name="hypernova_switch_thumb_size">18dp</dimen>
+
+    <!-- Typography -->
+    <dimen name="hypernova_section_text_size">11sp</dimen>
+    <dimen name="hypernova_title_text_size">16sp</dimen>
+    <dimen name="hypernova_body_text_size">13sp</dimen>
+    <dimen name="hypernova_value_text_size">15sp</dimen>
+    <dimen name="hypernova_toolbar_title_text_size">19sp</dimen>
+
+    <!-- CarUi compatibility -->
+    <dimen name="car_ui_toolbar_row_height">@dimen/hypernova_header_height</dimen>
+    <dimen name="car_ui_toolbar_first_row_height">@dimen/hypernova_header_height</dimen>
+    <dimen name="car_ui_toolbar_second_row_height">@dimen/hypernova_header_height</dimen>
+
+    <dimen name="car_ui_toolbar_start_inset">@dimen/hypernova_space_8</dimen>
+    <dimen name="car_ui_toolbar_end_inset">@dimen/hypernova_space_16</dimen>
+
+    <dimen name="car_ui_toolbar_margin">48dp</dimen>
+    <dimen name="car_ui_toolbar_nav_icon_size">24dp</dimen>
+    <dimen name="car_ui_toolbar_logo_size">24dp</dimen>
+
+    <dimen name="car_ui_toolbar_title_margin_start">@dimen/hypernova_space_8</dimen>
+    <dimen name="car_ui_toolbar_title_no_logo_margin_start">@dimen/hypernova_space_8</dimen>
+
+    <dimen name="car_ui_preference_icon_size">@dimen/hypernova_icon_size</dimen>
+    <dimen name="car_ui_preference_icon_margin_end">@dimen/hypernova_space_16</dimen>
+
+    <dimen name="car_ui_preference_content_margin_top">@dimen/hypernova_space_10</dimen>
+    <dimen name="car_ui_preference_content_margin_bottom">@dimen/hypernova_space_10</dimen>
+
+    <dimen name="car_ui_preference_category_min_height">38dp</dimen>
+
+    <dimen name="car_ui_touch_target_height">@dimen/hypernova_touch_target</dimen>
+    <dimen name="car_ui_touch_target_width">@dimen/hypernova_touch_target</dimen>
+
+    <dimen name="car_ui_toolbar_separator_height">1dp</dimen>
+    <dimen name="car_ui_toolbar_bottom_view_height">1dp</dimen>
+
+    <dimen name="multi_action_preference_item_container_padding">@dimen/hypernova_space_4</dimen>
+    <dimen name="multi_action_preference_toggle_button_size">40dp</dimen>
+    <dimen name="multi_action_preference_toggle_button_radius">10dp</dimen>
+    <dimen name="multi_action_preference_toggle_button_margin">@dimen/hypernova_space_4</dimen>
+
+    <dimen name="bluetooth_bonded_device_button_size">40dp</dimen>
+    <dimen name="bluetooth_bonded_device_button_radius">10dp</dimen>
+
+    <dimen name="theme_toggle_button_size">40dp</dimen>
+    <dimen name="theme_toggle_button_radius">10dp</dimen>
+
+</resources>

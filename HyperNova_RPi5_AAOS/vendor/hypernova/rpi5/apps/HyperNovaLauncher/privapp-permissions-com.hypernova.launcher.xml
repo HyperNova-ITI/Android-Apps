@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<permissions>
+    <privapp-permissions package="com.hypernova.launcher.dev">
+        <permission name="android.permission.MODIFY_DAY_NIGHT_MODE" />
+    </privapp-permissions>
+</permissions>

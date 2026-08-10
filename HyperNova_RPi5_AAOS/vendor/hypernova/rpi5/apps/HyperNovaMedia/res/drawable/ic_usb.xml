@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="42dp"
+    android:height="42dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+
+    <!-- USB connector -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="
+            M18,5
+            L30,5
+            L30,12
+            L18,12
+            Z" />
+
+    <!-- Connector pins -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="
+            M20,7
+            L23,7
+            L23,10
+            L20,10
+            Z" />
+
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="
+            M25,7
+            L28,7
+            L28,10
+            L25,10
+            Z" />
+
+    <!-- Flash drive body -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="
+            M15,12
+            L33,12
+            C35.2,12 37,13.8 37,16
+            L37,39
+            C37,41.2 35.2,43 33,43
+            L15,43
+            C12.8,43 11,41.2 11,39
+            L11,16
+            C11,13.8 12.8,12 15,12
+            Z" />
+
+    <!-- USB center stem -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:pathData="
+            M24,35
+            L24,21" />
+
+    <!-- Upper arrow -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="
+            M24,17
+            L20.5,22
+            L27.5,22
+            Z" />
+
+    <!-- Left branch -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="
+            M24,28
+            L19,28
+            L19,25" />
+
+    <!-- Left endpoint -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="
+            M17,23
+            L21,23
+            L21,27
+            L17,27
+            Z" />
+
+    <!-- Right branch -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="
+            M24,32
+            L29,32
+            L29,29" />
+
+    <!-- Right endpoint -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="
+            M29,26
+            A3,3 0,1 1 28.99,26
+            Z" />
+
+</vector>

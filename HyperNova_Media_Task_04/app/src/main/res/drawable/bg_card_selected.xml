@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <shape>
+            <solid android:color="@color/hn_surface_high"/>
+            <stroke android:width="2dp" android:color="@color/hn_cyan_bright"/>
+            <corners android:radius="@dimen/hn_card_radius"/>
+        </shape>
+    </item>
+    <item>
+        <shape>
+            <gradient android:angle="315" android:startColor="@color/hn_surface_selected" android:endColor="@color/hn_surface"/>
+            <stroke android:width="2dp" android:color="@color/hn_cyan"/>
+            <corners android:radius="@dimen/hn_card_radius"/>
+        </shape>
+    </item>
+</selector>

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style
+        name="Theme.HyperNova.AlertDialog"
+        parent="@android:style/Theme.Material.Dialog.Alert">
+
+        <item name="android:windowBackground">
+            @drawable/hypernova_dialog_background
+        </item>
+
+        <item name="android:windowMinWidthMajor">88%</item>
+        <item name="android:windowMinWidthMinor">88%</item>
+        <item name="android:windowElevation">16dp</item>
+        <item name="android:windowAnimationStyle">@style/HyperNovaDialogAnimation</item>
+
+        <item name="android:colorAccent">
+            @color/hypernova_runtime_cyan
+        </item>
+
+        <item name="android:textColorPrimary">
+            @color/hypernova_runtime_text_primary
+        </item>
+
+        <item name="android:textColorSecondary">
+            @color/hypernova_runtime_text_secondary
+        </item>
+
+        <item name="android:buttonBarButtonStyle">
+            @style/Widget.HyperNova.AlertDialog.Button
+        </item>
+
+        <item name="android:editTextStyle">
+            @style/Widget.HyperNova.AlertDialog.EditText
+        </item>
+
+        <item name="android:checkboxStyle">
+            @style/Widget.HyperNova.AlertDialog.CheckBox
+        </item>
+    </style>
+
+    <style
+        name="Widget.HyperNova.AlertDialog.Button"
+        parent="@android:style/Widget.Material.Button.Borderless">
+
+        <item name="android:background">
+            @drawable/hypernova_dialog_button_background
+        </item>
+
+        <item name="android:textColor">
+            @color/hypernova_runtime_cyan
+        </item>
+
+        <item name="android:textSize">17sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:minHeight">60dp</item>
+        <item name="android:minWidth">140dp</item>
+        <item name="android:layout_margin">6dp</item>
+    </style>
+
+    <style
+        name="Widget.HyperNova.AlertDialog.EditText"
+        parent="@android:style/Widget.Material.EditText">
+
+        <item name="android:background">
+            @drawable/hypernova_dialog_edit_text_background
+        </item>
+
+        <item name="android:textColor">
+            @color/hypernova_runtime_text_primary
+        </item>
+
+        <item name="android:textColorHint">
+            @color/hypernova_runtime_text_secondary
+        </item>
+
+        <item name="android:textSize">18sp</item>
+        <item name="android:minHeight">64dp</item>
+    </style>
+
+    <style
+        name="Widget.HyperNova.AlertDialog.CheckBox"
+        parent="@android:style/Widget.Material.CompoundButton.CheckBox">
+
+        <item name="android:buttonTint">
+            @color/hypernova_runtime_cyan
+        </item>
+
+        <item name="android:textColor">
+            @color/hypernova_runtime_text_primary
+        </item>
+
+        <item name="android:textSize">17sp</item>
+        <item name="android:minHeight">56dp</item>
+    </style>
+
+</resources>

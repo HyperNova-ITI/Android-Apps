@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2026 HyperNova. Licensed under the Apache License, Version 2.0. -->
+
+<resources>
+
+    <string name="hypernova_app_label" translatable="false">HyperNova Settings</string>
+
+    <string name="hypernova_quick_status">Quick status</string>
+    <string name="hypernova_settings_categories">Settings categories</string>
+
+    <string name="hypernova_wifi">Wi\u2011Fi</string>
+    <string name="hypernova_wifi_network">Wi\u2011Fi &amp; network</string>
+    <string name="hypernova_bluetooth">Bluetooth</string>
+
+    <string name="hypernova_brightness">Brightness</string>
+    <string name="hypernova_brightness_level">Brightness Level</string>
+    <string name="hypernova_automatic_brightness">Automatic Brightness</string>
+
+    <string name="hypernova_volume">Volume</string>
+
+    <string name="hypernova_settings">Settings</string>
+    <string name="hypernova_display">Display</string>
+    <string name="hypernova_sound">Sound</string>
+    <string name="hypernova_date_time">Date &amp; time</string>
+
+    <string name="hypernova_display_summary">Brightness, theme</string>
+    <string name="hypernova_sound_summary">Volume, audio groups</string>
+    <string name="hypernova_wifi_summary">Internet, networks</string>
+    <string name="hypernova_bluetooth_summary">Devices, connections</string>
+    <string name="hypernova_date_time_summary">Time zone, format</string>
+
+    <string name="hypernova_state_on">On</string>
+    <string name="hypernova_state_off">Off</string>
+    <string name="hypernova_state_turning_on">Turning on\u2026</string>
+    <string name="hypernova_state_turning_off">Turning off\u2026</string>
+    <string name="hypernova_state_unavailable">Unavailable</string>
+    <string name="hypernova_state_connected_to">Connected to %1$s</string>
+
+    <string name="hypernova_percent">%1$d%%</string>
+
+    <string name="hypernova_connected">Connected</string>
+    <string name="hypernova_no_connected_network">Not connected</string>
+
+    <string name="hypernova_master_volume">Master volume</string>
+    <string name="hypernova_audio_group_volume">Volume</string>
+
+    <string name="hypernova_decrease">Decrease</string>
+    <string name="hypernova_increase">Increase</string>
+    <string name="hypernova_back">Back</string>
+
+
+    <!-- Connection sections -->
+    <string name="hypernova_section_connection">Connection</string>
+    <string name="hypernova_section_connected_network">Connected network</string>
+    <string name="hypernova_section_networks">Available networks</string>
+
+    <string name="hypernova_section_paired_devices">Connected &amp; paired devices</string>
+    <string name="hypernova_section_available_devices">Available devices</string>
+
+
+    <!-- Display -->
+    <string name="hypernova_section_brightness">Brightness</string>
+
+    <!-- Kept for compatibility with the previous preference implementation. -->
+    <string name="hypernova_section_appearance">Appearance</string>
+
+    <string name="hypernova_section_theme">Theme</string>
+
+    <string name="hypernova_theme_mode">Day / Night Mode</string>
+    <string name="hypernova_theme_mode_summary">Automatic, light, or dark cockpit appearance</string>
+
+    <string name="hypernova_theme_auto">Automatic</string>
+    <string name="hypernova_theme_auto_short">Auto</string>
+    <string name="hypernova_theme_light">Light</string>
+    <string name="hypernova_theme_dark">Dark</string>
+
+    <string name="hypernova_theme_style">Theme Style</string>
+    <string name="hypernova_theme_style_light">HyperNova Light</string>
+    <string name="hypernova_theme_style_dark">HyperNova Dark</string>
+
+
+    <!-- Sound -->
+    <string name="hypernova_section_master_volume">Master volume</string>
+    <string name="hypernova_section_volume_groups">Audio groups</string>
+
+
+    <!-- Date & time -->
+    <string name="hypernova_section_automatic">Automatic</string>
+    <string name="hypernova_section_date_time">Date &amp; time</string>
+    <string name="hypernova_section_automatic_timezone">Automatic time zone</string>
+    <string name="hypernova_section_manual">Manual</string>
+    <string name="hypernova_section_format">Format</string>
+
+
+    <!-- Stable controller/preference keys; never shown to the user. -->
+    <string name="pk_hypernova_master_volume" translatable="false">hypernova_master_volume</string>
+
+    <string name="pk_hypernova_audio_group_slider" translatable="false">hypernova_audio_group_slider</string>
+
+    <string name="pk_hypernova_connected_wifi" translatable="false">hypernova_connected_wifi</string>
+
+
+    <string name="hypernova_audio_output">Audio output</string>
+    <string name="hypernova_audio_backend_vehicle">Vehicle audio</string>
+    <string name="hypernova_audio_backend_vehicle_summary">Controlled through Android Automotive volume groups</string>
+    <string name="hypernova_audio_backend_media">Media audio</string>
+    <string name="hypernova_audio_backend_media_summary">Controlled through the Android media stream</string>
+    <string name="hypernova_audio_backend_unavailable">Audio unavailable</string>
+    <string name="hypernova_audio_backend_unavailable_summary">Android did not report a controllable audio output</string>
+    <string name="hypernova_audio_decrease">Decrease volume</string>
+    <string name="hypernova_audio_increase">Increase volume</string>
+    <string name="hypernova_audio_test">Test sound</string>
+    <string name="hypernova_audio_test_playing">Playing test sound</string>
+    <string name="hypernova_audio_test_failed">Unable to play test sound</string>
+    <string name="hypernova_audio_volume_applied">Volume updated</string>
+    <string name="hypernova_audio_volume_failed">Unable to update volume</string>
+    <string name="hypernova_audio_hardware_note">The controls use Android audio services. Physical sound still requires a working audio HAL, audio policy and HDMI or USB audio output.</string>
+</resources>

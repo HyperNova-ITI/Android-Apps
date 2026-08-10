@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<exceptions>
+
+    <!-- =========================================================
+         HyperNova Launcher
+         ========================================================= -->
+    <exception package="com.hypernova.launcher">
+
+        <permission
+            name="android.permission.BLUETOOTH_CONNECT"
+            fixed="true" />
+
+    </exception>
+
+
+    <!-- =========================================================
+         HyperNova Phone
+         Core IVI phone application.
+         These permissions are granted by the product image.
+         No runtime permission UI should be required.
+         ========================================================= -->
+    <exception package="com.hypernova.phone">
+
+        <permission
+            name="android.permission.BLUETOOTH_CONNECT"
+            fixed="true" />
+
+        <permission
+            name="android.permission.READ_CONTACTS"
+            fixed="true" />
+
+        <permission
+            name="android.permission.READ_CALL_LOG"
+            fixed="true"
+            whitelisted="true" />
+
+        <permission
+            name="android.permission.CALL_PHONE"
+            fixed="true" />
+
+        <permission
+            name="android.permission.POST_NOTIFICATIONS"
+            fixed="true" />
+
+    </exception>
+
+
+    <!-- =========================================================
+         HyperNova Media
+         ========================================================= -->
+    <exception package="com.hypernova.media">
+
+        <permission
+            name="android.permission.BLUETOOTH_CONNECT"
+            fixed="true" />
+
+    </exception>
+
+
+    <!-- =========================================================
+         HyperNova Settings
+         ========================================================= -->
+    <exception package="com.hypernova.settings">
+
+        <permission
+            name="android.permission.BLUETOOTH_CONNECT"
+            fixed="true" />
+
+    </exception>
+
+</exceptions>

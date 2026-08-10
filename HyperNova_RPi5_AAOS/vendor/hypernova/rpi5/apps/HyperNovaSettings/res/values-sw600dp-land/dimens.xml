@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="hypernova_page_margin">24dp</dimen>
+    <dimen name="hypernova_header_height">64dp</dimen>
+    <dimen name="hypernova_header_content_height">63dp</dimen>
+    <dimen name="hypernova_status_height">88dp</dimen>
+    <dimen name="hypernova_row_min_height">68dp</dimen>
+</resources>

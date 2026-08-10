@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="hypernova_runtime_background">#020A13</color>
+    <color name="hypernova_runtime_surface">#071524</color>
+    <color name="hypernova_runtime_surface_elevated">#0B1B2C</color>
+    <color name="hypernova_runtime_selected">#102337</color>
+    <color name="hypernova_runtime_border">#506174</color>
+    <color name="hypernova_runtime_divider">#293847</color>
+    <color name="hypernova_runtime_cyan">#25D9E8</color>
+    <color name="hypernova_runtime_cyan_pressed">#1FC2D0</color>
+    <color name="hypernova_runtime_text_primary">#F5F7FA</color>
+    <color name="hypernova_runtime_text_secondary">#A7B0BE</color>
+    <color name="hypernova_runtime_text_disabled">#687486</color>
+    <color name="hypernova_runtime_error">#FF5E68</color>
+</resources>

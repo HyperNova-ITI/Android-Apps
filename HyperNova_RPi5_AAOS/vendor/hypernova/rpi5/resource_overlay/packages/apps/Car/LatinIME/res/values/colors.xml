@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ime_foreground_symbols">#D8E6F3</color>
+    <color name="ime_foreground_spacebar">#8FA7BA</color>
+    <color name="ime_foreground_spacebar_pressed">#F7FBFF</color>
+
+    <color name="ime_background_letters">#071522</color>
+    <color name="ime_background_pressed">#2637DDEB</color>
+
+    <color name="ime_symbol_tint_accent">#37DDEB</color>
+    <color name="ime_symbol_tint">#D8E6F3</color>
+
+    <color name="transparent_black">#00000000</color>
+
+    <color name="ime_hwr_background">#F2071522</color>
+    <color name="ime_hwr_stroke">#37DDEB</color>
+
+    <color name="car_teal_200">#75EDF4</color>
+    <color name="car_teal_700">#0E5365</color>
+</resources>

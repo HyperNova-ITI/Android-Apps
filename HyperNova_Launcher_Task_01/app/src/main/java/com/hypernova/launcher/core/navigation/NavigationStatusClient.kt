@@ -155,9 +155,14 @@ class NavigationStatusClient(
                 observerSnapshot =
                     NavigationStatusSnapshot(AppConnectionState.CONNECTING)
                 observerRegistered = tryRegisterStatusObserver(connectedService)
-                if (!observerRegistered) {
-                    requestCurrentState()
-                }
+
+                /*
+                 * Always request one authoritative current-state snapshot
+                 * after binding. The observer remains registered for live
+                 * updates, while this one-shot query guarantees that the
+                 * Launcher also requests current route preview geometry.
+                 */
+                requestCurrentState()
             } catch (exception: Exception) {
                 Log.e(TAG, "Could not query Navigation status", exception)
                 publishError(exception)

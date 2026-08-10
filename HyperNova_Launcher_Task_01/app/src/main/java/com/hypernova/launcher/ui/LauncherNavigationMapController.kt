@@ -60,6 +60,7 @@ class LauncherNavigationMapController(
     private var lastFollowCameraUpdateMillis = 0L
     private var markerAnimator: ValueAnimator? = null
     private var availabilityChanged: ((Boolean) -> Unit)? = null
+    private var currentNightMode = false
 
     private val failureListener =
         MapView.OnDidFailLoadingMapListener {
@@ -80,6 +81,7 @@ class LauncherNavigationMapController(
         isNightMode: Boolean,
         onAvailabilityChanged: (Boolean) -> Unit,
     ) {
+        currentNightMode = isNightMode
         availabilityChanged = onAvailabilityChanged
         onAvailabilityChanged(false)
         mapView.getMapAsync { readyMap ->
@@ -93,8 +95,8 @@ class LauncherNavigationMapController(
                 isTiltGesturesEnabled = false
                 isDoubleTapGesturesEnabled = false
                 isQuickZoomGesturesEnabled = false
-                isLogoEnabled = true
-                isAttributionEnabled = true
+                isLogoEnabled = false
+                isAttributionEnabled = false
                 logoGravity = Gravity.TOP or Gravity.END
                 attributionGravity = Gravity.TOP or Gravity.END
             }
@@ -112,10 +114,14 @@ class LauncherNavigationMapController(
         newCurrentPosition: NavigationPreviewPoint?,
         newBearingDegrees: Float?,
     ) {
+        val geometryChanged =
+            newRouteId != routeId ||
+                newRoutePoints != routePoints
+
         val routeChanged =
             newRouteVersion != routeVersion ||
-                newRouteId != routeId ||
-                newRoutePoints != routePoints
+                geometryChanged
+
         routeId = newRouteId
         routeVersion = newRouteVersion
         routePoints = newRoutePoints.toList()
@@ -127,7 +133,24 @@ class LauncherNavigationMapController(
             renderedPosition = null
             renderedBearingDegrees = null
             pendingRouteFit = routePoints.size >= 2
-            reapplyScene()
+        }
+
+        /*
+         * A Light/Dark switch is already proven to make a missing HOME route
+         * appear because it reconstructs the MapLibre Style and therefore
+         * recreates the custom route sources/layers.
+         *
+         * Do the same reconstruction automatically when new route geometry
+         * reaches HOME, but reload the SAME theme.
+         */
+        if (geometryChanged && routePoints.size >= 2) {
+            forceCurrentStyleReload()
+            return
+        }
+
+        reapplyScene()
+
+        if (routeChanged) {
             return
         }
 
@@ -148,12 +171,36 @@ class LauncherNavigationMapController(
         reapplyScene()
     }
 
+    /**
+     * Re-publish the current route after MapView lifecycle resume.
+     *
+     * This intentionally does not reload the map style. It restores the
+     * existing GeoJSON scene and refits the known route when necessary.
+     */
+    fun refreshScene() {
+        if (destroyed) return
+        if (routePoints.size >= 2) {
+            pendingRouteFit = true
+        }
+        reapplyScene()
+    }
+
     fun destroy() {
         destroyed = true
         markerAnimator?.cancel()
         markerAnimator = null
         availabilityChanged = null
         mapView.removeOnDidFailLoadingMapListener(failureListener)
+    }
+
+    private fun forceCurrentStyleReload() {
+        val readyMap = map ?: return
+
+        fallbackAttempted = false
+        loadStyle(
+            readyMap,
+            if (currentNightMode) DARK_STYLE_URL else LIGHT_STYLE_URL,
+        )
     }
 
     private fun loadStyle(readyMap: MapLibreMap, styleUrl: String) {

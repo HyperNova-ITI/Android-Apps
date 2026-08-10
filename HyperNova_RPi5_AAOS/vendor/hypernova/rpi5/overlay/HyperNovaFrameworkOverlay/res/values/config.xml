@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- CarSystemUI supplies the controlled insets path; no generic nav bar is reserved. -->
+    <bool name="config_showNavigationBar">false</bool>
+    <bool name="config_remoteInsetsControllerControlsSystemBars">true</bool>
+    <bool name="config_remoteInsetsControllerSystemBarsCanBeShownByUserAction">false</bool>
+</resources>

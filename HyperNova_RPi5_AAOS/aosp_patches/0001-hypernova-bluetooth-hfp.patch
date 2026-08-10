@@ -1,0 +1,45 @@
+diff --git a/system/bta/hf_client/bta_hf_client_main.cc b/system/bta/hf_client/bta_hf_client_main.cc
+index 98528ee..99210af 100644
+--- a/system/bta/hf_client/bta_hf_client_main.cc
++++ b/system/bta/hf_client/bta_hf_client_main.cc
+@@ -560,6 +560,40 @@ tBTA_HF_CLIENT_CB* bta_hf_client_find_cb_by_sco_handle(uint16_t handle) {
+ bool bta_hf_client_allocate_handle(const RawAddress& bd_addr, uint16_t* p_handle) {
+   tBTA_HF_CLIENT_CB* existing_cb = bta_hf_client_find_cb_by_bda(bd_addr);
+   if (existing_cb != NULL) {
++    /*
++     * HyperNova AAOS HFP simultaneous-connect collision fix.
++     *
++     * During Bluetooth autoconnect the AAOS Headset Client and the phone
++     * can initiate HFP at nearly the same time.
++     *
++     * The outgoing AAOS path has already allocated a control block for
++     * this BDADDR, while the phone's incoming RFCOMM connection can win
++     * before the outgoing RFCOMM handle has been created.
++     *
++     * In that specific OPENING + conn_handle==0 state, use the existing
++     * AOSP collision machinery and reuse the same control block.
++     *
++     * The collision callback moves the state back to INIT, cancels the
++     * outgoing discovery and arms the collision timer. The incoming
++     * RFC_OPEN event can then follow the normal accepted-connection path.
++     */
++    if (existing_cb->state == BTA_HF_CLIENT_OPENING_ST &&
++        existing_cb->conn_handle == 0) {
++      log::warn(
++          "HYPERNOVA HFP collision: incoming RFCOMM won; "
++          "reusing CB handle {} for peer {}",
++          existing_cb->handle, bd_addr);
++
++      bta_hf_client_collision_cback(
++          BTA_SYS_CONN_OPEN,
++          BTA_ID_HS,
++          0,
++          bd_addr);
++
++      *p_handle = existing_cb->handle;
++      return true;
++    }
++
+     log::error("cannot allocate handle since BDADDR already exists");
+     return false;
+   }
