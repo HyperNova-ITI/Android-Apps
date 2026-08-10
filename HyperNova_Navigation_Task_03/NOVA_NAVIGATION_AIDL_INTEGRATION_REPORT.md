@@ -129,7 +129,7 @@ Duplicates are removed by place identity. Missing Home/Work values are
 omitted. Fresh installations no longer auto-create the legacy hardcoded demo
 Home/Work values; existing user-persisted values are preserved.
 
-## Route activation
+## Destination setup and route preview
 
 `setDestination()` resolves only a Navigation-issued ID, then delegates to
 the shared repository and existing OSRM client.
@@ -137,22 +137,22 @@ the shared repository and existing OSRM client.
 The repository transitions the shared session through:
 
 ```text
-IDLE -> CALCULATING -> ACTIVE
+IDLE -> CALCULATING -> ROUTE_PREVIEW
 ```
 
 The AIDL result is `STATUS_CONFIRMED` only when the repository snapshot is
-`ACTIVE`, contains the same destination token, and has a real route plan.
+`ROUTE_PREVIEW`, contains the same destination token, and has a real route plan.
 The result uses OSRM's real selected-route duration and distance for
 `etaSeconds` and `distanceMeters`.
 
-The existing UI route flow uses the same session but retains its preview
-step:
+The driver starts guidance from the existing UI preview step:
 
 ```text
-IDLE -> CALCULATING -> ROUTE_PREVIEW -> ACTIVE
+ROUTE_PREVIEW -> ACTIVE
 ```
 
-Route-alternative selection is written back to the shared session.
+Route-alternative selection is written back to the shared session. AIDL never starts trip
+simulation as a side effect of setting the destination.
 
 ## Cancellation
 

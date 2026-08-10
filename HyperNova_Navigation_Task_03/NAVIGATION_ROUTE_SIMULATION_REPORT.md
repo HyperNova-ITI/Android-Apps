@@ -1,12 +1,13 @@
 # HyperNova Navigation Route Simulation Report
 
 Date: 2026-07-31  
+Behavior updated: 2026-08-05
 Target: `HyperNova_Navigation_Task_03/HyperNovaNavigation`  
 Reference reviewed read-only: `Android-feature-navigation/MotorGuardApp`
 
 ## Result
 
-HyperNova Navigation now has an application-scoped route-driving simulator. When the authoritative `NavigationSession` becomes `ACTIVE`, whether from the Navigation UI or AIDL `setDestination()`, the simulator follows the exact selected OSRM route geometry. It emits smoothly interpolated vehicle positions, smoothed road bearings, speed, traveled distance, remaining distance, and progress. MapLibre renders a rotating cyan vehicle arrow, a quantized passed-route line, and a throttled follow camera. Arrival and cancellation update the same repository/session state used by UI and AIDL.
+HyperNova Navigation now has an application-scoped route-driving simulator. When the driver presses Start on a prepared route and the authoritative `NavigationSession` becomes `ACTIVE`, the simulator follows the exact selected OSRM route geometry. AIDL `setDestination()` prepares the real route preview but deliberately does not start the simulator. The simulator emits smoothly interpolated vehicle positions, smoothed road bearings, speed, traveled distance, remaining distance, and progress. MapLibre renders a rotating cyan vehicle arrow, a quantized passed-route line, and a throttled follow camera. Arrival and cancellation update the same repository/session state used by UI and AIDL.
 
 No AIDL contract, search provider, nearby behavior, OSRM behavior, Gradle dependency, manifest, or other HyperNova application was changed.
 
@@ -21,16 +22,20 @@ No AIDL contract, search provider, nearby behavior, OSRM behavior, Gradle depend
 ## Architecture After
 
 ```text
-UI Start Route                         NOVA / AIDL setDestination()
-      |                                          |
-      +-------------------+----------------------+
-                          v
+NOVA / AIDL setDestination()
+              |
+              v
                NavigationRepository
                           |
                          OSRM
                           |
               selected RouteAlternative
                           |
+            NavigationSession ROUTE_PREVIEW
+                          |
+                 UI Start Route
+                          |
+                          v
                NavigationSession ACTIVE
                           |
                           v
@@ -76,7 +81,7 @@ Unlike the Compose/coroutine reference, HyperNova's implementation uses its exis
 
 ## Simulation Lifecycle
 
-1. UI `activateCurrentRoute()` or AIDL `startNavigation()` transitions the shared session to `ACTIVE` only after OSRM supplies a real `RoutePlan`.
+1. AIDL `setDestination()` calculates a real `RoutePlan` and stops at `ROUTE_PREVIEW`; UI `activateCurrentRoute()` transitions that prepared session to `ACTIVE` when the driver presses Start.
 2. The repository passes `routePlan.selected` to the one application-scoped `LocationSource`.
 3. `RouteSimulationController` replaces any previous engine and emits the route origin.
 4. `SimulatedLocationSource` advances every 100 ms on one managed scheduled executor.
@@ -85,7 +90,7 @@ Unlike the Compose/coroutine reference, HyperNova's implementation uses its exis
 7. At the end, the exact last OSRM point is emitted with speed zero, progress 1.0, and remaining distance zero. The authoritative session becomes `ARRIVED` and AIDL state mapping reports `STATE_ARRIVED`.
 8. Cancellation clears the location source before setting the session to `IDLE`. Generation checks and future cancellation prevent further accepted updates.
 
-Activity recreation does not create another simulator because the source belongs to the application-scoped repository. Opening Navigation after an AIDL route starts reads the current shared session and vehicle position.
+Activity recreation does not create another simulator because the source belongs to the application-scoped repository. Opening Navigation after AIDL sets a destination displays the shared route preview; simulation begins only after the driver presses Start.
 
 ## Route Math and Movement
 
@@ -181,9 +186,9 @@ ADB target `0.0.0.0:6520`, active AAOS user 10:
 - Navigation launched and remained the resumed activity without a runtime crash.
 - The existing AIDL contract client connected and passed API version 1.
 - Real text search returned a Navigation-issued destination ID.
-- AIDL `setDestination()` returned `CONFIRMED / ACTIVE` with real OSRM values: 1,435 m and 225 s.
-- Simulation logged 86 route points, approximately 1,436 m of route geometry, and speed factor 8x.
-- Opening Navigation displayed the same AIDL-started active route.
+- AIDL `setDestination()` originally returned `CONFIRMED / ACTIVE` with real OSRM values: 1,435 m and 225 s; as of 2026-08-05 it returns the same authoritative route as a prepared preview.
+- After the driver starts the prepared route, simulation logs route geometry and the configured 8x speed factor.
+- Opening Navigation displays the AIDL-prepared route preview and Start button.
 - The simulator logged arrival and the UI changed to `ARRIVED` / `You have arrived`.
 - A second AIDL route was started and cancelled; callback returned `CONFIRMED / IDLE`, and the simulator logged immediate cancellation with no arrival from that run.
 - The final rebuilt APK, including the updated active-simulation label, was installed successfully.

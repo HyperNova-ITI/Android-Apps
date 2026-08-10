@@ -26,16 +26,21 @@ class NovaAudioClient(
     @Volatile private var output: BufferedOutputStream? = null
     private val writerLock = Any()
     private val streamSequence = AtomicLong(0)
+    private val lifecycleGeneration = AtomicLong(0)
     private var worker: Thread? = null
 
+    @Synchronized
     fun start() {
         if (running) return
         running = true
-        worker = Thread(::runLoop, "nova-audio-network").also { it.start() }
+        val generation = lifecycleGeneration.incrementAndGet()
+        worker = Thread({ runLoop(generation) }, "nova-audio-network").also { it.start() }
     }
 
+    @Synchronized
     fun stop() {
         running = false
+        lifecycleGeneration.incrementAndGet()
         closeConnection()
         worker?.interrupt()
         worker = null
@@ -77,39 +82,56 @@ class NovaAudioClient(
         }
     }
 
-    private fun runLoop() {
+    private fun runLoop(generation: Long) {
         var backoffMs = 250L
-        while (running) {
+        while (isCurrent(generation)) {
+            var connectedSocket: Socket? = null
             try {
-                val connectedSocket = Socket().apply {
+                connectedSocket = Socket().apply {
                     tcpNoDelay = true
                     keepAlive = true
                     connect(InetSocketAddress(endpoint.host, endpoint.audioPort), CONNECT_TIMEOUT_MS)
                 }
-                socket = connectedSocket
-                output = BufferedOutputStream(connectedSocket.getOutputStream())
+                val accepted = synchronized(writerLock) {
+                    if (!isCurrent(generation)) {
+                        false
+                    } else {
+                        socket = connectedSocket
+                        output = BufferedOutputStream(connectedSocket.getOutputStream())
+                        true
+                    }
+                }
+                if (!accepted) break
                 listener.onAudioConnectionChanged(true)
                 sendHello()
                 backoffMs = 250L
 
                 BufferedInputStream(connectedSocket.getInputStream()).use { input ->
-                    while (running) {
+                    while (isCurrent(generation)) {
                         val frame = AudioFrameCodec.read(input) ?: break
                         if (frame.type == AudioFrameType.PING) {
                             send(AudioFrame(AudioFrameType.PONG))
                         } else {
-                            listener.onAudioFrame(frame)
+                            try {
+                                listener.onAudioFrame(frame)
+                            } catch (error: RuntimeException) {
+                                // A local AudioTrack/AudioManager failure must not corrupt the
+                                // framing layer or force the Pi and Android into a reconnect loop.
+                                Log.e(TAG, "Audio frame handler failed for ${frame.type}", error)
+                            }
                         }
                     }
                 }
             } catch (error: Exception) {
-                if (running) Log.d(TAG, "Audio connection unavailable: ${error.message}")
+                if (isCurrent(generation)) {
+                    Log.d(TAG, "Audio connection unavailable: ${error.message}")
+                }
             } finally {
-                closeConnection()
-                listener.onAudioConnectionChanged(false)
+                closeConnection(connectedSocket)
+                if (isCurrent(generation)) listener.onAudioConnectionChanged(false)
             }
 
-            if (running) {
+            if (isCurrent(generation)) {
                 try {
                     Thread.sleep(backoffMs)
                 } catch (_: InterruptedException) {
@@ -119,6 +141,9 @@ class NovaAudioClient(
             }
         }
     }
+
+    private fun isCurrent(generation: Long): Boolean =
+        running && lifecycleGeneration.get() == generation
 
     private fun sendHello() {
         send(AudioFrame(
@@ -131,11 +156,20 @@ class NovaAudioClient(
         ))
     }
 
-    private fun closeConnection() {
+    private fun closeConnection(expectedSocket: Socket? = null) {
         synchronized(writerLock) {
+            val activeSocket = socket
+            if (expectedSocket != null && activeSocket !== expectedSocket) {
+                try {
+                    expectedSocket.close()
+                } catch (_: Exception) {
+                    // This belongs to an obsolete worker and is already unusable.
+                }
+                return
+            }
             output = null
             try {
-                socket?.close()
+                activeSocket?.close()
             } catch (_: Exception) {
                 // The reconnect loop owns recovery.
             }

@@ -130,9 +130,9 @@ Navigation: returns up to four ranked real NavigationDestination values
 NOVA: "I found four. 1 …, 2 …, 3 …, or 4 …?"
 Driver: "The second one"
 Pi/NOVA: setDestination(req-2, result[1].id)
-Navigation: calculates and activates the route
+Navigation: calculates the route and stops at route preview
 Navigation: STATUS_CONFIRMED with destination, ETA, and distance
-NOVA: opens Navigation and says the confirmed route result
+NOVA: opens Navigation and says the destination is set and the route is ready
 ```
 
 `searchDestinations` rules:
@@ -155,7 +155,7 @@ Navigation: returns up to four real saved NavigationDestination values
 NOVA: "You have Home, Work, and …"
 Driver: "Take me home"
 Pi/NOVA: setDestination(req-4, home.id)
-Navigation: calculates and activates the route
+Navigation: calculates the route and stops at route preview
 Navigation: STATUS_CONFIRMED with destination, ETA, and distance
 ```
 
@@ -175,15 +175,16 @@ No saved destinations returns `STATUS_REJECTED/NO_SAVED_DESTINATIONS`.
 must not accept arbitrary LLM text, coordinates invented by NOVA, or a list index. NOVA resolves
 “the second one” to the second returned ID before calling AIDL.
 
-It may return `STATUS_ACCEPTED` while calculating. It returns `STATUS_CONFIRMED` only when guidance
-is active. The confirmed result includes the selected destination and real ETA/distance when
-available.
+It may return `STATUS_ACCEPTED` while calculating. It returns `STATUS_CONFIRMED` only when the real
+route preview is ready. The confirmed result includes the selected destination and real
+ETA/distance when available. `setDestination` never activates guidance; the driver starts the trip
+from Navigation's route-preview screen.
 
 Route calculation timeout is twenty seconds. Cancelling with no active route returns confirmed with
 idle state because the requested end state is already true.
 
 When `setDestination` becomes accepted, NOVA may open `com.hypernova.navigation.action.OPEN` so the
-driver sees the calculating-route state followed by active guidance.
+driver sees the calculating-route state followed by the route preview and Start button.
 
 ## Frozen Climate demo
 

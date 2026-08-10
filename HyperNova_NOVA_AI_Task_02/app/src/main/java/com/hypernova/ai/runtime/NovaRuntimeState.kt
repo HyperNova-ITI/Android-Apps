@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import com.hypernova.ai.ui.NovaVisibleState
 
 object NovaRuntimeState {
@@ -14,10 +15,18 @@ object NovaRuntimeState {
     val session: LiveData<NovaRuntimeSnapshot> = mutableSession
     private var latestSession = NovaRuntimeSnapshot()
 
-    fun publish(state: NovaVisibleState) {
+    fun publish(state: NovaVisibleState, followUpWindowMs: Long? = null) {
         dispatch {
+            val activeWindow = followUpWindowMs
+                ?.takeIf { state == NovaVisibleState.LISTENING && it > 0L }
             mutableState.value = state
-            latestSession = latestSession.copy(visibleState = state)
+            latestSession = latestSession.copy(
+                visibleState = state,
+                followUpWindowMs = activeWindow,
+                followUpDeadlineElapsedRealtimeMs = activeWindow?.let {
+                    SystemClock.elapsedRealtime() + it
+                },
+            )
             mutableSession.value = latestSession
         }
     }
@@ -31,6 +40,23 @@ object NovaRuntimeState {
         mutableSession.value = latestSession
     }
 
+    fun publishProgress(turnId: String?, text: String, routeTier: String?) = dispatch {
+        latestSession = latestSession.copy(
+            turnId = turnId ?: latestSession.turnId,
+            progressText = text,
+            routeTier = routeTier ?: latestSession.routeTier,
+        )
+        mutableSession.value = latestSession
+    }
+
+    fun publishRoute(turnId: String?, routeTier: String?) = dispatch {
+        latestSession = latestSession.copy(
+            turnId = turnId ?: latestSession.turnId,
+            routeTier = routeTier ?: latestSession.routeTier,
+        )
+        mutableSession.value = latestSession
+    }
+
     fun publishAction(
         turnId: String?,
         name: String?,
@@ -40,6 +66,7 @@ object NovaRuntimeState {
     ) = dispatch {
         latestSession = latestSession.copy(
             turnId = turnId ?: latestSession.turnId,
+            progressText = null,
             actionName = name,
             actionResult = result,
             errorMessage = errorMessage,
@@ -51,6 +78,7 @@ object NovaRuntimeState {
     fun publishResult(turnId: String?, text: String?, success: Boolean) = dispatch {
         latestSession = latestSession.copy(
             turnId = turnId ?: latestSession.turnId,
+            progressText = null,
             actionResult = text,
             errorMessage = if (success) null else text,
             blocked = !success,
@@ -61,6 +89,7 @@ object NovaRuntimeState {
     fun publishResponse(turnId: String?, text: String) = dispatch {
         latestSession = latestSession.copy(
             turnId = turnId ?: latestSession.turnId,
+            progressText = null,
             spokenText = text,
         )
         mutableSession.value = latestSession
@@ -69,6 +98,7 @@ object NovaRuntimeState {
     fun publishError(turnId: String?, message: String) = dispatch {
         latestSession = latestSession.copy(
             turnId = turnId ?: latestSession.turnId,
+            progressText = null,
             errorMessage = message,
             blocked = true,
         )

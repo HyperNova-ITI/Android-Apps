@@ -21,7 +21,7 @@ object RouteConfirmationPolicy {
         state: NavigationSessionState,
         destinationId: String
     ): Boolean =
-        state.status == NavigationSessionStatus.ACTIVE &&
+        state.status == NavigationSessionStatus.ROUTE_PREVIEW &&
             state.destination?.id == destinationId &&
             state.routePlan != null
 }

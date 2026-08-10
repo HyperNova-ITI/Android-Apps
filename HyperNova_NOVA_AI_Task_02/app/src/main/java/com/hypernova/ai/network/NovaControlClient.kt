@@ -27,17 +27,22 @@ class NovaControlClient(
     @Volatile private var socket: Socket? = null
     @Volatile private var writer: BufferedWriter? = null
     private val sequence = AtomicLong(0)
+    private val lifecycleGeneration = AtomicLong(0)
     private val writerLock = Any()
     private var worker: Thread? = null
 
+    @Synchronized
     fun start() {
         if (running) return
         running = true
-        worker = Thread(::runLoop, "nova-control").also { it.start() }
+        val generation = lifecycleGeneration.incrementAndGet()
+        worker = Thread({ runLoop(generation) }, "nova-control").also { it.start() }
     }
 
+    @Synchronized
     fun stop() {
         running = false
+        lifecycleGeneration.incrementAndGet()
         closeConnection()
         worker?.interrupt()
         worker = null
@@ -65,23 +70,34 @@ class NovaControlClient(
             put("seq", sequence.incrementAndGet())
         })
 
-    private fun runLoop() {
+    private fun runLoop(generation: Long) {
         var backoffMs = 250L
-        while (running) {
+        while (isCurrent(generation)) {
+            var connectedSocket: Socket? = null
             try {
-                val connectedSocket = Socket().apply {
+                connectedSocket = Socket().apply {
                     tcpNoDelay = true
                     keepAlive = true
                     connect(InetSocketAddress(endpoint.host, endpoint.controlPort), CONNECT_TIMEOUT_MS)
                 }
-                socket = connectedSocket
-                writer = BufferedWriter(OutputStreamWriter(connectedSocket.getOutputStream(), Charsets.UTF_8))
+                val accepted = synchronized(writerLock) {
+                    if (!isCurrent(generation)) {
+                        false
+                    } else {
+                        socket = connectedSocket
+                        writer = BufferedWriter(
+                            OutputStreamWriter(connectedSocket.getOutputStream(), Charsets.UTF_8),
+                        )
+                        true
+                    }
+                }
+                if (!accepted) break
                 listener.onControlConnectionChanged(true)
                 sendHello()
                 backoffMs = 250L
 
                 BufferedReader(InputStreamReader(connectedSocket.getInputStream(), Charsets.UTF_8)).use { reader ->
-                    while (running) {
+                    while (isCurrent(generation)) {
                         val line = reader.readLine() ?: break
                         if (line.isBlank()) continue
                         try {
@@ -92,13 +108,15 @@ class NovaControlClient(
                     }
                 }
             } catch (error: Exception) {
-                if (running) Log.d(TAG, "Control connection unavailable: ${error.message}")
+                if (isCurrent(generation)) {
+                    Log.d(TAG, "Control connection unavailable: ${error.message}")
+                }
             } finally {
-                closeConnection()
-                listener.onControlConnectionChanged(false)
+                closeConnection(connectedSocket)
+                if (isCurrent(generation)) listener.onControlConnectionChanged(false)
             }
 
-            if (running) {
+            if (isCurrent(generation)) {
                 try {
                     Thread.sleep(backoffMs)
                 } catch (_: InterruptedException) {
@@ -108,6 +126,9 @@ class NovaControlClient(
             }
         }
     }
+
+    private fun isCurrent(generation: Long): Boolean =
+        running && lifecycleGeneration.get() == generation
 
     private fun sendHello() {
         send(JSONObject().apply {
@@ -132,11 +153,20 @@ class NovaControlClient(
         }
     }
 
-    private fun closeConnection() {
+    private fun closeConnection(expectedSocket: Socket? = null) {
         synchronized(writerLock) {
+            val activeSocket = socket
+            if (expectedSocket != null && activeSocket !== expectedSocket) {
+                try {
+                    expectedSocket.close()
+                } catch (_: Exception) {
+                    // This belongs to an obsolete worker and is already unusable.
+                }
+                return
+            }
             writer = null
             try {
-                socket?.close()
+                activeSocket?.close()
             } catch (_: Exception) {
                 // The reconnect loop owns recovery.
             }

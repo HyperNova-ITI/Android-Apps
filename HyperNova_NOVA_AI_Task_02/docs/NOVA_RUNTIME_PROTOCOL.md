@@ -35,7 +35,7 @@ Android → Pi:
 {"type":"cancel","v":1,"seq":3,"turn_id":"uuid"}
 {"type":"playback","v":1,"seq":4,"turn_id":"uuid","value":"started"}
 {"type":"playback","v":1,"seq":5,"turn_id":"uuid","value":"ended"}
-{"type":"command_result","v":1,"seq":6,"turn_id":"uuid","request_id":"uuid","domain":"navigation","operation":"set_destination","status":"confirmed","message":"Route started","data":{"destination":{"id":"opaque-id","title":"Coffee Lab"},"eta_seconds":900,"distance_meters":8200}}
+{"type":"command_result","v":1,"seq":6,"turn_id":"uuid","request_id":"uuid","domain":"navigation","operation":"set_destination","status":"confirmed","message":"Destination set. Route is ready.","data":{"selected_destination":{"id":"opaque-id","title":"Coffee Lab"},"eta_seconds":900,"distance_meters":8200}}
 ```
 
 Pi → Android:
@@ -43,16 +43,53 @@ Pi → Android:
 ```json
 {"type":"hello_ack","v":1,"seq":1,"server":"nova-pi","audio_port":8766}
 {"type":"state","v":1,"seq":2,"turn_id":"uuid","value":"listening"}
-{"type":"transcript","v":1,"seq":3,"turn_id":"uuid","text":"turn on the AC","final":true}
-{"type":"state","v":1,"seq":4,"turn_id":"uuid","value":"processing"}
-{"type":"state","v":1,"seq":5,"turn_id":"uuid","value":"executing"}
-{"type":"result","v":1,"seq":6,"turn_id":"uuid","status":"success","text":"Air conditioning is on"}
-{"type":"state","v":1,"seq":7,"turn_id":"uuid","value":"speaking"}
-{"type":"error","v":1,"seq":8,"turn_id":"uuid","code":"ASR_FAILED","message":"I couldn't understand that"}
-{"type":"command_request","v":1,"seq":9,"turn_id":"uuid","request_id":"uuid","domain":"navigation","operation":"search_destinations","args":{"query":"coffee shops near me"}}
+{"type":"state","v":1,"seq":3,"value":"listening","followup":true,"window_ms":5000}
+{"type":"transcript","v":1,"seq":4,"turn_id":"uuid","text":"turn on the AC","final":true}
+{"type":"state","v":1,"seq":5,"turn_id":"uuid","value":"processing"}
+{"type":"state","v":1,"seq":6,"turn_id":"uuid","value":"executing"}
+{"type":"result","v":1,"seq":7,"turn_id":"uuid","status":"success","text":"Air conditioning is on"}
+{"type":"state","v":1,"seq":8,"turn_id":"uuid","value":"speaking"}
+{"type":"error","v":1,"seq":9,"turn_id":"uuid","code":"ASR_FAILED","message":"I couldn't understand that"}
+{"type":"command_request","v":1,"seq":10,"turn_id":"uuid","request_id":"uuid","domain":"navigation","operation":"search_destinations","args":{"query":"coffee shops near me"}}
+{"type":"latency","v":1,"seq":11,"turn_id":"uuid","ttfw_s":1.24,"total_s":1.52}
+{"type":"route","v":1,"seq":12,"turn_id":"uuid","tier":"cloud"}
+{"type":"progress","v":1,"seq":13,"turn_id":"uuid","tier":"local","text":"Thinking that through."}
 ```
 
 Allowed state values are `idle`, `listening`, `processing`, `executing`, `success`, `error`, `speaking`, and `unavailable`. Unknown message fields are ignored. Unknown protocol versions are rejected with `UNSUPPORTED_VERSION`.
+
+For a follow-up capture window, the Pi emits exactly one `listening` state with `followup=true` and a
+positive `window_ms`. Android renders this as a distinct conversational window and derives its local
+countdown deadline when the event arrives. A plain `listening` event remains the wake-word capture UI.
+
+`latency` is developer telemetry. `ttfw_s` may be JSON `null` for typed commands or when audible-start
+timing is unavailable; `total_s` is always present. Release UI must not expose these numbers to the
+driver. `route` is also developer telemetry for the hybrid tier and is safe for older clients to
+ignore.
+
+`progress` belongs to the same turn and is never terminal. It exists only for a slow local reasoning
+turn and must be followed by that turn's final `say` or `error`; Android may render it while the state
+remains `processing`. It must never claim that a tool succeeded.
+
+### Driver-facing Android state mapping
+
+The release UI does not expose Pi, cloud-provider, microphone, speaker, socket, or model names. It
+maps protocol state into the following compact driver language:
+
+| Runtime | Header/status | Card behavior |
+|---|---|---|
+| `idle` | Ready | Wake prompt; no activity indicator |
+| `listening` | Listening | Listening prompt or a real follow-up countdown |
+| transcript + `processing` | Understanding | Show the recognized request and activity indicator |
+| `progress` + `processing` | Working on it | Replace the transcript headline with truthful progress; keep the request as context |
+| `executing` | Acting | Show the domain action/provider message and activity indicator |
+| PCM playback | Responding | Actual playback owns the speaking animation |
+| `success` | Completed | Show the final confirmed result |
+| `error` | Needs attention | Show the safe failure and state that no change was made |
+| disconnected | Unavailable | Offer reconnect without exposing network topology |
+
+`route.tier` remains internal telemetry. Progress wording describes useful work (“Checking traffic
+and your schedule”) rather than infrastructure (“Calling cloud model”).
 
 ## Destination-command extension
 
@@ -117,4 +154,7 @@ MVP TTS format is `pcm_s16le`, mono, at the native Piper voice sample rate given
 
 ## Development addressing
 
-The Pi is currently discoverable as `hnc-ai30.local` (last known IPv4 `192.168.1.32`). The app must keep the host configurable because emulator, laptop, and final AAOS guest networking differ. No image-specific or Trout-specific API is allowed in the core audio or protocol layers.
+The Pi is currently discoverable as `hnc-ai30.local` on the dedicated HyperNova LAN (reserved IPv4
+`192.168.10.20`). The app must keep the host configurable because emulator, laptop, and final AAOS
+guest networking differ. No image-specific or Trout-specific API is allowed in the core audio or
+protocol layers.

@@ -27,7 +27,7 @@ Pi voice agent
 |---|---|
 | Pi agent | Wake word, ASR, conversation context, intent/arguments, initial safety policy, and final response |
 | NOVA Android | JSON/AIDL adapter, service binding, request correlation, timeouts, and honest UI state |
-| Navigation | Search, saved places, opaque destination IDs, route calculation, active guidance, and navigation state |
+| Navigation | Search, saved places, opaque destination IDs, route preview, driver-started guidance, and navigation state |
 | Climate | Capabilities, HVAC state, command validation, Vehicle Gateway calls, and hardware confirmation semantics |
 | Android Vehicle Gateway | The single Android-to-QNX session, request correlation, reconnect, and AIDL fan-out |
 | QNX gateway service | The only raw TC397 TCP/UDP client, frame/CRC/sequence handling, and ACK/reject translation |
@@ -120,9 +120,9 @@ Driver: "Take me to the second one"
 Pi resolves "second" to result[1].id
 Pi → Android: set_destination(destination_id)
 Android → Navigation: setDestination(...)
-Navigation calculates and starts guidance
+Navigation calculates the route and stops at route preview
 Navigation → callback: confirmed + destination + ETA + distance
-NOVA opens Navigation and speaks the confirmed route
+NOVA opens Navigation and says the destination is set and the route is ready
 ```
 
 Search rules:
@@ -153,7 +153,7 @@ NOVA: "You have Home, Work, and …"
 Driver: "Take me home"
 Pi selects the returned Home ID
 Pi → Android: set_destination(home_id)
-Navigation starts the route and confirms it
+Navigation prepares the route preview and confirms the selected destination
 ```
 
 Frozen saved ordering:
@@ -174,15 +174,18 @@ No saved places returns `rejected/NO_SAVED_DESTINATIONS`.
 `getSavedDestinations`. It does not accept raw LLM text, coordinates invented by NOVA, or a spoken
 list index.
 
-The service can return `accepted` during route calculation. It returns `confirmed` only when active
-guidance has started. The confirmed `NavigationResult` includes:
+The service can return `accepted` during route calculation. It returns `confirmed` only when the
+route preview is ready. The confirmed `NavigationResult` includes:
 
 ```text
 selectedDestination
-navigationState = ACTIVE
+navigationState = IDLE
 real etaSeconds, or -1 if unavailable
 real distanceMeters, or -1 if unavailable
 ```
+
+`setDestination` never starts guidance or trip simulation. The driver starts the prepared route
+from Navigation's route-preview screen.
 
 Route calculation timeout is twenty seconds. Cancelling while already idle returns confirmed with
 idle state.
@@ -563,9 +566,9 @@ Unsupported capabilities must be reported honestly. They do not change the AIDL.
 
 - Shared contracts AAR builds and all three apps use it.
 - “Find coffee near me” returns up to four real results.
-- “The second one” starts the selected real route.
+- “The second one” prepares the selected real route preview.
 - “Show saved destinations” returns real Home/Work/favorites in frozen order.
-- Navigation opens and displays calculating followed by active guidance.
+- Navigation opens and displays calculating followed by the route preview and Start button.
 - At least one supported Climate mutation reaches TC397 through Climate → Android Vehicle Gateway
   → QNX gateway and is confirmed from the controller result.
 - Climate rejection and timeout paths are demonstrated.

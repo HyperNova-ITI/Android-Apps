@@ -12,21 +12,46 @@ object NovaUiStateFactory {
             primaryMessage = "Ready when you are",
             secondaryMessage = "Say “Hey NOVA” to begin",
         )
-        NovaVisibleState.LISTENING -> NovaUiState(
-            visibleState = snapshot.visibleState,
-            eyebrow = "LISTENING",
-            primaryMessage = "I’m listening…",
-            secondaryMessage = "Speak naturally",
-            canCancel = true,
-        )
-        NovaVisibleState.PROCESSING -> NovaUiState(
-            visibleState = snapshot.visibleState,
-            eyebrow = if (snapshot.transcript != null) "YOU SAID" else "PROCESSING",
-            transcript = snapshot.transcript,
-            primaryMessage = snapshot.transcript ?: "Understanding your request…",
-            secondaryMessage = "Understanding your request",
-            canCancel = true,
-        )
+        NovaVisibleState.LISTENING -> if (snapshot.followUpDeadlineElapsedRealtimeMs != null) {
+            NovaUiState(
+                visibleState = snapshot.visibleState,
+                eyebrow = "STILL LISTENING",
+                primaryMessage = "Anything else?",
+                secondaryMessage = "Continue speaking",
+                followUpDeadlineElapsedRealtimeMs = snapshot.followUpDeadlineElapsedRealtimeMs,
+                canCancel = true,
+            )
+        } else {
+            NovaUiState(
+                visibleState = snapshot.visibleState,
+                eyebrow = "LISTENING",
+                primaryMessage = "I’m listening…",
+                secondaryMessage = "Speak naturally",
+                canCancel = true,
+            )
+        }
+        NovaVisibleState.PROCESSING -> if (snapshot.progressText != null) {
+            NovaUiState(
+                visibleState = snapshot.visibleState,
+                eyebrow = "WORKING ON IT",
+                transcript = snapshot.transcript,
+                primaryMessage = snapshot.progressText,
+                secondaryMessage = snapshot.transcript?.let { "You asked: $it" }
+                    ?: "This may take a moment",
+                canCancel = true,
+                showActivityProgress = true,
+            )
+        } else {
+            NovaUiState(
+                visibleState = snapshot.visibleState,
+                eyebrow = if (snapshot.transcript != null) "I HEARD YOU" else "UNDERSTANDING",
+                transcript = snapshot.transcript,
+                primaryMessage = snapshot.transcript ?: "Understanding your request…",
+                secondaryMessage = "Preparing the next step",
+                canCancel = true,
+                showActivityProgress = true,
+            )
+        }
         NovaVisibleState.EXECUTING -> NovaUiState(
             visibleState = snapshot.visibleState,
             eyebrow = actionLabel(snapshot.actionName),
@@ -35,12 +60,14 @@ object NovaUiStateFactory {
             secondaryMessage = snapshot.transcript?.let { "Request: $it" }
                 ?: "Applying the requested change",
             canCancel = true,
+            showActivityProgress = true,
         )
         NovaVisibleState.SUCCESS -> NovaUiState(
             visibleState = snapshot.visibleState,
             eyebrow = "COMMAND COMPLETED",
             transcript = snapshot.transcript,
             primaryMessage = snapshot.spokenText
+                ?: snapshot.progressText
                 ?: snapshot.actionResult
                 ?: "Command completed",
             secondaryMessage = "Your request is complete",
@@ -57,6 +84,7 @@ object NovaUiStateFactory {
             eyebrow = "NOVA RESPONSE",
             transcript = snapshot.transcript,
             primaryMessage = snapshot.spokenText
+                ?: snapshot.progressText
                 ?: snapshot.actionResult
                 ?: "NOVA is responding…",
             secondaryMessage = "NOVA is speaking",

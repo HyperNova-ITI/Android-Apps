@@ -2,7 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
 }
 
-val novaHost = providers.gradleProperty("novaHost").orElse("192.168.1.32")
+val novaHost = providers.gradleProperty("novaHost").orElse("192.168.10.20")
 val novaAssistantVolume = providers.gradleProperty("novaAssistantVolume").orElse("-1")
 
 android {

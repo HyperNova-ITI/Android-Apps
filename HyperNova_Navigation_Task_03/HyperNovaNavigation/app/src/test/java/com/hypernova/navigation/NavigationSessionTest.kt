@@ -17,7 +17,7 @@ import org.junit.Test
 
 class NavigationSessionTest {
     @Test
-    fun routeIsConfirmableOnlyAfterAuthoritativeStateIsActive() {
+    fun destinationIsConfirmableOnlyAfterAuthoritativeRoutePreviewIsReady() {
         val session = NavigationSession()
         val destination = destination()
         val route = route()
@@ -31,7 +31,7 @@ class NavigationSessionTest {
         )
 
         session.showRoutePreview(destination, route)
-        assertFalse(
+        assertTrue(
             RouteConfirmationPolicy.canConfirm(
                 session.current(),
                 destination.id
@@ -39,7 +39,7 @@ class NavigationSessionTest {
         )
 
         assertTrue(session.activate())
-        assertTrue(
+        assertFalse(
             RouteConfirmationPolicy.canConfirm(
                 session.current(),
                 destination.id

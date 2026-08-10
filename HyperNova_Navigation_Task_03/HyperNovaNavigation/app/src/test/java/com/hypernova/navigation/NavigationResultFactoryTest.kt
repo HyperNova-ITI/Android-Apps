@@ -111,6 +111,31 @@ class NavigationResultFactoryTest {
     }
 
     @Test
+    fun destinationSetResult_confirmsPreparedRouteWithoutStartingGuidance() {
+        val destination = destination()
+        val state =
+            NavigationSessionState(
+                status = NavigationSessionStatus.ROUTE_PREVIEW,
+                destination = destination,
+                routePlan = routePlan()
+            )
+
+        val result =
+            factory.destinationSetResult(
+                requestId = "set-destination-request",
+                destination = destination,
+                state = state
+            )
+
+        assertEquals(NavigationContract.OP_SET_DESTINATION, result.operation)
+        assertEquals(HyperNovaContract.STATUS_CONFIRMED, result.status)
+        assertEquals(NavigationContract.STATE_IDLE, result.navigationState)
+        assertEquals("Smart Village", result.selectedDestination?.title)
+        assertEquals(1_925L, result.etaSeconds)
+        assertEquals(28_410L, result.distanceMeters)
+    }
+
+    @Test
     fun currentStateResult_mapsIdleSessionWithoutRouteDetails() {
         val result = factory.currentStateResult("idle-request")
 

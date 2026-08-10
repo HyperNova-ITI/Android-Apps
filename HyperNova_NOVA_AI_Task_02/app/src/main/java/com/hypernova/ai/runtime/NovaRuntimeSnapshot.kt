@@ -6,7 +6,11 @@ import com.hypernova.ai.ui.NovaVisibleState
 data class NovaRuntimeSnapshot(
     val visibleState: NovaVisibleState = NovaVisibleState.UNAVAILABLE,
     val turnId: String? = null,
+    val followUpWindowMs: Long? = null,
+    val followUpDeadlineElapsedRealtimeMs: Long? = null,
     val transcript: String? = null,
+    val progressText: String? = null,
+    val routeTier: String? = null,
     val actionName: String? = null,
     val actionResult: String? = null,
     val spokenText: String? = null,

@@ -40,6 +40,10 @@ wire protocol is terminated on the QNX side.**
 | What does Android talk to QNX over? | **Plain TCP/UDP over the inter-guest virtio-net link** (not vsock, not SOME-IP — SOME-IP stays reserved for NXP↔RPi5 per `SOME-IP-Catalog.md`). |
 | Where does the Android-side broker live? | **A standalone Android service (`com.hypernova.vehiclegateway`)**, built now, shared by every feature app from day one — not folded into Climate and extracted later. |
 
+The no-framework-modification APK lifecycle, security boundary, loopback strategy, and implementation
+phases are specified in [ANDROID_QNX_GATEWAY_APK_PLAN.md](ANDROID_QNX_GATEWAY_APK_PLAN.md). That plan
+does not freeze protocol fields before the final TC397/QNX interface is supplied.
+
 ---
 
 ## 3. Full architecture

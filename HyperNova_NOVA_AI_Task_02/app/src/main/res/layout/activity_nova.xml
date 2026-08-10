@@ -179,6 +179,17 @@
             android:textColor="@color/hypernova_text_secondary"
             android:textSize="13sp" />
 
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/stateProgress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:visibility="gone"
+            app:indicatorColor="@color/hypernova_cyan"
+            app:indicatorTrackGapSize="0dp"
+            app:trackColor="@color/hypernova_divider"
+            app:trackThickness="3dp" />
+
     </LinearLayout>
 
     <LinearLayout

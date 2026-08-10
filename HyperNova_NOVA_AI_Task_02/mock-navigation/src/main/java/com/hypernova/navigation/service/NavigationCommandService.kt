@@ -27,7 +27,7 @@ class NavigationCommandService : Service() {
     private val handler = Handler(Looper.getMainLooper())
     private val cache = ConcurrentHashMap<String, Cached>()
     private val knownDestinations = ConcurrentHashMap<String, NavigationDestination>()
-    @Volatile private var activeDestination: NavigationDestination? = null
+    @Volatile private var selectedDestination: NavigationDestination? = null
 
     private val home = NavigationDestination(
         "saved:home",
@@ -140,20 +140,20 @@ class NavigationCommandService : Service() {
             accept(requestId, NavigationContract.OP_SET_DESTINATION, callback, "Calculating route")
             MockMode.status(this@NavigationCommandService, "Calculating route to ${destination.title}")
             handler.postDelayed({
-                activeDestination = destination
+                selectedDestination = destination
                 finish(callback, NavigationResult(
                     requestId,
                     NavigationContract.OP_SET_DESTINATION,
                     HyperNovaContract.STATUS_CONFIRMED,
-                    "Route to ${destination.title} started",
+                    "Destination set to ${destination.title}. Route is ready.",
                     HyperNovaContract.ERROR_NONE,
                     emptyList(),
                     destination,
-                    NavigationContract.STATE_ACTIVE,
+                    NavigationContract.STATE_IDLE,
                     900,
                     destination.distanceMeters,
                 ))
-                MockMode.status(this@NavigationCommandService, "Guidance active: ${destination.title}")
+                MockMode.status(this@NavigationCommandService, "Route ready: ${destination.title}")
             }, ROUTE_DELAY_MILLIS)
         }
 
@@ -163,7 +163,7 @@ class NavigationCommandService : Service() {
         ) {
             if (replay(requestId, callback)) return
             if (applyFailureMode(requestId, NavigationContract.OP_CANCEL_NAVIGATION, callback)) return
-            activeDestination = null
+            selectedDestination = null
             finish(callback, NavigationResult(
                 requestId,
                 NavigationContract.OP_CANCEL_NAVIGATION,
@@ -183,21 +183,16 @@ class NavigationCommandService : Service() {
             requestId: String,
             callback: INavigationCommandCallback,
         ) {
-            val destination = activeDestination
-            val state = if (destination == null) {
-                NavigationContract.STATE_IDLE
-            } else {
-                NavigationContract.STATE_ACTIVE
-            }
+            val destination = selectedDestination
             finish(callback, NavigationResult(
                 requestId,
                 NavigationContract.OP_GET_CURRENT_STATE,
                 HyperNovaContract.STATUS_CONFIRMED,
-                if (destination == null) "Navigation is idle" else "Guidance is active",
+                if (destination == null) "Navigation is idle" else "A route is ready to start",
                 HyperNovaContract.ERROR_NONE,
                 emptyList(),
                 destination,
-                state,
+                NavigationContract.STATE_IDLE,
                 if (destination == null) -1 else 900,
                 destination?.distanceMeters ?: -1,
             ))
@@ -207,14 +202,14 @@ class NavigationCommandService : Service() {
             requestId: String,
             callback: INavigationRoutePreviewCallback,
         ) {
-            val destination = activeDestination
+            val destination = selectedDestination
             try {
                 callback.onResult(NavigationRoutePreviewResult(
                     requestId,
                     HyperNovaContract.STATUS_CONFIRMED,
                     if (destination == null) "No active route" else "Route preview available",
                     HyperNovaContract.ERROR_NONE,
-                    if (destination == null) NavigationContract.STATE_IDLE else NavigationContract.STATE_ACTIVE,
+                    NavigationContract.STATE_IDLE,
                     NavigationRoutePreview.empty(),
                 ))
             } catch (_: Exception) {
@@ -223,12 +218,8 @@ class NavigationCommandService : Service() {
         }
 
         override fun registerNavigationStatusCallback(callback: INavigationStatusCallback) {
-            val destination = activeDestination
-            val state = if (destination == null) {
-                NavigationContract.STATE_IDLE
-            } else {
-                NavigationContract.STATE_ACTIVE
-            }
+            val destination = selectedDestination
+            val state = NavigationContract.STATE_IDLE
             try {
                 callback.onRouteSnapshot(NavigationRouteSnapshot(
                     destination?.id ?: "",

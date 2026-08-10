@@ -16,9 +16,44 @@ class NovaUiStateFactoryTest {
             ),
         )
 
-        assertEquals("YOU SAID", ui.eyebrow)
+        assertEquals("I HEARD YOU", ui.eyebrow)
         assertEquals("Set the climate to 22 degrees", ui.primaryMessage)
         assertTrue(ui.canCancel)
+        assertTrue(ui.showActivityProgress)
+    }
+
+    @Test
+    fun `progress replaces transcript as the active task state without exposing route tier`() {
+        val ui = NovaUiStateFactory.create(
+            NovaRuntimeSnapshot(
+                visibleState = NovaVisibleState.PROCESSING,
+                transcript = "Will I reach Valeo by nine?",
+                progressText = "Checking traffic and your schedule.",
+                routeTier = "connected",
+            ),
+        )
+
+        assertEquals("WORKING ON IT", ui.eyebrow)
+        assertEquals("Checking traffic and your schedule.", ui.primaryMessage)
+        assertEquals("You asked: Will I reach Valeo by nine?", ui.secondaryMessage)
+        assertFalse(ui.primaryMessage.contains("connected"))
+        assertTrue(ui.showActivityProgress)
+    }
+
+    @Test
+    fun `follow up listening is distinct and carries its deadline`() {
+        val deadline = 42_000L
+        val ui = NovaUiStateFactory.create(
+            NovaRuntimeSnapshot(
+                visibleState = NovaVisibleState.LISTENING,
+                followUpWindowMs = 5_000L,
+                followUpDeadlineElapsedRealtimeMs = deadline,
+            ),
+        )
+
+        assertEquals("STILL LISTENING", ui.eyebrow)
+        assertEquals("Anything else?", ui.primaryMessage)
+        assertEquals(deadline, ui.followUpDeadlineElapsedRealtimeMs)
     }
 
     @Test
@@ -35,6 +70,7 @@ class NovaUiStateFactoryTest {
         assertEquals("CLIMATE", ui.eyebrow)
         assertEquals("Air conditioning is on", ui.primaryMessage)
         assertEquals("Request: Turn on the AC", ui.secondaryMessage)
+        assertTrue(ui.showActivityProgress)
     }
 
     @Test
@@ -52,6 +88,7 @@ class NovaUiStateFactoryTest {
         assertTrue(speaking.isSpeaking)
         assertEquals("Cabin temperature is now 22 degrees", success.primaryMessage)
         assertFalse(success.isSpeaking)
+        assertFalse(success.showActivityProgress)
     }
 
     @Test

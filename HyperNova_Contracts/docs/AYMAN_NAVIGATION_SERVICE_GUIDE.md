@@ -126,13 +126,13 @@ interface NavigationRepository {
     fun searchDestinations(query: String): List<ResolvedDestination>
     fun getSavedDestinations(): List<ResolvedDestination>
     fun resolveDestination(destinationId: String): ResolvedDestination?
-    fun startGuidance(destination: ResolvedDestination): ActiveRoute
+    fun prepareRoute(destination: ResolvedDestination): RoutePreview
     fun cancelNavigation()
     fun hasActiveNavigation(): Boolean
 }
 ```
 
-`ResolvedDestination` and `ActiveRoute` are internal Navigation models. They do not belong in the
+`ResolvedDestination` and `RoutePreview` are internal Navigation models. They do not belong in the
 shared contract.
 
 The repository owns:
@@ -142,7 +142,7 @@ The repository owns:
 - user-saved Navigation favorites;
 - destination-ID storage and expiry;
 - route calculation;
-- active guidance state;
+- route-preview and active-guidance state;
 - ETA and distance.
 
 The activity renders repository state. The AIDL service adapts the same state. Never create a second
@@ -330,20 +330,20 @@ val result = if (destinations.isEmpty()) {
 callback.onResult(result)
 ```
 
-A confirmed active route:
+A confirmed prepared destination:
 
 ```kotlin
-val route = repository.startGuidance(destination)
+val route = repository.prepareRoute(destination)
 
 val result = NavigationResult(
     requestId,
     NavigationContract.OP_SET_DESTINATION,
     HyperNovaContract.STATUS_CONFIRMED,
-    "Route started to ${destination.title}",
+    "Destination set to ${destination.title}. Route is ready.",
     HyperNovaContract.ERROR_NONE,
     emptyList(),
     destination.toContract(),
-    NavigationContract.STATE_ACTIVE,
+    NavigationContract.STATE_IDLE,
     route.etaSeconds ?: -1L,
     route.distanceMeters ?: -1L,
 )
@@ -380,17 +380,17 @@ tokens, raw coordinates, or network details.
 3. Resolve only an ID previously issued by Navigation.
 4. Return `DESTINATION_EXPIRED` for an expired/unknown search ID.
 5. Emit accepted with state `CALCULATING`.
-6. Calculate and activate the route.
-7. Return confirmed only when repository state is `ACTIVE`.
+6. Calculate the route without activating guidance.
+7. Return confirmed only when repository state is `ROUTE_PREVIEW`.
 8. Include real destination, ETA, and distance.
 9. Finish within twenty seconds or return timeout.
 
 ### `cancelNavigation`
 
 1. Deduplicate the request.
-2. Stop active guidance through the repository.
+2. Clear either a prepared route preview or active guidance through the repository.
 3. If already idle, return confirmed/idle because the requested final state is already true.
-4. Never claim cancellation while guidance remains active.
+4. Never claim cancellation while a route preview or guidance remains present.
 
 ## 10. Register the service
 

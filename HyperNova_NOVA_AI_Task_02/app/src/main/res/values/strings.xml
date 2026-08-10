@@ -10,10 +10,10 @@
     <string name="ready_subtitle">How can I help?</string>
     <string name="listening_subtitle">I’m listening…</string>
     <string name="processing_subtitle">Understanding your request…</string>
-    <string name="executing_subtitle">Executing your command…</string>
-    <string name="success_subtitle">Command completed successfully</string>
-    <string name="error_subtitle">Something went wrong</string>
-    <string name="speaking_subtitle">NOVA is speaking…</string>
+    <string name="executing_subtitle">Completing your request…</string>
+    <string name="success_subtitle">Your request is complete</string>
+    <string name="error_subtitle">NOVA couldn’t complete that safely</string>
+    <string name="speaking_subtitle">Here’s what I found</string>
     <string name="voice_session">VOICE SESSION</string>
     <string name="idle_voice_hint">Say “Hey NOVA” to get started</string>
     <string name="listening_voice_hint">Go ahead — I’m listening</string>

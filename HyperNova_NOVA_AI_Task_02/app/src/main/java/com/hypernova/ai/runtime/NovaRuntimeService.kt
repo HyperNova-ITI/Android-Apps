@@ -8,6 +8,7 @@ import android.content.Intent
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.hypernova.ai.BuildConfig
 import com.hypernova.ai.NovaActivity
 import com.hypernova.ai.R
 import com.hypernova.ai.audio.NovaPcmPlayer
@@ -88,10 +89,29 @@ class NovaRuntimeService : Service(),
         val turnId = message.optionalText("turn_id")
         when (message.optString("type")) {
             "command_request" -> handleCommandRequest(message)
-            "state" -> publishWireState(message.optString("value"))
+            "state" -> publishWireState(message)
+            "latency" -> publishLatency(message)
+            "route" -> {
+                val tier = message.optionalText("tier")
+                NovaRuntimeState.publishRoute(turnId, tier)
+                if (BuildConfig.DEBUG) {
+                    Log.d(
+                        TAG,
+                        "NOVA route turn=${turnId ?: "unknown"} tier=${tier ?: "unknown"}",
+                    )
+                }
+            }
             "transcript" -> {
                 lastActionBlocked = false
                 NovaRuntimeState.publishTranscript(turnId, message.optString("text"))
+                publishControlState(NovaVisibleState.PROCESSING)
+            }
+            "progress" -> {
+                NovaRuntimeState.publishProgress(
+                    turnId,
+                    message.optString("text"),
+                    message.optionalText("tier"),
+                )
                 publishControlState(NovaVisibleState.PROCESSING)
             }
             "action" -> {
@@ -198,8 +218,8 @@ class NovaRuntimeService : Service(),
         NovaRuntimeState.publish(stateCoordinator.onControlState(state))
     }
 
-    private fun publishWireState(value: String) {
-        val state = when (value.lowercase()) {
+    private fun publishWireState(message: JSONObject) {
+        val state = when (message.optString("value").lowercase()) {
             "idle" -> NovaVisibleState.IDLE
             "listening" -> NovaVisibleState.LISTENING
             "thinking", "processing" -> NovaVisibleState.PROCESSING
@@ -210,11 +230,33 @@ class NovaRuntimeService : Service(),
             "unavailable" -> NovaVisibleState.UNAVAILABLE
             else -> return
         }
-        publishControlState(state)
+        val followUpWindowMs = message.optLong("window_ms", 0L)
+            .takeIf {
+                state == NovaVisibleState.LISTENING &&
+                    message.optBoolean("followup", false) &&
+                    it > 0L
+            }
+        NovaRuntimeState.publish(
+            stateCoordinator.onControlState(state),
+            followUpWindowMs,
+        )
+    }
+
+    private fun publishLatency(message: JSONObject) {
+        if (!BuildConfig.DEBUG) return
+        val turnId = message.optionalText("turn_id") ?: "unknown"
+        val ttfw = message.optionalDouble("ttfw_s")?.let { "%.2fs".format(it) } ?: "n/a"
+        val total = message.optionalDouble("total_s")?.let { "%.2fs".format(it) } ?: "n/a"
+        Log.d(TAG, "NOVA latency turn=$turnId ttfw=$ttfw total=$total")
     }
 
     private fun JSONObject.optionalText(name: String): String? =
         optString(name).trim().takeIf { it.isNotEmpty() }
+
+    private fun JSONObject.optionalDouble(name: String): Double? =
+        takeIf { has(name) && !isNull(name) }
+            ?.optDouble(name)
+            ?.takeIf { it.isFinite() }
 
     private fun createNotificationChannel() {
         getSystemService(NotificationManager::class.java).createNotificationChannel(

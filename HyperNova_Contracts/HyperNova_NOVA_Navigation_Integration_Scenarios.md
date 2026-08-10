@@ -402,7 +402,7 @@ If Work exists, NOVA uses its Navigation-issued destination ID and calls `setDes
 
 If it does not exist, NOVA should tell the user it is not configured.
 
-## Scenario 8 — Route start
+## Scenario 8 — Set destination and prepare route
 
 NOVA calls:
 
@@ -421,16 +421,21 @@ then:
 
 ```text
 STATUS_CONFIRMED
-STATE_ACTIVE
+STATE_IDLE
 ```
 
-NOVA should only tell the user that navigation has started after receiving:
+NOVA should only tell the user that the destination is set after receiving:
 
 ```text
 STATUS_CONFIRMED
 +
-STATE_ACTIVE
+selectedDestination
++
+real route metrics
 ```
+
+The Navigation app remains on `ROUTE_PREVIEW`. Guidance and trip simulation start only after the
+driver presses the Start button in Navigation.
 
 ## Scenario 9 — Ask about current route distance
 
@@ -683,18 +688,18 @@ STATUS_TIMEOUT
 STATUS_CANCELLED
 ```
 
-For route start:
+For destination setup:
 
 ```text
 ACCEPTED
 ```
 
-means the request was accepted, not that the route is already active.
+means the request was accepted, not that the route preview is ready.
 
 Final success requires:
 
 ```text
-CONFIRMED + ACTIVE
+CONFIRMED + selected destination + real route metrics
 ```
 
 ## 11. Navigation states
@@ -707,7 +712,7 @@ STATE_ARRIVED
 STATE_ERROR
 ```
 
-Typical route start:
+Typical destination setup through NOVA:
 
 ```text
 IDLE
@@ -716,7 +721,7 @@ IDLE
 CALCULATING
   |
   v
-ACTIVE
+IDLE with a prepared route preview
 ```
 
 Cancellation:
@@ -768,11 +773,11 @@ route success
 saved places
 ```
 
-NOVA must not claim navigation started before:
+NOVA must not claim the destination is set before:
 
 ```text
 STATUS_CONFIRMED
-STATE_ACTIVE
+selectedDestination
 ```
 
 ## 14. What Navigation must not do
@@ -830,13 +835,13 @@ setDestination(nav-A)
 
 Navigation:
 calculates route
-STATE_ACTIVE
+route preview ready
 real ETA + distance
 
         ↓
 
 NOVA:
-"Starting navigation to <destination>.
+"Destination set to <destination>.
 It's about 4 minutes away."
 
         ↓
@@ -847,7 +852,7 @@ Driver:
         ↓
 
 NOVA:
-uses active route context
+uses the selected route context
 
         ↓
 

@@ -155,7 +155,7 @@ LISTENING → PROCESSING → EXECUTING → COMPLETED → SPEAKING → READY
 The Climate harness changes to `22°C`. NOVA must not say “Climate set to 22°C” while the provider is
 only `accepted`; it waits for `confirmed`.
 
-### Saved destination and active route
+### Saved destination and route preview
 
 Say:
 
@@ -165,7 +165,8 @@ Hey NOVA, navigate home
 
 NOVA first requests the saved destinations, resolves the returned opaque Home ID, calls
 `setDestination`, opens Navigation while the route is calculating, and speaks success only after
-the provider reports active guidance.
+the provider reports that the real route preview is ready. Guidance starts only when the driver
+presses Start in Navigation.
 
 ### Search, four choices, selection
 
@@ -296,7 +297,7 @@ Verified on 2026-07-28 with Android 16/API 36 and `hnc-ai30.local`:
 - The Pi USB microphone opened as `plughw:CARD=Device,DEV=0`.
 - Both live Pi↔Android sockets connected.
 - `set_temperature(22°C)` returned accepted then confirmed; NOVA spoke only the confirmation.
-- saved Home resolved to its returned opaque ID; active guidance confirmed in 1.46 seconds.
+- saved Home resolved to its returned opaque ID; its route preview was confirmed in 1.46 seconds.
 - forced Climate rejection produced an error response and no success claim.
 - Climate and Navigation harnesses were restored to `Normal` after testing.
 

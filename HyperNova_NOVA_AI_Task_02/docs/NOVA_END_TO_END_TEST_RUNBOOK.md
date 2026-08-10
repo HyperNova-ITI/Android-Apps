@@ -30,7 +30,7 @@ ssh -i ~/.ssh/id_ed25519_hypernova_nova nova@hnc-ai30.local hostname -I
 Save the returned LAN address for the rest of the session:
 
 ```bash
-PI_IP=192.168.1.32
+PI_IP=192.168.10.20
 ```
 
 Replace the example address if DHCP assigned a different one. Android should use the IPv4 address,
@@ -105,6 +105,10 @@ host firewall before opening Android.
 
 ```bash
 export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-$HOME/Android/Sdk}"
+QEMU_AUDIO_DRV=pa \
+QEMU_PA_SAMPLES=8192 \
+QEMU_AUDIO_DAC_FIXED_SETTINGS=1 \
+QEMU_AUDIO_DAC_FIXED_FREQ=48000 \
 "$ANDROID_SDK_ROOT/emulator/emulator" \
   -avd HyperNova_API_36 \
   -skin 1080x1920 \
@@ -139,6 +143,12 @@ The API 35 emulator is only a fallback. The project test target is Android 16/AP
 MapLibre in Navigation and Launcher requires Vulkan. Do not launch this AVD with
 `-feature -Vulkan`; that configuration makes both apps terminate with
 `No Vulkan compatible GPU found`.
+
+Keep the audio environment variables in the launch command. They use the PulseAudio backend,
+match Android's 48 kHz output, and give QEMU enough host-side buffering for clean speech. The
+default small/zero-latency emulator buffer produced audible breakup even when the exact same WAV
+played cleanly on the laptop outside Android. Do not force `QEMU_AUDIO_TIMER_PERIOD`: a timer
+override made the Ranchu virtual PCM device enter a persistent I/O-error state on later playbacks.
 
 ## 6. Build and install NOVA and the real feature apps
 
@@ -207,7 +217,8 @@ PASS: TCP -> NOVA -> AIDL -> Climate/Navigation -> final callback
 ```
 
 Open Launcher after the pass. Its Climate card should show 22°C, fan 3, and AUTO, and Navigation
-should show an active route to the returned saved-home destination. Press Ctrl+C when finished.
+should show the prepared route preview for the returned saved-home destination. Press Ctrl+C when
+finished.
 
 ## 8B. Live Pi integration mode
 
@@ -342,6 +353,14 @@ When reporting a failure, include:
 - Check `AudioTrack` output in Android logs.
 - Confirm laptop emulator audio is not muted.
 - On NXP, verify Android audio focus and output routing to the passed-through speaker.
+
+### Emulator speech sounds rough or broken up
+
+- Fully stop the emulator; changing the variables after it has started has no effect.
+- Relaunch it with the four `QEMU_AUDIO_*`/`QEMU_PA_SAMPLES` settings from step 5.
+- Confirm the laptop output device itself is clean by playing ordinary audio outside the emulator.
+- This workaround is for the laptop QEMU audio backend. Revalidate clean playback separately on
+  the NXP Android 16 guest and its real audio HAL.
 
 ## Stop the test safely
 

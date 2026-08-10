@@ -82,29 +82,29 @@ class NavigationResultFactory(
             )
         }
 
-    fun activeRouteResult(
+    fun destinationSetResult(
         requestId: String,
         destination: ResolvedDestination,
         state: NavigationSessionState
     ): NavigationResult {
         val route =
             state.routePlan?.selected
-        val isAuthoritativelyActive =
+        val isAuthoritativelyReady =
             RouteConfirmationPolicy.canConfirm(
                 state = state,
                 destinationId = destination.id
             )
 
-        return if (isAuthoritativelyActive && route != null) {
+        return if (isAuthoritativelyReady && route != null) {
             NavigationResult(
                 requestId,
                 NavigationContract.OP_SET_DESTINATION,
                 HyperNovaContract.STATUS_CONFIRMED,
-                "Navigation is active.",
+                "Destination set to ${destination.place.name}. Route is ready.",
                 HyperNovaContract.ERROR_NONE,
                 emptyList(),
                 destination.toContract(),
-                NavigationContract.STATE_ACTIVE,
+                NavigationContract.STATE_IDLE,
                 route.durationSeconds.roundToLong(),
                 route.distanceMeters.roundToLong()
             )
@@ -113,7 +113,7 @@ class NavigationResultFactory(
                 requestId,
                 NavigationContract.OP_SET_DESTINATION,
                 HyperNovaContract.STATUS_UNAVAILABLE,
-                "The route was not activated.",
+                "The route preview was not prepared.",
                 HyperNovaContract.ERROR_INTERNAL,
                 emptyList(),
                 destination.toContract(),

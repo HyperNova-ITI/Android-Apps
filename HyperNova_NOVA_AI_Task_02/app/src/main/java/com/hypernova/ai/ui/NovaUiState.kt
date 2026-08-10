@@ -7,7 +7,9 @@ data class NovaUiState(
     val transcript: String? = null,
     val primaryMessage: String = "NOVA AI is unavailable",
     val secondaryMessage: String? = "Check the connection and try again",
+    val followUpDeadlineElapsedRealtimeMs: Long? = null,
     val isMicrophoneAvailable: Boolean = false,
     val canCancel: Boolean = false,
     val isSpeaking: Boolean = false,
+    val showActivityProgress: Boolean = false,
 )

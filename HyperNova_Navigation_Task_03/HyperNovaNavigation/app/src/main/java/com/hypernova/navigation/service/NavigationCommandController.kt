@@ -348,7 +348,7 @@ class NavigationCommandController(
                             )
                         }
                         is DestinationResolution.Found -> {
-                            startRoute(
+                            prepareRoute(
                                 key = key,
                                 requestId = id,
                                 destination =
@@ -451,18 +451,18 @@ class NavigationCommandController(
         executor.shutdownNow()
     }
 
-    private fun startRoute(
+    private fun prepareRoute(
         key: RequestKey,
         requestId: String,
         destination: ResolvedDestination
     ) {
         val generation =
-            repository.startNavigation(destination) { result ->
+            repository.prepareNavigation(destination) { result ->
                 result.fold(
                     onSuccess = { state ->
                         finish(
                             key,
-                            resultFactory.activeRouteResult(
+                            resultFactory.destinationSetResult(
                                 requestId,
                                 destination,
                                 state

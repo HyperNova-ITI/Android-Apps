@@ -355,6 +355,33 @@ class NavigationRepository(
             (
                 Result<NavigationSessionState>
             ) -> Unit
+    ): Int =
+        calculateNavigationRoute(
+            destination = destination,
+            activateWhenReady = true,
+            callback = callback
+        )
+
+    fun prepareNavigation(
+        destination: ResolvedDestination,
+        callback:
+            (
+                Result<NavigationSessionState>
+            ) -> Unit
+    ): Int =
+        calculateNavigationRoute(
+            destination = destination,
+            activateWhenReady = false,
+            callback = callback
+        )
+
+    private fun calculateNavigationRoute(
+        destination: ResolvedDestination,
+        activateWhenReady: Boolean,
+        callback:
+            (
+                Result<NavigationSessionState>
+            ) -> Unit
     ): Int {
         val origin =
             originProvider()
@@ -390,7 +417,7 @@ class NavigationRepository(
         return requestRoute(
             origin = origin,
             destination = destination,
-            activateWhenReady = true
+            activateWhenReady = activateWhenReady
         ) { result ->
             result.fold(
                 onSuccess = {

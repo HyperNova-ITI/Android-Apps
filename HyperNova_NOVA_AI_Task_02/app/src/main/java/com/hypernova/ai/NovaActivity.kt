@@ -7,6 +7,9 @@ import android.content.res.ColorStateList
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import android.view.View
 import android.view.animation.LinearInterpolator
 import androidx.activity.viewModels
@@ -27,6 +30,23 @@ class NovaActivity : AppCompatActivity() {
     private val viewModel: NovaViewModel by viewModels()
     private var orbAnimator: ObjectAnimator? = null
     private var animatedState: NovaVisibleState? = null
+    private val countdownHandler = Handler(Looper.getMainLooper())
+    private var followUpDeadlineElapsedRealtimeMs: Long? = null
+    private val followUpCountdownTick = object : Runnable {
+        override fun run() {
+            val deadline = followUpDeadlineElapsedRealtimeMs ?: return
+            val remainingMs = (deadline - SystemClock.elapsedRealtime()).coerceAtLeast(0L)
+            val remainingSeconds = (remainingMs + 999L) / 1_000L
+            binding.textSecondaryMessage.text = if (remainingMs > 0L) {
+                "Continue speaking · ${remainingSeconds}s"
+            } else {
+                "Listening window closed"
+            }
+            if (remainingMs > 0L) {
+                countdownHandler.postDelayed(this, minOf(remainingMs, 250L))
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,11 +96,14 @@ class NovaActivity : AppCompatActivity() {
         textPrimaryMessage.text = state.primaryMessage
         textSecondaryMessage.text = state.secondaryMessage.orEmpty()
         textSecondaryMessage.visibility = if (state.secondaryMessage == null) View.GONE else View.VISIBLE
+        renderFollowUpCountdown(state.followUpDeadlineElapsedRealtimeMs)
 
         val statusColor = ContextCompat.getColor(this@NovaActivity, state.visibleState.colorResource())
         textStatus.setTextColor(statusColor)
         statusDot.backgroundTintList = ColorStateList.valueOf(statusColor)
         textStateEyebrow.setTextColor(statusColor)
+        stateProgress.setIndicatorColor(statusColor)
+        stateProgress.visibility = if (state.showActivityProgress) View.VISIBLE else View.GONE
 
         val unavailable = state.visibleState == NovaVisibleState.UNAVAILABLE
         orbRing.imageAlpha = if (unavailable) 88 else 255
@@ -93,6 +116,15 @@ class NovaActivity : AppCompatActivity() {
 
         buttonSecondary.visibility = if (unavailable) View.VISIBLE else View.GONE
         buttonSecondary.isEnabled = unavailable
+    }
+
+    private fun renderFollowUpCountdown(deadlineElapsedRealtimeMs: Long?) {
+        countdownHandler.removeCallbacks(followUpCountdownTick)
+        followUpDeadlineElapsedRealtimeMs = deadlineElapsedRealtimeMs
+        if (deadlineElapsedRealtimeMs != null) {
+            binding.textSecondaryMessage.visibility = View.VISIBLE
+            followUpCountdownTick.run()
+        }
     }
 
     private fun animateOrb(state: NovaVisibleState) {
@@ -132,13 +164,18 @@ class NovaActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        countdownHandler.removeCallbacks(followUpCountdownTick)
         orbAnimator?.cancel()
         super.onDestroy()
     }
 
     private fun NovaVisibleState.statusLabel(): String = when (this) {
         NovaVisibleState.IDLE -> "READY"
+        NovaVisibleState.PROCESSING -> "UNDERSTANDING"
+        NovaVisibleState.EXECUTING -> "ACTING"
+        NovaVisibleState.SPEAKING -> "RESPONDING"
         NovaVisibleState.SUCCESS -> "COMPLETED"
+        NovaVisibleState.ERROR -> "NEEDS ATTENTION"
         else -> name
     }
 

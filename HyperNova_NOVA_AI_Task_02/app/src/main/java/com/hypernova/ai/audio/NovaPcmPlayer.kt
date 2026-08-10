@@ -66,19 +66,26 @@ class NovaPcmPlayer(
 
         this.streamId = streamId
         pendingPcm = ByteArrayOutputStream(maxOf(minimumBuffer, sampleRate))
-        listener.onPlaybackChanged(true, turnId)
     }
 
     private fun applyConfiguredAssistantVolume() {
         val requested = BuildConfig.NOVA_ASSISTANT_VOLUME_INDEX
         if (requested < 0) return
-        val maximum = audioManager.getStreamMaxVolume(ASSISTANT_STREAM)
-        val target = requested.coerceIn(
-            audioManager.getStreamMinVolume(ASSISTANT_STREAM),
-            maximum,
-        )
-        if (audioManager.getStreamVolume(ASSISTANT_STREAM) != target) {
-            audioManager.setStreamVolume(ASSISTANT_STREAM, target, 0)
+        try {
+            // The phone emulator routes USAGE_ASSISTANT through the media mixer but does not
+            // expose Android Automotive's private assistant stream (stream type 11). Querying that
+            // stream throws and used to tear down the whole PCM socket before playback began.
+            val maximum = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+            val target = requested.coerceIn(
+                audioManager.getStreamMinVolume(AudioManager.STREAM_MUSIC),
+                maximum,
+            )
+            if (audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) != target) {
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, target, 0)
+            }
+        } catch (error: RuntimeException) {
+            // Volume is a presentation preference, never a reason to drop response audio.
+            Log.w(TAG, "Could not apply the debug assistant volume preset", error)
         }
     }
 
@@ -116,6 +123,10 @@ class NovaPcmPlayer(
         }
         activeTrack.setVolume(1f)
         activeTrack.play()
+        // This callback is the Pi's time-to-first-word marker. TTS_START means only that buffering
+        // began; reporting "started" before AudioTrack.play() produced optimistic latency numbers
+        // and showed SPEAKING while the cockpit was still silent.
+        listener.onPlaybackChanged(true, turnId)
 
         val playbackMs = (written.toLong() / BYTES_PER_SAMPLE * 1_000L / sampleRate) + PLAYBACK_TAIL_MS
         try {
@@ -147,7 +158,6 @@ class NovaPcmPlayer(
     private companion object {
         const val TAG = "NovaPcmPlayer"
         const val BYTES_PER_SAMPLE = 2
-        const val ASSISTANT_STREAM = 11
         const val PLAYBACK_TAIL_MS = 80L
         const val MAX_PLAYBACK_MS = 30_000L
     }

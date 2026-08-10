@@ -16,6 +16,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.hypernova.launcher.core.assistant.NovaAssistantStateParser
 import com.hypernova.launcher.core.assistant.NovaStatusClient
 import com.hypernova.launcher.core.climate.ClimateStatusClient
 import com.hypernova.launcher.core.dashboard.DashboardCard
@@ -69,6 +70,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var latestUiState: LauncherUiState
     private var novaOrbAnimator: ObjectAnimator? = null
     private var animatedNovaState: AssistantRuntimeState? = null
+    private var previousAssistantRuntimeState: AssistantRuntimeState? = null
     private var navigationMapView: MapView? = null
     private var navigationMapController: LauncherNavigationMapController? = null
 
@@ -164,8 +166,19 @@ class MainActivity : AppCompatActivity() {
         novaStatusClient =
             NovaStatusClient(this) { snapshot ->
                 runOnUiThread {
+                    val runtimeState = NovaAssistantStateParser.parse(snapshot.state)
                     stateController.updateAssistantSnapshot(snapshot)
                     refreshAndRenderState()
+                    // Climate exposes a frozen one-shot status query rather than a status
+                    // observer. Refresh after a completed NOVA action so the Launcher card and
+                    // the spoken confirmation always describe the same cockpit state.
+                    if (
+                        runtimeState == AssistantRuntimeState.SUCCESS &&
+                        previousAssistantRuntimeState != AssistantRuntimeState.SUCCESS
+                    ) {
+                        climateStatusClient.refresh()
+                    }
+                    previousAssistantRuntimeState = runtimeState
                 }
             }
 
