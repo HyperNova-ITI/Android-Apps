@@ -23,6 +23,13 @@ The frozen contract already fixes the numbers you must honor:
 
 ## 1. The core architecture question — linking CarProperty to the bare-metal TC397 over Ethernet
 
+> **Superseded 2026-07-31:** the "socket owner" question in §1.3/§3 below is now answered by
+> `HyperNova_Contracts/docs/VEHICLE_NETWORK_ARCHITECTURE.md` (frozen decision v1). Climate does not
+> open a socket to TC397 directly — it binds to a shared `com.hypernova.vehiclegateway` Android
+> service, which talks to a QNX guest network service that owns the actual TC397 socket and frame
+> protocol. Read that document first; §1.2–§1.4 below are kept for historical context on why a
+> VHAL bridge was considered and rejected for now.
+
 Your question: *"How does CarProperty get its values from the vehicle when the vehicle is the bare-metal TC397, and the IVI connects to it over Ethernet?"*
 
 Short answer: **`CarPropertyManager` never talks to hardware directly. It talks to a HAL (the VHAL). To connect real hardware you put your Ethernet client inside — or behind — that HAL.** There are two clean ways to do it, and the README's `ClimateBackend` abstraction is designed so you can pick one without changing the UI.
@@ -139,15 +146,22 @@ Fourteen phases, ordered so each one is demoable and de-risks the next. Phases 1
 - Feed it from an in-memory `StateFlow` for now (in `viewModel`/test scope, not a production repository).
 - **Exit check:** flipping state in a debug hook drives every visual state correctly.
 
-### Phase 6 — Backend abstraction + transport layer
+### Phase 6 — Backend abstraction + gateway client (superseded transport approach)
 - Define `ClimateBackend` (README §38): `state: StateFlow<ClimateState>`, `capabilities: StateFlow<ClimateCapabilities>`, `suspend execute(command)`, `suspend refreshState()`.
-- Build the reusable **TC397 transport**: frame encode/decode, CRC-16/CCITT-FALSE, SEQ correlation, TCP command client (one connection), UDP telemetry listener, ACK/reject/timeout state machine (5 s mutations, 2 s queries). This is shared by both backend options.
-- **Exit check:** transport unit-tested against known CRC vectors and a loopback socket stub (test-only, under `src/test`).
+- ~~Build the reusable TC397 transport (frame encode/decode, CRC-16, SEQ correlation) inside Climate~~ —
+  per `VEHICLE_NETWORK_ARCHITECTURE.md` this now lives in the QNX guest network service, not here.
+  Instead, build an `IVehicleGatewayService` client: bind, correlate `requestId`s, map ACK/reject/
+  timeout JSON results (§5/§6 of that doc) onto the same 5 s mutation / 2 s query timeout rules.
+- **Exit check:** gateway client unit-tested against a loopback JSON socket stub standing in for the
+  Android Vehicle Gateway service (test-only, under `src/test`).
 
-### Phase 7 — Primary backend: `VehicleGatewayClimateBackend` (Option B)
-- Implement `ClimateBackend` over the transport: map `execute()` commands to `CMD_SET_HVAC`; parse `EVT_SENSOR_DATA` into `cabin/outside` temps + air quality; parse `EVT_FAULT_EVENT` into `ClimateHealth`.
+### Phase 7 — Primary backend: `VehicleGatewayClimateBackend` (binds the shared gateway service)
+- Implement `ClimateBackend` over the Phase 6 client: map `execute()` commands to
+  `sendCommand(domain="climate", operation="set_hvac", ...)`; parse telemetry/fault JSON pushed via
+  `IVehicleTelemetryListener` into `cabin` temp/humidity and `ClimateHealth`.
 - Derive **real** `ClimateCapabilities` from the TC397 mapping table (§1.5) — advertise only temp/fan/zone until more frames land.
-- **Exit check:** app shows live TC397 values; a temperature change round-trips ACK→confirmed against the board (or the socket simulator).
+- **Exit check:** app shows live TC397 values; a temperature change round-trips ACK→confirmed through
+  Climate → `com.hypernova.vehiclegateway` → QNX → TC397 (or a gateway-service simulator).
 
 ### Phase 8 — Command manager & confirmation semantics
 - `ClimateCommandManager` (README §19, §29–§33): serialize conflicting commands, block duplicates while pending, hold `confirmed` until ACK, surface `Requested` vs `Confirmed`, handle REJECTED (restore confirmed), TIMEOUT (don't claim success, offer refresh), and honor authorization rejections from TC397 (overheat/critical/sensor-fault reasons `0x04/0x07/0x08`).
@@ -186,7 +200,9 @@ Fourteen phases, ordered so each one is demoable and de-risks the next. Phases 1
 
 1. **Scaffold the Gradle project** (Phase 1) by copying the Launcher project shape, then wire the `hypernova-contracts` module path and confirm `assembleDebug` + contract imports.
 2. **Port the design tokens** (Phase 2) into `res/values` and stand up `Theme.HyperNovaClimate`.
-3. **Decide the socket owner** for the TC397 link with the NXP team — does the IVI open TCP `192.168.10.30:6001` directly, or does the NXP gateway relay? This determines whether `VehicleGatewayClimateBackend` connects straight to the board or to the gateway, and it's the one external dependency that gates Phase 7.
+3. **Decided:** the NXP gateway relays (see `VEHICLE_NETWORK_ARCHITECTURE.md`) — Climate never opens
+   TCP `192.168.10.30:6001` itself. The remaining external dependency gating Phase 7 is the QNX-side
+   guest network service (that doc's Phase 3) and the inter-guest virtio-net link it needs.
 
 ---
 
@@ -194,7 +210,9 @@ Fourteen phases, ordered so each one is demoable and de-risks the next. Phases 1
 
 - **Capability mismatch is the #1 correctness trap.** The rich README UI implies A/C, AUTO, recirc, defrost, seat heat — the TC397 doesn't implement those yet. Advertise only temp/fan/zone; let capabilities hide the rest. Do **not** fake them.
 - **Confirmation discipline.** ACK ≠ requested-applied-optimistically. Every mutation waits for `EVT_CMD_ACK` or authoritative readback; 5 s → timeout, explicit reject → restore confirmed.
-- **One TCP client only.** The TC397 serves a single command connection. If both the VHAL and the app try to own it, they collide — decide the single owner (§3 step 3).
+- **One TCP client only.** The TC397 serves a single command connection. Resolved by
+  `VEHICLE_NETWORK_ARCHITECTURE.md`: the QNX guest network service is that one client; Climate (and
+  every future TC397-consuming app) shares it through `com.hypernova.vehiclegateway`.
 - **Signing.** NOVA and Climate must share the integration key or the signature-protected bind fails silently. Build integration APKs on one machine / shared debug key.
 - **No production dummy data** anywhere outside `src/test` / `src/androidTest` (README §5).
 
@@ -202,6 +220,7 @@ Fourteen phases, ordered so each one is demoable and de-risks the next. Phases 1
 
 ## 5. Source-of-truth references
 
+- **Vehicle network architecture (frozen decision v1):** `HyperNova_Contracts/docs/VEHICLE_NETWORK_ARCHITECTURE.md`
 - App spec: `HyperNova_Climate_Task_05/README.md` (visual + full capability model)
 - NOVA service recipe: `HyperNova_Contracts/docs/MAHGOUB_CLIMATE_SERVICE_GUIDE.md`
 - Frozen contract code: `HyperNova_Contracts/contracts/src/main/...` (`ClimateContract.java` constants)
