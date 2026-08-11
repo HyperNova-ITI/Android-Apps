@@ -1,8 +1,34 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp" android:height="108dp"
-    android:viewportWidth="108" android:viewportHeight="108">
-    <group android:scaleX="2.4" android:scaleY="2.4" android:translateX="25.2" android:translateY="25.2">
-        <path android:fillColor="#25D9E8"
-            android:pathData="M12,2l2.2,4.2L19,5.2l-1,4.8L22,12l-4,2 1,4.8 -4.8,-1L12,22l-2.2,-4.2L5,18.8l1,-4.8L2,12l4,-2 -1,-4.8 4.8,1z" />
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Keep the supplied car + snowflake composition inside the adaptive safe zone. -->
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.76"
+        android:scaleY="0.76">
+
+        <!-- Front/three-quarter vehicle silhouette with transparent glass and lamps. -->
+        <path
+            android:fillColor="@color/hn_icon_foreground"
+            android:fillType="evenOdd"
+            android:pathData="M0,44C0,41.8 1.8,40 4,40L11,40L18.5,25.8C22,19.1 27.4,16 36.5,15.7L54,15.7C60.8,15.7 66.8,16.3 72,18.1C66.7,19.6 61.8,22 57.5,25.2L36.5,25.2C29.2,25.2 26,27.3 23.4,32.3L19.4,40L43.3,40C40.5,45.4 39,51.5 39,58C39,68.2 43.4,77.4 50.4,83.8L31.3,83.8C27.5,83.8 24.5,86.8 24.5,90.5L24.5,94L19.5,94L19.5,101C19.5,103.2 17.7,105 15.5,105L8.2,105C6,105 4.2,103.2 4.2,101L4.2,94C1.6,92.6 0,89.9 0,87L0,70.5C0,66.9 1.5,61.7 3.4,57.1L5.5,52L4,52C1.8,52 0,50.2 0,48ZM10.8,57.3L28.8,62.2L26.6,70.4L10.2,66C8.6,65.6 7.6,64 8,62.4ZM11.6,78.5C16.5,75.2 22.5,75.1 25,77C22.7,81.2 16.7,83.6 9.3,83.6C8.3,81.8 9.3,80 11.6,78.5Z" />
+
+        <!-- Large HVAC snowflake overlay and its circular surround. -->
+        <path
+            android:fillColor="@android:color/transparent"
+            android:pathData="M108,58C108,76.8 92.8,92 74,92C55.2,92 40,76.8 40,58C40,39.2 55.2,24 74,24C92.8,24 108,39.2 108,58Z"
+            android:strokeColor="@color/hn_icon_foreground"
+            android:strokeWidth="4.2" />
+        <path
+            android:fillColor="@android:color/transparent"
+            android:pathData="M74,32L74,84M48,58L100,58M55.6,39.6L92.4,76.4M92.4,39.6L55.6,76.4M74,32L68,38M74,32L80,38M74,84L68,78M74,84L80,78M48,58L54,52M48,58L54,64M100,58L94,52M100,58L94,64M55.6,39.6L55.6,48M55.6,39.6L64,39.6M92.4,76.4L84,76.4M92.4,76.4L92.4,68M92.4,39.6L84,39.6M92.4,39.6L92.4,48M55.6,76.4L55.6,68M55.6,76.4L64,76.4"
+            android:strokeColor="@color/hn_icon_foreground"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:strokeWidth="4.2" />
     </group>
 </vector>

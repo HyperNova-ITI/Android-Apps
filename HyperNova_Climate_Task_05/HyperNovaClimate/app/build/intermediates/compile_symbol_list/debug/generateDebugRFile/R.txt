@@ -117,6 +117,7 @@ int id airflowView 0x0
 int id btnAirflowFace 0x0
 int id btnAirflowFaceFeet 0x0
 int id btnAirflowFeet 0x0
+int id btnAirflowWindshield 0x0
 int id btnBack 0x0
 int id btnClimateAc 0x0
 int id btnClimateAuto 0x0

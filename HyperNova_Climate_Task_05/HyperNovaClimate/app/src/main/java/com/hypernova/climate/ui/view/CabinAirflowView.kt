@@ -217,18 +217,41 @@ class CabinAirflowView @JvmOverloads constructor(
         }
     }
 
-    /** Matches ImageView scaleType=fitStart: scale to fit, aligned top-left. */
+    /**
+     * Matches ImageView scaleType=fitCenter.
+     *
+     * The vehicle drawable keeps its aspect ratio and is centered inside the
+     * available center stage. Airflow coordinates must use the exact same
+     * displayed rectangle, otherwise the particles remain aligned to the old
+     * top-aligned vehicle position.
+     */
     private fun computeCarRect(vw: Float, vh: Float) {
         if (vw <= 0f || vh <= 0f) return
+
         val viewAspect = vw / vh
+
         if (viewAspect > CAR_ASPECT) {
-            // Height-limited: full height, aligned to the left.
+            // Image is height-limited: full height, centered horizontally.
             val w = vh * CAR_ASPECT
-            carRect.set(0f, 0f, w, vh)
+            val left = (vw - w) / 2f
+
+            carRect.set(
+                left,
+                0f,
+                left + w,
+                vh
+            )
         } else {
-            // Width-limited: full width, aligned to the top.
+            // Image is width-limited: full width, centered vertically.
             val h = vw / CAR_ASPECT
-            carRect.set(0f, 0f, vw, h)
+            val top = (vh - h) / 2f
+
+            carRect.set(
+                0f,
+                top,
+                vw,
+                top + h
+            )
         }
     }
 

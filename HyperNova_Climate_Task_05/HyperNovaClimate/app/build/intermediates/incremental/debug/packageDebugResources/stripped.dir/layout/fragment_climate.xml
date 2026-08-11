@@ -680,58 +680,98 @@
             android:contentDescription="@string/cd_fan_plus" />
     </LinearLayout>
 
-    <!-- ========= AIRFLOW DIRECTION + FRESH / RECIRCULATE ========= -->
+    <!-- ================ AIRFLOW + FRESH/RECIRCULATE ================ -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="@dimen/hn_airflow_row_height"
         android:layout_marginTop="@dimen/hn_section_gap"
-        android:orientation="vertical"
-        android:gravity="center_vertical"
-        android:background="@drawable/bg_card"
-        android:paddingHorizontal="@dimen/hn_space_12"
-        android:paddingVertical="@dimen/hn_space_8">
+        android:orientation="horizontal"
+        android:baselineAligned="false">
 
-        <TextView
-            style="@style/HnText.SectionTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/label_airflow" />
-
-        <!-- One row: 3 airflow icons | divider | fresh air, recirculate -->
+        <!-- Airflow direction -->
         <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/hn_space_8"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1.4"
+            android:orientation="vertical"
+            android:gravity="center_vertical"
+            android:background="@drawable/bg_card"
+            android:paddingHorizontal="@dimen/hn_space_12"
+            android:paddingVertical="@dimen/hn_space_8">
+            <TextView
+                style="@style/HnText.SectionTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/label_airflow" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/hn_space_8"
+                android:orientation="horizontal">
+                <ImageButton android:id="@+id/btnAirflowFace" style="@style/HnControlButton"
+                    android:background="@drawable/bg_control_selected"
+                    android:src="@drawable/ic_airflow_face" app:tint="@color/hn_primary_cyan"
+                    android:contentDescription="@string/cd_airflow_face" />
+                <ImageButton android:id="@+id/btnAirflowFaceFeet" style="@style/HnControlButton"
+                    android:layout_marginStart="@dimen/hn_space_8"
+                    android:src="@drawable/ic_airflow_face_feet" app:tint="@color/hn_text_secondary"
+                    android:contentDescription="@string/cd_airflow_face_feet" />
+                <ImageButton android:id="@+id/btnAirflowFeet" style="@style/HnControlButton"
+                    android:layout_marginStart="@dimen/hn_space_8"
+                    android:src="@drawable/ic_airflow_feet" app:tint="@color/hn_text_secondary"
+                    android:contentDescription="@string/cd_airflow_feet" />
+                <ImageButton android:id="@+id/btnAirflowWindshield" style="@style/HnControlButton"
+                    android:layout_marginStart="@dimen/hn_space_8"
+                    android:src="@drawable/ic_windshield" app:tint="@color/hn_text_secondary"
+                    android:contentDescription="@string/cd_airflow_windshield" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Fresh air / recirculate -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="@dimen/hn_section_gap"
             android:orientation="horizontal"
-            android:gravity="center_vertical">
-
-            <ImageButton android:id="@+id/btnAirflowFace" style="@style/HnControlButton"
+            android:gravity="center_vertical"
+            android:background="@drawable/bg_card"
+            android:padding="@dimen/hn_space_8">
+            <LinearLayout
+                android:id="@+id/btnFreshAir"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
                 android:background="@drawable/bg_control_selected"
-                android:src="@drawable/car_fan_mid_left_24px" app:tint="@color/hn_primary_cyan"
-                android:contentDescription="@string/cd_airflow_face" />
-            <ImageButton android:id="@+id/btnAirflowFeet" style="@style/HnControlButton"
+                android:padding="@dimen/hn_space_8">
+                <ImageView android:layout_width="@dimen/hn_icon_medium"
+                    android:layout_height="@dimen/hn_icon_medium"
+                    android:src="@drawable/ic_fresh_air" app:tint="@color/hn_primary_cyan"
+                    android:contentDescription="@string/label_fresh_air" />
+                <TextView style="@style/HnText.Label" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:layout_marginTop="@dimen/hn_space_4"
+                    android:text="@string/label_fresh_air" />
+            </LinearLayout>
+            <LinearLayout
+                android:id="@+id/btnRecirculation"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:layout_marginStart="@dimen/hn_space_8"
-                android:src="@drawable/car_fan_low_left_24px" app:tint="@color/hn_text_secondary"
-                android:contentDescription="@string/cd_airflow_feet" />
-            <ImageButton android:id="@+id/btnAirflowFaceFeet" style="@style/HnControlButton"
-                android:layout_marginStart="@dimen/hn_space_8"
-                android:src="@drawable/car_fan_low_mid_left_24px" app:tint="@color/hn_text_secondary"
-                android:contentDescription="@string/cd_airflow_face_feet" />
-
-            <View
-                android:layout_width="1dp"
-                android:layout_height="40dp"
-                android:layout_marginHorizontal="@dimen/hn_space_12"
-                android:background="@color/hn_border_subtle" />
-
-            <ImageButton android:id="@+id/btnFreshAir" style="@style/HnControlButton"
-                android:background="@drawable/bg_control_selected"
-                android:src="@drawable/ic_fresh_air" app:tint="@color/hn_primary_cyan"
-                android:contentDescription="@string/label_fresh_air" />
-            <ImageButton android:id="@+id/btnRecirculation" style="@style/HnControlButton"
-                android:layout_marginStart="@dimen/hn_space_8"
-                android:src="@drawable/ic_recirculate" app:tint="@color/hn_text_secondary"
-                android:contentDescription="@string/label_recirculate" />
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="@drawable/bg_control_toggle"
+                android:padding="@dimen/hn_space_8">
+                <ImageView android:layout_width="@dimen/hn_icon_medium"
+                    android:layout_height="@dimen/hn_icon_medium"
+                    android:src="@drawable/ic_recirculate" app:tint="@color/hn_text_secondary"
+                    android:contentDescription="@string/label_recirculate" />
+                <TextView style="@style/HnText.Label" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:layout_marginTop="@dimen/hn_space_4"
+                    android:text="@string/label_recirculate" />
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 
