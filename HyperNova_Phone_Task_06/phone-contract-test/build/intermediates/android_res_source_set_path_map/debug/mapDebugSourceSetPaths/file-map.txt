@@ -1,0 +1,8 @@
+com.hypernova.phone.contracttest.phone-contract-test-pngs-0 /home/ayman/ITI/Android-Apps/HyperNova_Phone_Task_06/phone-contract-test/build/generated/res/pngs/debug
+com.hypernova.phone.contracttest.phone-contract-test-updated_navigation_xml-1 /home/ayman/ITI/Android-Apps/HyperNova_Phone_Task_06/phone-contract-test/build/generated/updated_navigation_xml/debug
+com.hypernova.phone.contracttest.phone-contract-test-packageDebugResources-2 /home/ayman/ITI/Android-Apps/HyperNova_Phone_Task_06/phone-contract-test/build/intermediates/incremental/debug/packageDebugResources/merged.dir
+com.hypernova.phone.contracttest.phone-contract-test-packageDebugResources-3 /home/ayman/ITI/Android-Apps/HyperNova_Phone_Task_06/phone-contract-test/build/intermediates/incremental/debug/packageDebugResources/stripped.dir
+com.hypernova.phone.contracttest.phone-contract-test-debug-4 /home/ayman/ITI/Android-Apps/HyperNova_Phone_Task_06/phone-contract-test/build/intermediates/merged_res/debug/mergeDebugResources
+com.hypernova.phone.contracttest.phone-contract-test-debug-5 /home/ayman/ITI/Android-Apps/HyperNova_Phone_Task_06/phone-contract-test/src/debug/res
+com.hypernova.phone.contracttest.phone-contract-test-main-6 /home/ayman/ITI/Android-Apps/HyperNova_Phone_Task_06/phone-contract-test/src/main/res
+gradleHome-0 /home/ayman/.gradle
