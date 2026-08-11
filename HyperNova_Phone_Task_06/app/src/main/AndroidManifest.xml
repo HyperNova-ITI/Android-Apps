@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <permission
+        android:name="com.hypernova.permission.CONTROL_COCKPIT_APPS"
+        android:protectionLevel="signature" />
+
     <!-- Public Bluetooth observation -->
     <uses-permission
         android:name="android.permission.BLUETOOTH_CONNECT" />
@@ -19,8 +23,8 @@
     <uses-permission
         android:name="android.permission.CALL_PHONE" />
 
-<uses-permission
-    android:name="android.permission.CONTROL_INCALL_EXPERIENCE" />
+    <uses-permission
+        android:name="android.permission.CONTROL_INCALL_EXPERIENCE" />
 
     <!-- Real contacts -->
     <uses-permission
@@ -76,6 +80,7 @@
             </intent-filter>
 
         </activity>
+
         <activity
             android:name=".telecom.IncomingCallActivity"
             android:exported="false"
@@ -85,7 +90,9 @@
             android:showWhenLocked="true"
             android:turnScreenOn="true" />
 
-
+        <!--
+             Android Telecom / AAOS InCallService.
+        -->
         <service
             android:name=".telecom.HyperNovaInCallService"
             android:exported="true"
@@ -101,6 +108,26 @@
 
             <intent-filter>
                 <action android:name="android.telecom.InCallService" />
+            </intent-filter>
+
+        </service>
+
+        <!--
+             NOVA -> HyperNova Phone Binder command service.
+
+             Only applications holding the HyperNova signature permission
+             can bind to this service.
+
+             NOVA binds using:
+             com.hypernova.phone.action.BIND_COMMAND
+        -->
+        <service
+            android:name=".service.PhoneCommandService"
+            android:exported="true"
+            android:permission="com.hypernova.permission.CONTROL_COCKPIT_APPS">
+
+            <intent-filter>
+                <action android:name="com.hypernova.phone.action.BIND_COMMAND" />
             </intent-filter>
 
         </service>

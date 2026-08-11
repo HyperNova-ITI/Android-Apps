@@ -10,6 +10,8 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import com.hypernova.phone.bluetooth.BluetoothPhoneClient
 import com.hypernova.phone.contacts.CallHistoryRepository
+import com.hypernova.phone.contacts.ContactDetailsRecord
+import com.hypernova.phone.contacts.RecentCallsLoadResult
 import com.hypernova.phone.contacts.ContactsRepository
 import com.hypernova.phone.domain.CallStatus
 import com.hypernova.phone.domain.CapabilityStatus
@@ -31,6 +33,13 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import android.database.ContentObserver
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
+import android.provider.CallLog
+import android.provider.ContactsContract
+import kotlinx.coroutines.delay
 
 /**
  * Aggregates real Android framework data for the HyperNova Phone UI.
@@ -58,6 +67,13 @@ class PhoneRepository(
     private val context: Context,
     private val scope: CoroutineScope
 ) {
+
+    private val PROVIDER_REFRESH_DEBOUNCE_MILLIS =
+        450L
+
+    private val CONTACTS_PROVIDER_QUIET_WINDOW_MILLIS =
+        5_000L
+
 
     private val bluetooth =
         BluetoothPhoneClient(context)
@@ -117,6 +133,60 @@ class PhoneRepository(
 
     private val recentsGate =
         RecentsLoadGate()
+
+    private var providerObserversRegistered =
+        false
+
+    private var contactsProviderRefreshJob:
+        Job? = null
+
+    private var callLogProviderRefreshJob:
+        Job? = null
+
+    @Volatile
+    private var lastContactsProviderChangeElapsedMillis:
+        Long = 0L
+
+    private val contactsProviderObserver =
+        object :
+            ContentObserver(
+                Handler(
+                    Looper.getMainLooper()
+                )
+            ) {
+
+            override fun onChange(
+                selfChange: Boolean
+            ) {
+                super.onChange(
+                    selfChange
+                )
+
+                lastContactsProviderChangeElapsedMillis =
+                    SystemClock.elapsedRealtime()
+
+                scheduleContactsProviderRefresh()
+            }
+        }
+
+    private val callLogProviderObserver =
+        object :
+            ContentObserver(
+                Handler(
+                    Looper.getMainLooper()
+                )
+            ) {
+
+            override fun onChange(
+                selfChange: Boolean
+            ) {
+                super.onChange(
+                    selfChange
+                )
+
+                scheduleCallLogProviderRefresh()
+            }
+        }
 
     /**
      * Call state presented to the UI.
@@ -284,10 +354,28 @@ class PhoneRepository(
 
     fun start() {
         bluetooth.start()
+
+        registerProviderObservers()
+
         refreshCapabilities()
+
+        /*
+         * Read the current provider snapshot immediately.
+         * PBAP provider notifications keep it live afterwards.
+         */
+        refreshContacts()
+        refreshRecents()
     }
 
     fun stop() {
+        unregisterProviderObservers()
+
+        contactsProviderRefreshJob
+            ?.cancel()
+
+        callLogProviderRefreshJob
+            ?.cancel()
+
         bluetooth.stop()
     }
 
@@ -311,6 +399,216 @@ class PhoneRepository(
             recentsStatus.value =
                 RecentsStatus
                     .RECENTS_PERMISSION_REQUIRED
+        }
+    }
+
+    private fun registerProviderObservers() {
+
+        if (providerObserversRegistered) {
+            return
+        }
+
+        try {
+            context.contentResolver
+                .registerContentObserver(
+                    ContactsContract.AUTHORITY_URI,
+                    true,
+                    contactsProviderObserver
+                )
+
+            context.contentResolver
+                .registerContentObserver(
+                    CallLog.Calls.CONTENT_URI,
+                    true,
+                    callLogProviderObserver
+                )
+
+            providerObserversRegistered =
+                true
+
+            Log.i(
+                TAG,
+                "Contacts/CallLog provider observers registered"
+            )
+
+        } catch (security: SecurityException) {
+
+            try {
+                context.contentResolver
+                    .unregisterContentObserver(
+                        contactsProviderObserver
+                    )
+            } catch (_: Exception) {
+            }
+
+            try {
+                context.contentResolver
+                    .unregisterContentObserver(
+                        callLogProviderObserver
+                    )
+            } catch (_: Exception) {
+            }
+
+            Log.w(
+                TAG,
+                "Provider observer registration unavailable",
+                security
+            )
+        }
+    }
+
+    private fun unregisterProviderObservers() {
+
+        if (!providerObserversRegistered) {
+            return
+        }
+
+        try {
+            context.contentResolver
+                .unregisterContentObserver(
+                    contactsProviderObserver
+                )
+
+            context.contentResolver
+                .unregisterContentObserver(
+                    callLogProviderObserver
+                )
+        } catch (exception: Exception) {
+            Log.w(
+                TAG,
+                "Provider observer cleanup failed",
+                exception
+            )
+        } finally {
+            providerObserversRegistered =
+                false
+        }
+    }
+
+    private fun scheduleContactsProviderRefresh() {
+
+        contactsProviderRefreshJob
+            ?.cancel()
+
+        contactsProviderRefreshJob =
+            scope.launch {
+
+                delay(
+                    PROVIDER_REFRESH_DEBOUNCE_MILLIS
+                )
+
+                history
+                    .invalidateContactIdentityCache()
+
+                refreshContacts()
+                refreshRecents()
+
+                refreshCurrentCallIdentityAfterContactsChange()
+            }
+    }
+
+    private fun scheduleCallLogProviderRefresh() {
+
+        callLogProviderRefreshJob
+            ?.cancel()
+
+        callLogProviderRefreshJob =
+            scope.launch {
+
+                delay(
+                    PROVIDER_REFRESH_DEBOUNCE_MILLIS
+                )
+
+                refreshRecents()
+            }
+    }
+
+    /**
+     * A NOVA search miss is not definitive while PBAP is actively
+     * mutating ContactsProvider.
+     */
+    fun contactsProviderChangingRecently():
+        Boolean {
+
+        val changedAt =
+            lastContactsProviderChangeElapsedMillis
+
+        if (changedAt <= 0L) {
+            return false
+        }
+
+        return SystemClock.elapsedRealtime() -
+            changedAt <=
+            CONTACTS_PROVIDER_QUIET_WINDOW_MILLIS
+    }
+
+    /**
+     * Retry active caller identity if the call began before PBAP delivered
+     * the matching contact.
+     */
+    private suspend fun refreshCurrentCallIdentityAfterContactsChange() {
+
+        val current =
+            telecom.state.value
+
+        if (
+            current.status ==
+                CallStatus.IDLE ||
+            current.status ==
+                CallStatus.CALL_ENDED
+        ) {
+            return
+        }
+
+        if (
+            meaningfulTelecomDisplayName(
+                current
+            ) != null
+        ) {
+            return
+        }
+
+        val number =
+            current.number
+                ?.trim()
+                ?.takeIf {
+                    it.isNotEmpty()
+                }
+                ?: return
+
+        val contactName =
+            contacts
+                .findDisplayNameByNumber(
+                    number
+                )
+                ?.trim()
+                ?.takeIf {
+                    it.isNotEmpty()
+                }
+
+        val afterLookup =
+            telecom.state.value
+
+        val afterNumber =
+            afterLookup.number
+                ?.trim()
+                ?.takeIf {
+                    it.isNotEmpty()
+                }
+
+        if (
+            afterNumber ==
+                number &&
+            afterLookup.status !=
+                CallStatus.IDLE &&
+            afterLookup.status !=
+                CallStatus.CALL_ENDED
+        ) {
+            resolvedCallNumber =
+                number
+
+            resolvedCallName.value =
+                contactName
         }
     }
 
@@ -539,6 +837,24 @@ class PhoneRepository(
     }
 
     fun ensureContactsLoaded() {
+        loadContacts(
+            force = false
+        )
+    }
+
+    /**
+     * CONTACTS_EMPTY and CONTACTS_READY are snapshots, not permanent
+     * terminal states. PBAP can change the provider at any time.
+     */
+    fun refreshContacts() {
+        loadContacts(
+            force = true
+        )
+    }
+
+    private fun loadContacts(
+        force: Boolean
+    ) {
 
         if (
             !has(
@@ -553,7 +869,13 @@ class PhoneRepository(
 
         if (
             contactsJob?.isActive ==
-                true ||
+                true
+        ) {
+            return
+        }
+
+        if (
+            !force &&
             contactsStatus.value in
                 setOf(
                     ContactsStatus.CONTACTS_READY,
@@ -580,8 +902,49 @@ class PhoneRepository(
 
                 contactsEntries.value =
                     values
+
+                Log.i(
+                    TAG,
+                    "Contacts load completed: " +
+                        "$status entries=${values.size}"
+                )
             }
     }
+
+    /**
+     * Load one real Android contact by its ContactsProvider CONTACT_ID.
+     *
+     * This is the command-layer path used after NOVA has selected one
+     * search candidate. The returned record contains every real phone row
+     * for that contact, including the real Phone._ID used as numberId.
+     *
+     * No contact or number data is synthesized here.
+     */
+    suspend fun getContactDetails(
+        contactId: Long
+    ): ContactDetailsRecord? =
+        contacts.loadContact(
+            contactId
+        )
+
+    /**
+     * Command-layer snapshot from the real Android CallLog.
+     *
+     * This does not mutate the Phone UI filter.
+     */
+    suspend fun getCallHistorySnapshot():
+        RecentCallsLoadResult =
+        history.load()
+
+    /**
+     * Resolve a real phone number to a real ContactsProvider CONTACT_ID.
+     */
+    suspend fun findContactIdByNumber(
+        number: String
+    ): Long? =
+        contacts.findContactIdByNumber(
+            number
+        )
 
     /**
      * Repeated Recents commands share this one job and preserve the

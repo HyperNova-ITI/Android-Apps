@@ -14,6 +14,27 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
+ * One real phone-number row belonging to one Android contact.
+ *
+ * numberId is ContactsContract.CommonDataKinds.Phone._ID.
+ */
+data class ContactNumberRecord(
+    val numberId: Long,
+    val label: String?,
+    val displayNumber: String,
+    val primary: Boolean
+)
+
+/**
+ * Detailed real Android contact record used by the Phone command layer.
+ */
+data class ContactDetailsRecord(
+    val contactId: Long,
+    val displayName: String,
+    val numbers: List<ContactNumberRecord>
+)
+
+/**
  * Real Android Contacts provider integration.
  *
  * No fake contact data is generated.
@@ -26,8 +47,12 @@ class ContactsRepository(
 
     /**
      * Load the real Android contacts list.
+     *
+     * This is intentionally one row per contact for UI/search discovery.
+     * Full multi-number expansion is handled by loadContact().
      */
-    suspend fun load(): Pair<ContactsStatus, List<ContactEntry>> =
+    suspend fun load():
+        Pair<ContactsStatus, List<ContactEntry>> =
         withContext(Dispatchers.IO) {
 
             if (!hasContactsPermission()) {
@@ -38,7 +63,8 @@ class ContactsRepository(
             }
 
             try {
-                val entries = linkedMapOf<Long, ContactEntry>()
+                val entries =
+                    linkedMapOf<Long, ContactEntry>()
 
                 context.contentResolver.query(
                     ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
@@ -55,19 +81,22 @@ class ContactsRepository(
                 )?.use { cursor ->
 
                     while (cursor.moveToNext()) {
-                        val id = cursor.getLong(0)
+                        val id =
+                            cursor.getLong(0)
 
-                        if (entries.containsKey(id)) {
+                        if (
+                            entries.containsKey(id)
+                        ) {
                             continue
                         }
 
-                        val displayName = cursor
-                            .getString(1)
-                            .orEmpty()
+                        val displayName =
+                            cursor.getString(1)
+                                .orEmpty()
 
-                        val number = cursor
-                            .getString(2)
-                            .orEmpty()
+                        val number =
+                            cursor.getString(2)
+                                .orEmpty()
 
                         val label =
                             ContactsContract.CommonDataKinds.Phone
@@ -78,13 +107,19 @@ class ContactsRepository(
                                 )
                                 ?.toString()
 
-                        entries[id] = ContactEntry(
-                            id = id,
-                            displayName = displayName.ifBlank { number },
-                            number = number,
-                            label = label,
-                            isFavorite = cursor.getInt(4) != 0
-                        )
+                        entries[id] =
+                            ContactEntry(
+                                id = id,
+                                displayName =
+                                    displayName
+                                        .ifBlank {
+                                            number
+                                        },
+                                number = number,
+                                label = label,
+                                isFavorite =
+                                    cursor.getInt(4) != 0
+                            )
                     }
                 }
 
@@ -93,7 +128,8 @@ class ContactsRepository(
                     "Contacts query completed with ${entries.size} entries"
                 )
 
-                val result = entries.values.toList()
+                val result =
+                    entries.values.toList()
 
                 Pair(
                     if (result.isEmpty()) {
@@ -130,129 +166,388 @@ class ContactsRepository(
         }
 
     /**
+     * Load one selected contact using its real ContactsProvider CONTACT_ID.
+     *
+     * Every real phone row is returned with Phone._ID as numberId.
+     */
+    suspend fun loadContact(
+        contactId: Long
+    ): ContactDetailsRecord? =
+        withContext(Dispatchers.IO) {
+
+            if (
+                contactId <= 0L
+            ) {
+                return@withContext null
+            }
+
+            if (!hasContactsPermission()) {
+                Log.w(
+                    TAG,
+                    "Cannot load contact details: READ_CONTACTS unavailable"
+                )
+
+                return@withContext null
+            }
+
+            try {
+                var displayName:
+                    String? = null
+
+                val numbers =
+                    linkedMapOf<Long, ContactNumberRecord>()
+
+                context.contentResolver.query(
+                    ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                    arrayOf(
+                        ContactsContract.CommonDataKinds.Phone._ID,
+                        ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
+                        ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                        ContactsContract.CommonDataKinds.Phone.NUMBER,
+                        ContactsContract.CommonDataKinds.Phone.TYPE,
+                        ContactsContract.CommonDataKinds.Phone.LABEL,
+                        ContactsContract.CommonDataKinds.Phone.IS_PRIMARY
+                    ),
+                    "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?",
+                    arrayOf(
+                        contactId.toString()
+                    ),
+                    "${ContactsContract.CommonDataKinds.Phone.IS_PRIMARY} DESC, " +
+                        "${ContactsContract.CommonDataKinds.Phone._ID} ASC"
+                )?.use { cursor ->
+
+                    while (cursor.moveToNext()) {
+                        val numberId =
+                            cursor.getLong(0)
+
+                        val rowContactId =
+                            cursor.getLong(1)
+
+                        if (
+                            rowContactId !=
+                            contactId
+                        ) {
+                            continue
+                        }
+
+                        val rowDisplayName =
+                            cursor.getString(2)
+                                ?.trim()
+                                ?.takeIf {
+                                    it.isNotEmpty()
+                                }
+
+                        val number =
+                            cursor.getString(3)
+                                ?.trim()
+                                ?.takeIf {
+                                    it.isNotEmpty()
+                                }
+                                ?: continue
+
+                        val type =
+                            cursor.getInt(4)
+
+                        val customLabel =
+                            cursor.getString(5)
+
+                        val label =
+                            ContactsContract.CommonDataKinds.Phone
+                                .getTypeLabel(
+                                    context.resources,
+                                    type,
+                                    customLabel
+                                )
+                                ?.toString()
+                                ?.trim()
+                                ?.takeIf {
+                                    it.isNotEmpty()
+                                }
+
+                        val primary =
+                            cursor.getInt(6) != 0
+
+                        if (
+                            displayName == null
+                        ) {
+                            displayName =
+                                rowDisplayName
+                                    ?: number
+                        }
+
+                        numbers[numberId] =
+                            ContactNumberRecord(
+                                numberId = numberId,
+                                label = label,
+                                displayNumber = number,
+                                primary = primary
+                            )
+                    }
+                }
+
+                if (
+                    numbers.isEmpty()
+                ) {
+                    Log.i(
+                        TAG,
+                        "No real phone rows found for contactId=$contactId"
+                    )
+
+                    return@withContext null
+                }
+
+                val result =
+                    ContactDetailsRecord(
+                        contactId = contactId,
+
+                        displayName =
+                            displayName
+                                ?: numbers.values
+                                    .first()
+                                    .displayNumber,
+
+                        numbers =
+                            numbers.values
+                                .toList()
+                    )
+
+                Log.i(
+                    TAG,
+                    "Loaded real contact details " +
+                        "contactId=$contactId " +
+                        "numbers=${result.numbers.size}"
+                )
+
+                result
+
+            } catch (security: SecurityException) {
+                Log.w(
+                    TAG,
+                    "READ_CONTACTS was revoked during contact detail query"
+                )
+
+                null
+
+            } catch (exception: Exception) {
+                Log.e(
+                    TAG,
+                    "Contact detail query failed",
+                    exception
+                )
+
+                null
+            }
+        }
+
+    /**
+     * Resolve one real phone number to a real ContactsProvider CONTACT_ID.
+     *
+     * Used only to enrich CallLog results for the cross-APK contract.
+     */
+    suspend fun findContactIdByNumber(
+        number: String
+    ): Long? =
+        withContext(Dispatchers.IO) {
+
+            val cleanedNumber =
+                number.trim()
+                    .takeIf {
+                        it.isNotEmpty()
+                    }
+                    ?: return@withContext null
+
+            if (!hasContactsPermission()) {
+                return@withContext null
+            }
+
+            try {
+                val lookupUri =
+                    Uri.withAppendedPath(
+                        ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
+                        Uri.encode(cleanedNumber)
+                    )
+
+                context.contentResolver.query(
+                    lookupUri,
+                    arrayOf(
+                        ContactsContract.PhoneLookup.CONTACT_ID,
+                        ContactsContract.PhoneLookup.NUMBER
+                    ),
+                    null,
+                    null,
+                    null
+                )?.use { cursor ->
+
+                    while (
+                        cursor.moveToNext()
+                    ) {
+                        val candidateId =
+                            cursor.getLong(0)
+
+                        val candidateNumber =
+                            cursor.getString(1)
+                                ?.trim()
+                                ?.takeIf {
+                                    it.isNotEmpty()
+                                }
+
+                        val matches =
+                            candidateNumber == null ||
+                                candidateNumber ==
+                                    cleanedNumber ||
+                                PhoneNumberUtils.compare(
+                                    candidateNumber,
+                                    cleanedNumber
+                                )
+
+                        if (
+                            matches
+                        ) {
+                            return@withContext candidateId
+                        }
+                    }
+                }
+
+                null
+
+            } catch (security: SecurityException) {
+                null
+
+            } catch (exception: Exception) {
+                Log.w(
+                    TAG,
+                    "Contact ID lookup failed",
+                    exception
+                )
+
+                null
+            }
+        }
+
+    /**
      * Resolve one real incoming phone number to one real contact name.
-     *
-     * This is deliberately a targeted PhoneLookup query rather than
-     * reloading the complete contacts database for every incoming call.
-     *
-     * Returns:
-     *
-     * saved contact   -> real contact display name
-     * unsaved number  -> null
-     * no permission   -> null
      */
     suspend fun findDisplayNameByNumber(
         number: String
-    ): String? = withContext(Dispatchers.IO) {
+    ): String? =
+        withContext(Dispatchers.IO) {
 
-        val cleanedNumber = number
-            .trim()
-            .takeIf { it.isNotEmpty() }
-
-        if (cleanedNumber == null) {
-            return@withContext null
-        }
-
-        if (!hasContactsPermission()) {
-            Log.w(
-                TAG,
-                "Cannot resolve caller identity: READ_CONTACTS unavailable"
-            )
-
-            return@withContext null
-        }
-
-        try {
-            /*
-             * Android PhoneLookup handles contact-number matching and
-             * common formatting variations more appropriately than a
-             * simple SQL equality comparison.
-             */
-            val lookupUri = Uri.withAppendedPath(
-                ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
-                Uri.encode(cleanedNumber)
-            )
-
-            context.contentResolver.query(
-                lookupUri,
-                arrayOf(
-                    ContactsContract.PhoneLookup.DISPLAY_NAME,
-                    ContactsContract.PhoneLookup.NUMBER
-                ),
-                null,
-                null,
-                null
-            )?.use { cursor ->
-
-                while (cursor.moveToNext()) {
-                    val candidateName = cursor
-                        .getString(0)
-                        ?.trim()
-                        ?.takeIf { it.isNotEmpty() }
-                        ?: continue
-
-                    val candidateNumber = cursor
-                        .getString(1)
-                        ?.trim()
-                        ?.takeIf { it.isNotEmpty() }
-
-                    /*
-                     * PhoneLookup has already filtered the provider.
-                     * Keep an additional sanity check when Android
-                     * supplies the candidate number.
-                     */
-                    val matches = candidateNumber == null ||
-                        candidateNumber == cleanedNumber ||
-                        PhoneNumberUtils.compare(
-                            candidateNumber,
-                            cleanedNumber
-                        )
-
-                    if (matches) {
-                        Log.i(
-                            TAG,
-                            "Real contact identity resolved for incoming call"
-                        )
-
-                        return@withContext candidateName
+            val cleanedNumber =
+                number.trim()
+                    .takeIf {
+                        it.isNotEmpty()
                     }
-                }
+
+            if (
+                cleanedNumber == null
+            ) {
+                return@withContext null
             }
 
-            Log.i(
-                TAG,
-                "Incoming number is not saved in Android Contacts"
-            )
+            if (!hasContactsPermission()) {
+                Log.w(
+                    TAG,
+                    "Cannot resolve caller identity: READ_CONTACTS unavailable"
+                )
 
-            null
+                return@withContext null
+            }
 
-        } catch (security: SecurityException) {
-            Log.w(
-                TAG,
-                "READ_CONTACTS was revoked during caller lookup"
-            )
+            try {
+                val lookupUri =
+                    Uri.withAppendedPath(
+                        ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
+                        Uri.encode(cleanedNumber)
+                    )
 
-            null
+                context.contentResolver.query(
+                    lookupUri,
+                    arrayOf(
+                        ContactsContract.PhoneLookup.DISPLAY_NAME,
+                        ContactsContract.PhoneLookup.NUMBER
+                    ),
+                    null,
+                    null,
+                    null
+                )?.use { cursor ->
 
-        } catch (exception: Exception) {
-            Log.e(
-                TAG,
-                "Incoming caller contact lookup failed",
-                exception
-            )
+                    while (
+                        cursor.moveToNext()
+                    ) {
+                        val candidateName =
+                            cursor.getString(0)
+                                ?.trim()
+                                ?.takeIf {
+                                    it.isNotEmpty()
+                                }
+                                ?: continue
 
-            null
+                        val candidateNumber =
+                            cursor.getString(1)
+                                ?.trim()
+                                ?.takeIf {
+                                    it.isNotEmpty()
+                                }
+
+                        val matches =
+                            candidateNumber == null ||
+                                candidateNumber ==
+                                    cleanedNumber ||
+                                PhoneNumberUtils.compare(
+                                    candidateNumber,
+                                    cleanedNumber
+                                )
+
+                        if (
+                            matches
+                        ) {
+                            Log.i(
+                                TAG,
+                                "Real contact identity resolved for incoming call"
+                            )
+
+                            return@withContext candidateName
+                        }
+                    }
+                }
+
+                Log.i(
+                    TAG,
+                    "Incoming number is not saved in Android Contacts"
+                )
+
+                null
+
+            } catch (security: SecurityException) {
+                Log.w(
+                    TAG,
+                    "READ_CONTACTS was revoked during caller lookup"
+                )
+
+                null
+
+            } catch (exception: Exception) {
+                Log.e(
+                    TAG,
+                    "Incoming caller contact lookup failed",
+                    exception
+                )
+
+                null
+            }
         }
-    }
 
-    private fun hasContactsPermission(): Boolean {
-        return ContextCompat.checkSelfPermission(
+    private fun hasContactsPermission():
+        Boolean =
+        ContextCompat.checkSelfPermission(
             context,
             Manifest.permission.READ_CONTACTS
-        ) == PackageManager.PERMISSION_GRANTED
-    }
+        ) ==
+            PackageManager.PERMISSION_GRANTED
 
     private companion object {
-        const val TAG = "HN-Contacts"
+        const val TAG =
+            "HN-Contacts"
     }
 }
+

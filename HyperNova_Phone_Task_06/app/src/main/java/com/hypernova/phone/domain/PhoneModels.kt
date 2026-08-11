@@ -62,11 +62,32 @@ enum class PhoneScreen {
     CALL
 }
 
+/**
+ * Existing UI filter.
+ *
+ * Keep this separate from CallHistoryType so adding REJECTED semantics
+ * does not create a new UI tab.
+ */
 enum class RecentFilter {
     ALL,
     MISSED,
     INCOMING,
     OUTGOING
+}
+
+/**
+ * Exact semantic call-history type derived from Android CallLog.
+ *
+ * Used by the cross-APK Phone contract.
+ *
+ * MISSED != REJECTED.
+ */
+enum class CallHistoryType {
+    INCOMING,
+    OUTGOING,
+    MISSED,
+    REJECTED,
+    OTHER
 }
 
 enum class RecentsStatus {
@@ -122,7 +143,20 @@ data class RecentCallEntry(
     val id: Long,
     val displayName: String?,
     val number: String?,
+
+    /**
+     * Existing UI grouping.
+     *
+     * REJECTED remains grouped visually with MISSED so the existing
+     * screen behavior stays unchanged.
+     */
     val type: RecentFilter,
+
+    /**
+     * Exact Android CallLog semantic meaning for Binder/NOVA.
+     */
+    val historyType: CallHistoryType,
+
     val timestamp: Long,
     val durationSeconds: Long,
     val presentation: CallNumberPresentation =
@@ -210,3 +244,4 @@ data class PhoneUiState(
     val inCallDtmfDigits: String = "",
     val nowMillis: Long = System.currentTimeMillis()
 )
+
