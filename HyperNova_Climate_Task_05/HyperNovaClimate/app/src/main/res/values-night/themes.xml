@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools">
-
+<resources>
     <style name="Theme.HyperNovaClimate" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/hn_primary_cyan</item>
         <item name="colorOnPrimary">@color/hn_background_primary</item>
@@ -11,11 +10,10 @@
         <item name="android:windowBackground">@color/hn_background_primary</item>
         <item name="android:statusBarColor">@color/hn_background_primary</item>
         <item name="android:navigationBarColor">@color/hn_background_primary</item>
-        <item name="android:windowLightStatusBar">true</item>
-        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
         <item name="android:forceDarkAllowed">false</item>
         <item name="fontFamily">sans-serif</item>
         <item name="android:fontFamily">sans-serif</item>
     </style>
-
 </resources>

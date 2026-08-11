@@ -1,19 +1,16 @@
 package com.hypernova.climate.ui
 
 import androidx.lifecycle.ViewModel
-import com.hypernova.climate.model.AcMode
-import com.hypernova.climate.ui.state.ClimatePreview
+import com.hypernova.climate.data.ClimateStateOwner
+import com.hypernova.climate.data.ClimateZone
+import com.hypernova.climate.model.AirflowMode
 import com.hypernova.climate.ui.state.ClimateUiState
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 
 /**
  * Exposes the immutable [ClimateUiState] the screen renders from (README §36).
  *
- * The initial state comes from [ClimatePreview], which is provided per build
- * variant:
+ * The application-scoped state owner is seeded per build variant:
  *  - debug   -> a populated sample so the emulator matches the reference,
  *  - release -> an honest empty/unavailable state (no fake data ships).
  *
@@ -22,44 +19,62 @@ import kotlinx.coroutines.flow.update
  */
 class ClimateViewModel : ViewModel() {
 
-    private val _uiState = MutableStateFlow(ClimatePreview.initialUiState())
-    val uiState: StateFlow<ClimateUiState> = _uiState.asStateFlow()
+    val uiState: StateFlow<ClimateUiState> = ClimateStateOwner.uiState
 
     /**
      * Cycle the A/C control OFF → COOL → HEAT → OFF.
      *
-     * Applied locally/optimistically for now; once the command pipeline is
-     * wired this becomes a confirmed backend command instead.
+     * Demo builds confirm through the shared state owner. Release builds reject
+     * the mutation until an authoritative backend enables commands.
      */
-    fun cycleAcMode() {
-        _uiState.update { state ->
-            val confirmed = state.confirmedState ?: return@update state
-            val next = when (confirmed.acMode) {
-                AcMode.OFF -> AcMode.COOL
-                AcMode.COOL -> AcMode.HEAT
-                AcMode.HEAT -> AcMode.OFF
-            }
-            state.copy(confirmedState = confirmed.copy(acMode = next))
-        }
-    }
+    fun cycleAcMode() = ClimateStateOwner.cycleAcMode()
 
-    /** Toggle master power (local/optimistic for now). */
-    fun togglePower() = updateConfirmed { it.copy(powerEnabled = !it.powerEnabled) }
+    /** Toggle master power through the shared state owner. */
+    fun togglePower() = ClimateStateOwner.togglePower()
 
     /** Toggle AUTO mode. */
-    fun toggleAuto() = updateConfirmed {
-        it.copy(autoModeEnabled = !(it.autoModeEnabled ?: false))
-    }
+    fun toggleAuto() = ClimateStateOwner.toggleAutoMode()
 
     /** Toggle zone SYNC. */
-    fun toggleSync() = updateConfirmed {
-        it.copy(zonesSynchronized = !(it.zonesSynchronized ?: false))
+    fun toggleSync() = ClimateStateOwner.toggleZonesSynchronized()
+
+    fun adjustTargetTemperature(zone: ClimateZone, direction: Int) {
+        val state = uiState.value
+        val capabilities = state.capabilities ?: return
+        val confirmed = state.confirmedState ?: return
+        val current = when (zone) {
+            ClimateZone.ALL,
+            ClimateZone.DRIVER -> confirmed.driverTargetTemperatureC
+            ClimateZone.PASSENGER -> confirmed.passengerTargetTemperatureC
+        } ?: return
+        val step = capabilities.temperatureStepC ?: return
+        val minimum = capabilities.minimumTemperatureC ?: return
+        val maximum = capabilities.maximumTemperatureC ?: return
+        val target = (current + step * direction.coerceIn(-1, 1)).coerceIn(minimum, maximum)
+        ClimateStateOwner.setTargetTemperature(zone, target)
     }
 
-    private inline fun updateConfirmed(crossinline transform: (com.hypernova.climate.model.ClimateState) -> com.hypernova.climate.model.ClimateState) {
-        _uiState.update { state ->
-            val confirmed = state.confirmedState ?: return@update state
-            state.copy(confirmedState = transform(confirmed))
-        }
+    fun adjustFanLevel(direction: Int) {
+        val state = uiState.value
+        val maximum = state.capabilities?.maximumFanLevel ?: return
+        val current = state.confirmedState?.fanLevel ?: return
+        ClimateStateOwner.setFanLevel((current + direction.coerceIn(-1, 1)).coerceIn(0, maximum))
     }
+
+    fun toggleRecirculation() = ClimateStateOwner.toggleRecirculation()
+
+    fun enableFreshAir() = ClimateStateOwner.setRecirculationEnabled(false)
+
+
+    fun setAirflowMode(mode: AirflowMode) =
+        ClimateStateOwner.setAirflowMode(mode)
+
+    fun toggleFrontDefrost() =
+        ClimateStateOwner.toggleFrontDefrost()
+
+    fun toggleRearDefrost() =
+        ClimateStateOwner.toggleRearDefrost()
+
+    fun toggleMaxDefrost() =
+        ClimateStateOwner.toggleMaxDefrost()
 }
