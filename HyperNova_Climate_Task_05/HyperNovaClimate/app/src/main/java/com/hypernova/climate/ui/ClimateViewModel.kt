@@ -69,6 +69,9 @@ class ClimateViewModel : ViewModel() {
     fun setAirflowMode(mode: AirflowMode) =
         ClimateStateOwner.setAirflowMode(mode)
 
+    fun setAirflowMode(zone: ClimateZone, mode: AirflowMode) =
+        ClimateStateOwner.setAirflowMode(zone, mode)
+
     fun toggleFrontDefrost() =
         ClimateStateOwner.toggleFrontDefrost()
 

@@ -109,30 +109,50 @@ class ClimateFragment : Fragment() {
         // Airflow streams over the car (mode = direction, fan = speed/density).
         val fan = confirmed?.fanLevel ?: 0
         val active = confirmed?.powerEnabled == true && fan > 0
+
+        // The backend still exposes one cabin-wide airflowMode.
+        // Per-zone values override it only when the user selects a zone locally.
+        val driverAirflowMode =
+            confirmed?.driverAirflowMode ?: confirmed?.airflowMode
+
+        val passengerAirflowMode =
+            confirmed?.passengerAirflowMode ?: confirmed?.airflowMode
+
         airflowView.setAirflow(
             driver = CabinAirflowView.ZoneAirflow(
-                mode = confirmed?.airflowMode,
+                mode = driverAirflowMode,
                 fanLevel = fan,
-                accentColor = color(if (heating) R.color.hn_warning else R.color.hn_primary_cyan),
+                accentColor = color(
+                    if (heating) R.color.hn_warning
+                    else R.color.hn_primary_cyan
+                ),
                 active = active
             ),
             passenger = CabinAirflowView.ZoneAirflow(
-                mode = confirmed?.airflowMode,
+                mode = passengerAirflowMode,
                 fanLevel = fan,
                 accentColor = color(R.color.hn_warning),
                 active = active
             )
         )
 
-        // Per-zone airflow selection (opt1=face, opt2=face+feet, opt3=feet).
+        // Per-zone airflow:
+        // option 1 = FACE
+        // option 2 = FEET
+        // option 3 = FACE + FEET
         renderZoneAirflow(
-            confirmed?.airflowMode,
-            driverAirflowOption1, driverAirflowOption2, driverAirflowOption3,
+            driverAirflowMode,
+            driverAirflowOption1,
+            driverAirflowOption2,
+            driverAirflowOption3,
             R.color.hn_primary_cyan
         )
+
         renderZoneAirflow(
-            confirmed?.airflowMode,
-            passengerAirflowOption1, passengerAirflowOption2, passengerAirflowOption3,
+            passengerAirflowMode,
+            passengerAirflowOption1,
+            passengerAirflowOption2,
+            passengerAirflowOption3,
             R.color.hn_warning
         )
 
@@ -307,12 +327,24 @@ class ClimateFragment : Fragment() {
         btnFanMinus.setOnClickListener { viewModel.adjustFanLevel(-1) }
         btnFanPlus.setOnClickListener { viewModel.adjustFanLevel(1) }
 
-        driverAirflowOption1.setOnClickListener { viewModel.setAirflowMode(AirflowMode.FACE) }
-        driverAirflowOption2.setOnClickListener { viewModel.setAirflowMode(AirflowMode.FEET) }
-        driverAirflowOption3.setOnClickListener { viewModel.setAirflowMode(AirflowMode.FACE_AND_FEET) }
-        passengerAirflowOption1.setOnClickListener { viewModel.setAirflowMode(AirflowMode.FACE) }
-        passengerAirflowOption2.setOnClickListener { viewModel.setAirflowMode(AirflowMode.FEET) }
-        passengerAirflowOption3.setOnClickListener { viewModel.setAirflowMode(AirflowMode.FACE_AND_FEET) }
+        driverAirflowOption1.setOnClickListener {
+            viewModel.setAirflowMode(ClimateZone.DRIVER, AirflowMode.FACE)
+        }
+        driverAirflowOption2.setOnClickListener {
+            viewModel.setAirflowMode(ClimateZone.DRIVER, AirflowMode.FEET)
+        }
+        driverAirflowOption3.setOnClickListener {
+            viewModel.setAirflowMode(ClimateZone.DRIVER, AirflowMode.FACE_AND_FEET)
+        }
+        passengerAirflowOption1.setOnClickListener {
+            viewModel.setAirflowMode(ClimateZone.PASSENGER, AirflowMode.FACE)
+        }
+        passengerAirflowOption2.setOnClickListener {
+            viewModel.setAirflowMode(ClimateZone.PASSENGER, AirflowMode.FEET)
+        }
+        passengerAirflowOption3.setOnClickListener {
+            viewModel.setAirflowMode(ClimateZone.PASSENGER, AirflowMode.FACE_AND_FEET)
+        }
         btnFreshAir.setOnClickListener { viewModel.enableFreshAir() }
         btnRecirculation.setOnClickListener { viewModel.toggleRecirculation() }
 

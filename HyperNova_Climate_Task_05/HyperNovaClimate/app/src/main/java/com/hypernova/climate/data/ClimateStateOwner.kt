@@ -162,7 +162,7 @@ object ClimateStateOwner {
      * ClimateState currently has one airflowMode, so Driver and Passenger
      * selectors control the same confirmed cabin airflow mode.
      */
-    fun setAirflowMode(mode: AirflowMode): Boolean {
+    fun setAirflowMode(zone: ClimateZone, mode: AirflowMode): Boolean {
         val capabilities = currentState().capabilities ?: return false
 
         if (mode !in capabilities.supportedAirflowModes) {
@@ -170,12 +170,29 @@ object ClimateStateOwner {
         }
 
         return mutateConfirmed { state ->
-            state.copy(
-                airflowMode = mode,
-                powerEnabled = true,
-            )
+            when (zone) {
+                ClimateZone.ALL -> state.copy(
+                    airflowMode = mode,
+                    driverAirflowMode = mode,
+                    passengerAirflowMode = mode,
+                    powerEnabled = true,
+                )
+
+                ClimateZone.DRIVER -> state.copy(
+                    driverAirflowMode = mode,
+                    powerEnabled = true,
+                )
+
+                ClimateZone.PASSENGER -> state.copy(
+                    passengerAirflowMode = mode,
+                    powerEnabled = true,
+                )
+            }
         }
     }
+
+    fun setAirflowMode(mode: AirflowMode): Boolean =
+        setAirflowMode(ClimateZone.ALL, mode)
 
     fun toggleFrontDefrost(): Boolean {
         if (currentState().capabilities?.supportsFrontDefrost != true) {
@@ -214,11 +231,6 @@ object ClimateStateOwner {
 
             state.copy(
                 maxDefrostEnabled = enabled,
-                frontDefrostEnabled = if (enabled) {
-                    true
-                } else {
-                    state.frontDefrostEnabled
-                },
                 powerEnabled = if (enabled) true else state.powerEnabled,
             )
         }
