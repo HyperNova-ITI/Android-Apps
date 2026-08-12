@@ -20,6 +20,8 @@ data class ClimateState(
     val autoModeEnabled: Boolean? = null,
     val zonesSynchronized: Boolean? = null,
     val airflowMode: AirflowMode? = null,
+    val driverAirflowMode: AirflowMode? = null,
+    val passengerAirflowMode: AirflowMode? = null,
     val freshAirEnabled: Boolean? = null,
     val recirculationEnabled: Boolean? = null,
     val frontDefrostEnabled: Boolean? = null,
