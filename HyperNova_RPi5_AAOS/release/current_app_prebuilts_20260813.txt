@@ -1,0 +1,31 @@
+HyperNova Raspberry Pi 5 AAOS — Current App Integration Snapshot
+Generated: 2026-08-13T02:13:02+03:00
+
+Git branch:
+feature/ayman-dev
+
+Source commit before this snapshot:
+cc778f267c38e519e5736a7bdcd35a8629518b68
+
+Product:
+hypernova_rpi5_car-trunk_staging-userdebug
+
+AOSP source:
+/media/ayman/5d150459-9442-4a28-abb0-2da4c090069f/aosp_15_rpi/AOSP15
+
+IMPORTANT:
+This manifest describes the CURRENT RPi5 integration/prebuilt APK snapshot.
+The YouTube Media changes have NOT yet been baked into a newly rebuilt full RPi image.
+The existing latest_build_manifest.txt continues to describe the older built image.
+
+RPi5 app prebuilts:
+
+c782f8303008cdb179c374d824b55d9c7151585e3535333ec1d6d77a52b6a336  /home/ayman/ITI/Android-Apps/HyperNova_RPi5_AAOS/vendor/hypernova/rpi5/apps/HyperNovaLauncher/HyperNovaLauncher.apk
+d4b60becc9a301d63876dec98534d5f56729d85613b0185168e233cdd0b77a47  /home/ayman/ITI/Android-Apps/HyperNova_RPi5_AAOS/vendor/hypernova/rpi5/apps/HyperNovaNavigation/HyperNovaNavigation.apk
+22e48640e70c12a1ee958a5053bc4f6c019a9801cecf525079599f29c7bbabba  /home/ayman/ITI/Android-Apps/HyperNova_RPi5_AAOS/vendor/hypernova/rpi5/apps/HyperNovaClimate/HyperNovaClimate.apk
+eb2f3d77b995f7a69d831a60debdcc404321ac090a5473fe0448b70dfbd66654  /home/ayman/ITI/Android-Apps/HyperNova_RPi5_AAOS/vendor/hypernova/rpi5/apps/HyperNovaMedia/HyperNovaMedia.apk
+3edf7814c74b1b2d611a2a58e7157c76fbeb9ce9ccd5def6f068464f001d653a  /home/ayman/ITI/Android-Apps/HyperNova_RPi5_AAOS/vendor/hypernova/rpi5/apps/HyperNovaPhone/HyperNovaPhone.apk
+MISSING: /home/ayman/ITI/Android-Apps/HyperNova_RPi5_AAOS/vendor/hypernova/rpi5/apps/HyperNovaSettings/HyperNovaSettings.apk
+
+Runtime-tested Media APK:
+7bae49eb20d9e1c5097185fb93f82b59bd79ab2fe7a14c5eaf75a1d792ff6dc1  /home/ayman/ITI/Android-Apps/HyperNova_Media_Task_04/CODEX_OUTPUT/apk/HyperNovaMedia-runtime.apk

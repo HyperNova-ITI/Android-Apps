@@ -1,0 +1,17 @@
+android_app_import {
+    name: "HyperNovaPhoneContractTest",
+
+    apk: "HyperNovaPhoneContractTest.apk",
+
+    // Must match HyperNovaPhone / other trusted HyperNova command clients
+    // so the signature-level CONTROL_COCKPIT_APPS permission is granted.
+    certificate: "platform",
+
+    system_ext_specific: true,
+
+    enforce_uses_libs: false,
+
+    dex_preopt: {
+        enabled: false,
+    },
+}
