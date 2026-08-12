@@ -11,6 +11,7 @@ data class NovaRuntimeSnapshot(
     val transcript: String? = null,
     val progressText: String? = null,
     val routeTier: String? = null,
+    val actionDomain: String? = null,
     val actionName: String? = null,
     val actionResult: String? = null,
     val spokenText: String? = null,

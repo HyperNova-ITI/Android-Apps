@@ -9,6 +9,7 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import com.hypernova.ai.runtime.NovaRuntimeService
+import com.hypernova.ai.runtime.NovaRuntimeSnapshot
 import com.hypernova.ai.runtime.NovaRuntimeState
 import com.hypernova.ai.ui.NovaVisibleState
 
@@ -24,9 +25,13 @@ class NovaStatusService : Service() {
     @Volatile
     private var latestState = NovaVisibleState.UNAVAILABLE.name
 
-    private val stateObserver = Observer<NovaVisibleState> { state ->
-        latestState = state.name
-        broadcast(state.name)
+    @Volatile
+    private var latestSnapshotJson = NovaPresentationSnapshotCodec.encode(NovaRuntimeSnapshot())
+
+    private val sessionObserver = Observer<NovaRuntimeSnapshot> { snapshot ->
+        latestState = snapshot.visibleState.name
+        latestSnapshotJson = NovaPresentationSnapshotCodec.encode(snapshot)
+        broadcast(latestSnapshotJson)
     }
 
     private val binder = object : INovaStatusService.Stub() {
@@ -34,10 +39,12 @@ class NovaStatusService : Service() {
 
         override fun getState(): String = latestState
 
+        override fun getSnapshotJson(): String = latestSnapshotJson
+
         override fun registerCallback(callback: INovaStatusCallback) {
             callbacks.register(callback)
             try {
-                callback.onStateChanged(latestState)
+                callback.onSnapshotChanged(latestSnapshotJson)
             } catch (exception: RemoteException) {
                 callbacks.unregister(callback)
                 Log.w(TAG, "Status callback died during registration", exception)
@@ -51,8 +58,10 @@ class NovaStatusService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        latestState = NovaRuntimeState.state.value?.name ?: NovaVisibleState.UNAVAILABLE.name
-        NovaRuntimeState.state.observeForever(stateObserver)
+        val current = NovaRuntimeState.session.value ?: NovaRuntimeSnapshot()
+        latestState = current.visibleState.name
+        latestSnapshotJson = NovaPresentationSnapshotCodec.encode(current)
+        NovaRuntimeState.session.observeForever(sessionObserver)
 
         // The launcher binding is the product-level signal that NOVA should be available.
         try {
@@ -67,17 +76,17 @@ class NovaStatusService : Service() {
     override fun onBind(intent: Intent?): IBinder = binder
 
     override fun onDestroy() {
-        NovaRuntimeState.state.removeObserver(stateObserver)
+        NovaRuntimeState.session.removeObserver(sessionObserver)
         callbacks.kill()
         super.onDestroy()
     }
 
-    private fun broadcast(state: String) {
+    private fun broadcast(snapshotJson: String) {
         val count = callbacks.beginBroadcast()
         try {
             repeat(count) { index ->
                 try {
-                    callbacks.getBroadcastItem(index).onStateChanged(state)
+                    callbacks.getBroadcastItem(index).onSnapshotChanged(snapshotJson)
                 } catch (exception: RemoteException) {
                     Log.w(TAG, "Status callback is no longer available", exception)
                 }
@@ -89,6 +98,6 @@ class NovaStatusService : Service() {
 
     companion object {
         private const val TAG = "NovaStatusService"
-        const val API_VERSION = 1
+        const val API_VERSION = 2
     }
 }

@@ -14,7 +14,7 @@ import com.hypernova.ai.status.INovaStatusService
 /** Subscribes the launcher widget to NOVA's read-only status contract. */
 class NovaStatusClient(
     context: Context,
-    private val onSnapshotChanged: (NovaStatusSnapshot) -> Unit,
+    private val snapshotSink: (NovaStatusSnapshot) -> Unit,
 ) {
     private val applicationContext = context.applicationContext
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -27,12 +27,22 @@ class NovaStatusClient(
 
     private val callback = object : INovaStatusCallback.Stub() {
         override fun onStateChanged(state: String) {
-            onSnapshotChanged(
+            snapshotSink(
                 NovaStatusSnapshot(
                     connection = NovaServiceConnection.CONNECTED,
                     state = state,
                 ),
             )
+        }
+
+        override fun onSnapshotChanged(snapshotJson: String) {
+            val snapshot = runCatching {
+                NovaStatusSnapshotCodec.decode(snapshotJson)
+            }.getOrElse { error ->
+                Log.e(TAG, "Rejected invalid NOVA presentation snapshot", error)
+                NovaStatusSnapshot(NovaServiceConnection.ERROR)
+            }
+            snapshotSink(snapshot)
         }
     }
 
@@ -44,36 +54,30 @@ class NovaStatusClient(
             try {
                 if (connectedService.apiVersion != SUPPORTED_API_VERSION) {
                     Log.e(TAG, "Unsupported NOVA status API: ${connectedService.apiVersion}")
-                    onSnapshotChanged(NovaStatusSnapshot(NovaServiceConnection.ERROR))
+                    snapshotSink(NovaStatusSnapshot(NovaServiceConnection.ERROR))
                     return
                 }
                 connectedService.registerCallback(callback)
-                onSnapshotChanged(
-                    NovaStatusSnapshot(
-                        connection = NovaServiceConnection.CONNECTED,
-                        state = connectedService.state,
-                    ),
-                )
             } catch (exception: Exception) {
                 Log.e(TAG, "Could not subscribe to NOVA status", exception)
-                onSnapshotChanged(NovaStatusSnapshot(NovaServiceConnection.ERROR))
+                snapshotSink(NovaStatusSnapshot(NovaServiceConnection.ERROR))
             }
         }
 
         override fun onServiceDisconnected(name: ComponentName) {
             service = null
-            onSnapshotChanged(NovaStatusSnapshot(NovaServiceConnection.DISCONNECTED))
+            snapshotSink(NovaStatusSnapshot(NovaServiceConnection.DISCONNECTED))
         }
 
         override fun onBindingDied(name: ComponentName) {
             releaseDeadBinding()
-            onSnapshotChanged(NovaStatusSnapshot(NovaServiceConnection.ERROR))
+            snapshotSink(NovaStatusSnapshot(NovaServiceConnection.ERROR))
             scheduleReconnect()
         }
 
         override fun onNullBinding(name: ComponentName) {
             releaseDeadBinding()
-            onSnapshotChanged(NovaStatusSnapshot(NovaServiceConnection.ERROR))
+            snapshotSink(NovaStatusSnapshot(NovaServiceConnection.ERROR))
             scheduleReconnect()
         }
     }
@@ -87,7 +91,7 @@ class NovaStatusClient(
 
     private fun bindStatusService() {
         if (!started || bound) return
-        onSnapshotChanged(NovaStatusSnapshot(NovaServiceConnection.CONNECTING))
+        snapshotSink(NovaStatusSnapshot(NovaServiceConnection.CONNECTING))
 
         val intent = Intent(ACTION_BIND_STATUS).apply {
             component = ComponentName(NOVA_PACKAGE, NOVA_STATUS_SERVICE)
@@ -100,7 +104,7 @@ class NovaStatusClient(
         }
 
         if (!bound) {
-            onSnapshotChanged(NovaStatusSnapshot(NovaServiceConnection.DISCONNECTED))
+            snapshotSink(NovaStatusSnapshot(NovaServiceConnection.DISCONNECTED))
             scheduleReconnect()
         }
     }
@@ -143,7 +147,7 @@ class NovaStatusClient(
         private const val ACTION_BIND_STATUS = "com.hypernova.ai.action.BIND_STATUS"
         private const val NOVA_PACKAGE = "com.hypernova.ai"
         private const val NOVA_STATUS_SERVICE = "com.hypernova.ai.status.NovaStatusService"
-        private const val SUPPORTED_API_VERSION = 1
+        private const val SUPPORTED_API_VERSION = 2
         private const val RECONNECT_INITIAL_MS = 1_000L
         private const val RECONNECT_MAX_MS = 5_000L
     }

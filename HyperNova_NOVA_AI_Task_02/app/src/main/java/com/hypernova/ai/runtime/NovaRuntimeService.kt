@@ -130,6 +130,8 @@ class NovaRuntimeService : Service(),
                 lastActionBlocked = message.optBoolean("blocked", false)
                 NovaRuntimeState.publishAction(
                     turnId = turnId,
+                    domain = message.optionalText("domain")
+                        ?: actionDomain(message.optionalText("tool")),
                     name = message.optionalText("tool"),
                     result = message.optionalText("result"),
                     blocked = lastActionBlocked,
@@ -176,6 +178,7 @@ class NovaRuntimeService : Service(),
         lastActionBlocked = false
         NovaRuntimeState.publishAction(
             turnId = request.turnId,
+            domain = request.domain,
             name = request.operation,
             result = "Completing your request…",
             blocked = false,
@@ -191,6 +194,7 @@ class NovaRuntimeService : Service(),
         lastActionBlocked = isFailure
         NovaRuntimeState.publishAction(
             turnId = result.request.turnId,
+            domain = result.request.domain,
             name = result.request.operation,
             result = result.message,
             blocked = isFailure,
@@ -269,6 +273,16 @@ class NovaRuntimeService : Service(),
         takeIf { has(name) && !isNull(name) }
             ?.optDouble(name)
             ?.takeIf { it.isFinite() }
+
+    private fun actionDomain(tool: String?): String? = when (tool) {
+        "navigate", "trip_check" -> "navigation"
+        "set_climate" -> "climate"
+        "media" -> "media"
+        "phone" -> "phone"
+        "vehicle_status", "explain_fault", "owner_manual" -> "vehicle"
+        "set_lighting" -> "ambient"
+        else -> null
+    }
 
     private fun createNotificationChannel() {
         getSystemService(NotificationManager::class.java).createNotificationChannel(

@@ -164,7 +164,7 @@ class LauncherStateController(
                 R.string.assistant_error_title,
                 applicationContext.getString(R.string.state_service_error),
             )
-            NovaServiceConnection.CONNECTED -> createLiveAssistantState(snapshot.state)
+            NovaServiceConnection.CONNECTED -> createLiveAssistantState(snapshot)
             NovaServiceConnection.DISCONNECTED, null -> assistantState(
                 AppConnectionState.DISCONNECTED,
                 AssistantRuntimeState.UNAVAILABLE,
@@ -174,8 +174,8 @@ class LauncherStateController(
         }
     }
 
-    private fun createLiveAssistantState(wireState: String?): AssistantUiState {
-        val runtimeState = NovaAssistantStateParser.parse(wireState)
+    private fun createLiveAssistantState(snapshot: NovaStatusSnapshot): AssistantUiState {
+        val runtimeState = NovaAssistantStateParser.parse(snapshot.state)
 
         val content = when (runtimeState) {
             AssistantRuntimeState.IDLE -> R.string.assistant_ready_title to R.string.assistant_idle_subtitle
@@ -192,11 +192,23 @@ class LauncherStateController(
             AssistantRuntimeState.UNAVAILABLE -> AppConnectionState.DISCONNECTED
             else -> AppConnectionState.READY
         }
-        return assistantState(
-            connectionState,
-            runtimeState,
-            content.first,
-            applicationContext.getString(content.second),
+        return AssistantUiState(
+            connectionState = connectionState,
+            runtimeState = runtimeState,
+            headline = snapshot.eyebrow
+                ?: applicationContext.getString(content.first),
+            primaryMessage = snapshot.primaryMessage
+                ?: applicationContext.getString(content.first),
+            secondaryMessage = snapshot.secondaryMessage
+                ?: applicationContext.getString(content.second),
+            transcript = snapshot.transcript,
+            turnId = snapshot.turnId,
+            actionDomain = snapshot.actionDomain,
+            actionName = snapshot.actionName,
+            blocked = snapshot.blocked,
+            speaking = snapshot.speaking,
+            showActivityProgress = snapshot.showActivityProgress,
+            artworkVisible = true,
         )
     }
 
@@ -209,7 +221,8 @@ class LauncherStateController(
         connectionState = connectionState,
         runtimeState = runtimeState,
         headline = applicationContext.getString(headlineResource),
-        subtitle = subtitle,
+        primaryMessage = applicationContext.getString(headlineResource),
+        secondaryMessage = subtitle,
         artworkVisible = true,
     )
 

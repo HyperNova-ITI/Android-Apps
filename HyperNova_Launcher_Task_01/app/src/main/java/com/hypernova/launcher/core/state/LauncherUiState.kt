@@ -75,8 +75,16 @@ data class AssistantUiState(
     val connectionState: AppConnectionState,
     val runtimeState: AssistantRuntimeState,
     val headline: String,
-    val subtitle: String,
-    val artworkVisible: Boolean
+    val primaryMessage: String,
+    val secondaryMessage: String? = null,
+    val transcript: String? = null,
+    val turnId: String? = null,
+    val actionDomain: String? = null,
+    val actionName: String? = null,
+    val blocked: Boolean = false,
+    val speaking: Boolean = false,
+    val showActivityProgress: Boolean = false,
+    val artworkVisible: Boolean,
 )
 
 enum class AssistantRuntimeState {

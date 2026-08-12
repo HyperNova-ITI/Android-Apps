@@ -76,6 +76,7 @@ dependencies {
     implementation("androidx.media3:media3-session:1.10.1")
 
     testImplementation(libs.junit)
+    testImplementation("org.json:json:20240303")
 
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)

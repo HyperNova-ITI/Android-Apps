@@ -59,6 +59,7 @@ object NovaRuntimeState {
 
     fun publishAction(
         turnId: String?,
+        domain: String?,
         name: String?,
         result: String?,
         blocked: Boolean,
@@ -67,6 +68,7 @@ object NovaRuntimeState {
         latestSession = latestSession.copy(
             turnId = turnId ?: latestSession.turnId,
             progressText = null,
+            actionDomain = domain ?: latestSession.actionDomain,
             actionName = name,
             actionResult = result,
             errorMessage = errorMessage,

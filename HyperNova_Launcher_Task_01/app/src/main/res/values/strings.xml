@@ -75,6 +75,9 @@
     <string name="assistant_error_subtitle">Open NOVA AI to try again</string>
     <string name="assistant_speaking_title">Here’s what I found</string>
     <string name="assistant_speaking_subtitle">NOVA is responding</string>
+    <string name="nova_transcript_format">You · %1$s</string>
+    <string name="nova_context_card">NOVA result card</string>
+    <string name="nova_context_open">OPEN</string>
 
     <!-- Existing NOVA layout values -->
     <string name="nova_greeting">Assistant unavailable</string>

@@ -76,9 +76,31 @@ timing is unavailable; `total_s` is always present. Release UI must not expose t
 driver. `route` is also developer telemetry for the hybrid tier and is safe for older clients to
 ignore.
 
-`progress` belongs to the same turn and is never terminal. It exists only for a slow local reasoning
-turn and must be followed by that turn's final `say` or `error`; Android may render it while the state
-remains `processing`. It must never claim that a tool succeeded.
+`progress` belongs to the same turn and is never terminal. It may contain truthful local work or
+partial connected text and must be followed by that turn's final `say` or `error`; Android may render
+it while the state remains `processing`. It must never claim that a tool succeeded.
+
+### Launcher presentation contract
+
+The private NOVA status Binder is API version 2. `INovaStatusService.getSnapshotJson()` and
+`INovaStatusCallback.onSnapshotChanged()` carry a bounded presentation snapshot from the NOVA app to
+the trusted Launcher. This is not another Pi control protocol and it does not grant command access.
+
+Snapshot schema version 1 contains only driver-facing, read-only presentation fields: visible state,
+turn ID, eyebrow, transcript, primary/secondary text, action domain/name, progress visibility,
+speaking, and blocked. Unknown JSON fields are ignored, malformed snapshots fail closed to the
+Launcher's unavailable state, and all strings are length-bounded by NOVA before crossing Binder.
+
+The Launcher uses the snapshot to render a single NOVA stage:
+
+- transcript and truthful progress while a turn is active;
+- the real final answer, with progressive text presentation;
+- one lightweight Navigation, Media, Phone, Climate, or Vehicle context card built from the
+  Launcher's existing authoritative app snapshots;
+- an explicit **Open** action for the relevant app.
+
+NOVA never embeds another app's screen and never opens an app automatically. Setting a Navigation
+destination updates its context card but does not start guidance.
 
 ### Driver-facing Android state mapping
 

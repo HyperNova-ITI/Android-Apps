@@ -1,5 +1,6 @@
 package com.hypernova.launcher
 
+import android.animation.ValueAnimator
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
@@ -15,6 +16,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.hypernova.launcher.core.assistant.NovaAssistantStateParser
+import com.hypernova.launcher.core.assistant.NovaContextCardFactory
 import com.hypernova.launcher.core.assistant.NovaStatusClient
 import com.hypernova.launcher.core.climate.ClimateStatusClient
 import com.hypernova.launcher.core.dashboard.DashboardCard
@@ -79,6 +81,10 @@ class MainActivity : AppCompatActivity() {
     private var cockpitIntegrationsReady = false
     private var activityStarted = false
     private var activityResumed = false
+    private var novaTypingAnimator: ValueAnimator? = null
+    private var novaTextTarget = ""
+    private var visibleNovaContextDomain: String? = null
+    private var activeNovaContextDestination: AppDestination? = null
 
     private val resetFeedbackRunnable = Runnable {
         if (
@@ -329,6 +335,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        novaTypingAnimator?.cancel()
         if (::binding.isInitialized) {
             binding.textNovaQuestion.removeCallbacks(
                 resetFeedbackRunnable
@@ -613,29 +620,15 @@ class MainActivity : AppCompatActivity() {
      */
     private fun configureNovaActions() {
         configureDestinationClick(
-            view = binding.buttonNavigateHome,
-            destination = AppDestination.NAVIGATION
-        )
-
-        configureDestinationClick(
-            view = binding.buttonPlayMusic,
-            destination = AppDestination.MEDIA
-        )
-
-        configureDestinationClick(
-            view = binding.buttonSetClimate,
-            destination = AppDestination.CLIMATE
-        )
-
-        configureDestinationClick(
-            view = binding.buttonCallContact,
-            destination = AppDestination.PHONE
-        )
-
-        configureDestinationClick(
             view = binding.novaFace,
             destination = AppDestination.NOVA_AI
         )
+
+        val openContext = View.OnClickListener {
+            activeNovaContextDestination?.let(::openHyperNovaApp)
+        }
+        binding.novaContextCard.setOnClickListener(openContext)
+        binding.buttonNovaContextOpen.setOnClickListener(openContext)
     }
 
     /**
@@ -1063,8 +1056,35 @@ class MainActivity : AppCompatActivity() {
         binding.textNovaGreeting.text =
             state.assistant.headline
 
-        binding.textNovaQuestion.text =
-            state.assistant.subtitle
+        binding.textNovaStatusChip.text = when (state.assistant.runtimeState) {
+            AssistantRuntimeState.IDLE -> "READY"
+            AssistantRuntimeState.LISTENING -> "LISTENING"
+            AssistantRuntimeState.PROCESSING -> "THINKING"
+            AssistantRuntimeState.EXECUTING -> "ACTING"
+            AssistantRuntimeState.SUCCESS -> "DONE"
+            AssistantRuntimeState.ERROR -> "ATTENTION"
+            AssistantRuntimeState.SPEAKING -> "SPEAKING"
+            AssistantRuntimeState.UNAVAILABLE -> "OFFLINE"
+        }
+
+        renderNovaPrimaryMessage(
+            text = state.assistant.primaryMessage,
+            animate = state.assistant.speaking ||
+                state.assistant.runtimeState == AssistantRuntimeState.SUCCESS,
+        )
+
+        binding.textNovaTranscript.text = state.assistant.transcript?.let {
+            getString(R.string.nova_transcript_format, it)
+        }.orEmpty()
+        binding.textNovaTranscript.visibility =
+            if (state.assistant.transcript.isNullOrBlank()) View.GONE else View.VISIBLE
+
+        binding.textNovaSecondary.text = state.assistant.secondaryMessage.orEmpty()
+        binding.textNovaSecondary.visibility =
+            if (state.assistant.secondaryMessage.isNullOrBlank()) View.GONE else View.VISIBLE
+
+        binding.novaActivityProgress.visibility =
+            if (state.assistant.showActivityProgress) View.VISIBLE else View.GONE
 
         binding.textNovaQuestion.setTextColor(
             ContextCompat.getColor(
@@ -1093,14 +1113,85 @@ class MainActivity : AppCompatActivity() {
             error = ContextCompat.getColor(this, R.color.hypernova_error),
         )
         binding.novaFace.setStateName(state.assistant.runtimeState.name)
+        renderNovaContext(state)
+    }
+
+    private fun renderNovaPrimaryMessage(text: String, animate: Boolean) {
+        if (text == novaTextTarget) return
+        novaTextTarget = text
+        novaTypingAnimator?.cancel()
+        binding.textNovaQuestion.contentDescription = text
+
+        if (!animate || text.length < 12) {
+            binding.textNovaQuestion.text = text
+            return
+        }
+
+        binding.textNovaQuestion.text = ""
+        novaTypingAnimator = ValueAnimator.ofInt(0, text.length).apply {
+            duration = (text.length * 22L).coerceIn(450L, 2_800L)
+            addUpdateListener { animation ->
+                val end = (animation.animatedValue as Int).coerceIn(0, text.length)
+                binding.textNovaQuestion.text = text.substring(0, end)
+            }
+            start()
+        }
+    }
+
+    private fun renderNovaContext(state: LauncherUiState) {
+        val card = NovaContextCardFactory.create(state)
+        if (card == null) {
+            activeNovaContextDestination = null
+            visibleNovaContextDomain = null
+            binding.novaContextCard.animate().cancel()
+            binding.novaContextCard.visibility = View.GONE
+            return
+        }
+
+        activeNovaContextDestination = card.destination
+        binding.textNovaContextLabel.text = card.label
+        binding.textNovaContextTitle.text = card.title
+        binding.textNovaContextDetail.text = card.detail
+        binding.textNovaContextMetadata.text = card.metadata.orEmpty()
+        binding.textNovaContextMetadata.visibility =
+            if (card.metadata.isNullOrBlank()) View.GONE else View.VISIBLE
+        binding.buttonNovaContextOpen.visibility =
+            if (card.destination == null) View.GONE else View.VISIBLE
+        binding.novaContextCard.isClickable = card.destination != null
+        binding.imageNovaContextIcon.setImageResource(
+            when (card.domain) {
+                "navigation" -> R.drawable.ic_nav_navigation
+                "media" -> R.drawable.ic_nav_media
+                "phone" -> R.drawable.ic_nav_phone
+                "climate" -> R.drawable.ic_nav_climate
+                else -> R.drawable.ic_nav_nova
+            },
+        )
+
+        if (binding.novaContextCard.visibility != View.VISIBLE) {
+            binding.novaContextCard.visibility = View.VISIBLE
+        }
+        if (visibleNovaContextDomain != card.domain) {
+            visibleNovaContextDomain = card.domain
+            binding.novaContextCard.alpha = 0f
+            binding.novaContextCard.translationY = dp(10).toFloat()
+            binding.novaContextCard.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setDuration(220L)
+                .start()
+        }
     }
 
     /**
      * Restore the real assistant subtitle after feedback.
      */
     private fun restoreAssistantSubtitle() {
-        binding.textNovaQuestion.text =
-            latestUiState.assistant.subtitle
+        novaTextTarget = ""
+        renderNovaPrimaryMessage(
+            latestUiState.assistant.primaryMessage,
+            animate = false,
+        )
 
         binding.textNovaQuestion.setTextColor(
             ContextCompat.getColor(
@@ -1640,6 +1731,8 @@ class MainActivity : AppCompatActivity() {
 
         binding.textNovaQuestion.text =
             message
+        novaTextTarget = message
+        novaTypingAnimator?.cancel()
 
         val colorResourceId =
             if (isError) {

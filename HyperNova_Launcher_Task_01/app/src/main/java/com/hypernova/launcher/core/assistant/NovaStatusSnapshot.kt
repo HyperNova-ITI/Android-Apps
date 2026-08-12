@@ -10,4 +10,14 @@ enum class NovaServiceConnection {
 data class NovaStatusSnapshot(
     val connection: NovaServiceConnection,
     val state: String? = null,
+    val turnId: String? = null,
+    val eyebrow: String? = null,
+    val transcript: String? = null,
+    val primaryMessage: String? = null,
+    val secondaryMessage: String? = null,
+    val actionDomain: String? = null,
+    val actionName: String? = null,
+    val blocked: Boolean = false,
+    val speaking: Boolean = false,
+    val showActivityProgress: Boolean = false,
 )
