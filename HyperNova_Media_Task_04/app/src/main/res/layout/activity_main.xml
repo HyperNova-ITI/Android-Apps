@@ -243,7 +243,7 @@
                 android:layout_width="28dp"
                 android:layout_height="28dp"
                 android:contentDescription="@null"
-                android:src="@drawable/ic_library" />
+                android:src="@drawable/ic_video" />
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -258,7 +258,7 @@
                     android:layout_height="wrap_content"
                     android:ellipsize="end"
                     android:maxLines="1"
-                    android:text="@string/library"
+                    android:text="@string/video"
                     android:textColor="@color/hn_text_primary"
                     android:textSize="14sp" />
 
@@ -268,7 +268,7 @@
                     android:layout_height="wrap_content"
                     android:ellipsize="end"
                     android:maxLines="1"
-                    android:text="@string/local_usb"
+                    android:text="@string/video_subtitle"
                     android:textColor="@color/hn_text_secondary"
                     android:textSize="11sp" />
 
@@ -276,7 +276,7 @@
         </LinearLayout>
     </LinearLayout>
 
-    <androidx.core.widget.NestedScrollView
+    <com.hypernova.media.ui.NonScrollingNestedScrollView
         android:id="@+id/content_scroll"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -317,6 +317,11 @@
                     android:id="@+id/video_host"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent">
+
+                    <FrameLayout
+                        android:id="@+id/video_render_host"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent" />
 
                     <androidx.media3.ui.PlayerView
                         android:id="@+id/player_view"
@@ -361,7 +366,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_gravity="bottom"
-                    android:background="@color/hn_scrim"
+                    android:background="@color/hn_transparent"
                     android:orientation="vertical"
                     android:padding="16dp">
 
@@ -379,7 +384,7 @@
                         android:ellipsize="end"
                         android:maxLines="1"
                         android:text="@string/choose_source_title"
-                        android:textColor="@android:color/white"
+                        android:textColor="@color/hn_text_primary"
                         android:textSize="25sp" />
 
                     <TextView
@@ -390,7 +395,7 @@
                         android:ellipsize="end"
                         android:maxLines="2"
                         android:text="@string/choose_source_body"
-                        android:textColor="#C5D3DC"
+                        android:textColor="@color/hn_text_secondary"
                         android:textSize="13sp" />
 
                 </LinearLayout>
@@ -998,8 +1003,50 @@
                     android:nestedScrollingEnabled="false" />
 
             </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/video_panel"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_card"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="8dp"
+                android:visibility="gone">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button_youtube_back"
+                    style="@style/Widget.HyperNova.Action"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:layout_marginEnd="8dp"
+                    android:text="←  Back"
+                    android:visibility="invisible" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button_youtube_home"
+                    style="@style/Widget.HyperNova.Action"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:text="Home" />
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1" />
+
+                <ImageButton
+                    android:id="@+id/button_video_web_fullscreen"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_icon"
+                    android:contentDescription="Fullscreen YouTube"
+                    android:padding="12dp"
+                    android:src="@drawable/ic_fullscreen" />
+            </LinearLayout>
         </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
+    </com.hypernova.media.ui.NonScrollingNestedScrollView>
 
     <FrameLayout
         android:id="@+id/fullscreen_panel"

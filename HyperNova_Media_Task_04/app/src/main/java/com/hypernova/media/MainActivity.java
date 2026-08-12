@@ -4,7 +4,6 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -34,11 +33,9 @@ import androidx.transition.AutoTransition;
 import androidx.transition.TransitionManager;
 
 import com.hypernova.media.bluetooth.BluetoothAudioBackend;
-import com.hypernova.media.library.LocalMediaBackend;
 import com.hypernova.media.debug.DemoModeController;
 import com.hypernova.media.model.BluetoothUiState;
 import com.hypernova.media.model.LibraryUiState;
-import com.hypernova.media.model.MediaItemModel;
 import com.hypernova.media.model.MediaSourceType;
 import com.hypernova.media.model.PlaybackUiState;
 import com.hypernova.media.model.RadioUiState;
@@ -46,10 +43,9 @@ import com.hypernova.media.playback.PlaybackController;
 import com.hypernova.media.radio.RadioStation;
 import com.hypernova.media.radio.RadioRepository;
 import com.hypernova.media.radio.InternetRadioBackend;
-import com.hypernova.media.ui.LibraryBrowserController;
 import com.hypernova.media.ui.MainUiRenderer;
 import com.hypernova.media.ui.RadioBrowserController;
-import com.hypernova.media.usb.UsbStorageMonitor;
+import com.hypernova.media.video.YoutubeWebSession;
 
 import java.text.DateFormat;
 import java.util.Collections;
@@ -58,8 +54,8 @@ import java.util.List;
 import java.util.Set;
 
 public final class MainActivity extends AppCompatActivity implements PlaybackController.Listener,
-        BluetoothAudioBackend.Listener, LocalMediaBackend.Listener,
-        RadioRepository.Listener, InternetRadioBackend.Listener {
+        BluetoothAudioBackend.Listener, RadioRepository.Listener, InternetRadioBackend.Listener,
+        YoutubeWebSession.FullscreenListener, YoutubeWebSession.NavigationListener {
     private static final String PREF_PERMISSION = "permission_prompts";
     private static final String HYPERNOVA_SETTINGS_PACKAGE =
             "com.hypernova.settings";
@@ -77,44 +73,25 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
     private MainUiRenderer renderer;
     private PlaybackUiState playbackState = PlaybackUiState.DISCONNECTED;
     private BluetoothUiState bluetoothState;
-    private LibraryUiState libraryState = LibraryUiState.noFolder();
+    private final LibraryUiState libraryState = LibraryUiState.noFolder();
     private RadioUiState radioState = RadioUiState.initial(Collections.emptyList());
     private MediaSourceType selectedSource = MediaSourceType.HOME;
-    private LibraryBrowserController libraryBrowser;
     private RadioBrowserController radioBrowser;
     private TextView headerTime;
     private NestedScrollView contentScroll;
     private ViewGroup contentStack;
-    private FrameLayout videoHost;
+    private FrameLayout videoRenderHost;
     private FrameLayout fullscreenVideoHost;
     private View fullscreenPanel;
     private boolean fullscreen;
+    private boolean webFullscreen;
+    private android.webkit.WebChromeClient.CustomViewCallback webFullscreenCallback;
+    private View youtubeBackButton;
+    private boolean youtubeCanNavigateBack;
     private boolean demoMode;
     private DemoModeController demoController;
     private boolean shuffle;
     private ObjectAnimator statusAnimator;
-
-    private final ActivityResultLauncher<Uri> treePicker = registerForActivityResult(
-            new ActivityResultContracts.OpenDocumentTree(), uri -> {
-                if (uri != null) {
-                    demoController.exit();
-                    selectedSource = MediaSourceType.LIBRARY;
-                    application.library().selectTree(uri);
-                }
-            });
-
-    private final ActivityResultLauncher<String[]> mediaPermissionLauncher = registerForActivityResult(
-            new ActivityResultContracts.RequestMultiplePermissions(), result -> {
-                getSharedPreferences(PREF_PERMISSION, MODE_PRIVATE).edit().putBoolean("media_requested", true).apply();
-                if (hasMediaPermission()) application.library().scanMediaStore();
-                else {
-                    libraryState = new LibraryUiState(LibraryUiState.Status.PERMISSION_REQUIRED,
-                            "USB media", "Media permission was denied. You can still select the USB folder privately.",
-                            Collections.emptyList());
-                    render();
-                }
-            });
-
     private final ActivityResultLauncher<String> bluetoothPermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestPermission(), granted -> {
                 getSharedPreferences(PREF_PERMISSION, MODE_PRIVATE)
@@ -147,11 +124,11 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
         });
         bindViews();
         bindActions();
+        application.youtubeWeb().setNavigationListener(this);
         configureResponsiveLayout();
         configureInsets();
         configureSystemBarAppearance();
         bluetoothState = application.bluetooth().currentState();
-        libraryState = application.library().currentState();
         radioState = application.radioStations().currentState();
         playbackState = application.playback().getState();
         attachPlayerIfReady();
@@ -169,18 +146,18 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
         headerTime = findViewById(R.id.header_time);
         contentScroll = findViewById(R.id.content_scroll);
         contentStack = findViewById(R.id.content_stack);
-        videoHost = findViewById(R.id.video_host);
+        videoRenderHost = findViewById(R.id.video_render_host);
         fullscreenVideoHost = findViewById(R.id.fullscreen_video_host);
         fullscreenPanel = findViewById(R.id.fullscreen_panel);
         View root = findViewById(R.id.main);
-        libraryBrowser = new LibraryBrowserController(root, this::playLibraryItem);
         radioBrowser = new RadioBrowserController(root, application.radioStations(), this::playStation);
+        youtubeBackButton = findViewById(R.id.button_youtube_back);
     }
 
     private void bindActions() {
         findViewById(R.id.card_radio).setOnClickListener(v -> selectSource(MediaSourceType.RADIO));
         findViewById(R.id.card_bluetooth).setOnClickListener(v -> selectSource(MediaSourceType.BLUETOOTH));
-        findViewById(R.id.card_library).setOnClickListener(v -> selectSource(MediaSourceType.LIBRARY));
+        findViewById(R.id.card_library).setOnClickListener(v -> selectSource(MediaSourceType.VIDEO));
         findViewById(R.id.button_back).setOnClickListener(v -> handleBack());
         findViewById(R.id.button_play_pause).setOnClickListener(v -> {
             if (selectedSource == MediaSourceType.BLUETOOTH) {
@@ -230,17 +207,9 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
         findViewById(R.id.button_fullscreen).setOnClickListener(v -> enterFullscreen());
         findViewById(R.id.button_exit_fullscreen).setOnClickListener(v -> exitFullscreen());
         findViewById(R.id.state_action).setOnClickListener(v -> handleStateAction());
-        findViewById(R.id.button_select_folder).setOnClickListener(v -> treePicker.launch(null));
-        findViewById(R.id.button_device_media).setOnClickListener(v -> requestOrScanDeviceMedia());
-        findViewById(R.id.button_rescan).setOnClickListener(v -> application.library().scanSelectedTree());
-        findViewById(R.id.button_select_folder).setOnLongClickListener(v -> {
-            new AlertDialog.Builder(this).setTitle("Forget selected folder?")
-                    .setMessage("Android's persisted folder access will be released. Mounted USB detection remains active.")
-                    .setNegativeButton(R.string.cancel, null)
-                    .setPositiveButton("Forget", (dialog, which) -> application.library().forgetSelectedTree())
-                    .show();
-            return true;
-        });
+        findViewById(R.id.button_youtube_back).setOnClickListener(v -> application.youtubeWeb().goBackOrHome());
+        findViewById(R.id.button_youtube_home).setOnClickListener(v -> application.youtubeWeb().goHome());
+        findViewById(R.id.button_video_web_fullscreen).setOnClickListener(v -> enterFullscreen());
         bindSeekBar();
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override public void handleOnBackPressed() { handleBack(); }
@@ -307,8 +276,6 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
         super.onStart();
         application.playback().addListener(this);
         application.bluetooth().start(this);
-        application.library().setListener(this);
-        application.library().refreshVolumes();
         application.radioStations().addListener(this);
         application.radio().setListener(this);
         application.radioStations().start();
@@ -321,7 +288,7 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
     @Override protected void onResume() {
         super.onResume();
         configureSystemBarAppearance();
-        if (application != null) application.library().refreshVolumes();
+        if (selectedSource == MediaSourceType.VIDEO) attachYoutube();
     }
 
     @Override protected void onStop() {
@@ -330,19 +297,23 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
         clockHandler.removeCallbacks(clockTicker);
         application.playback().removeListener(this);
         application.bluetooth().stop(this);
-        application.library().clearListener(this);
+        application.youtubeWeb().detach(true);
         application.radioStations().removeListener(this);
         application.radio().setListener(null);
-        if (playbackState.item != null && playbackState.item.isVideo() && playbackState.playing) {
-            application.playback().pause();
-        }
         super.onStop();
     }
 
     private void selectSource(MediaSourceType source) {
         demoController.exit();
+        if (selectedSource == MediaSourceType.VIDEO && source != MediaSourceType.VIDEO) leaveVideo();
         selectedSource = source;
         if (source == MediaSourceType.BLUETOOTH) application.bluetooth().refresh();
+        if (source == MediaSourceType.VIDEO) {
+            application.playback().pause();
+            // Explicit source selection always resets only the page to YouTube home; session stays.
+            application.youtubeWeb().openYoutubeHome(this);
+            attachYoutube();
+        }
         contentScroll.stopNestedScroll();
         contentScroll.scrollTo(0, 0);
         TransitionManager.beginDelayedTransition(contentStack, new AutoTransition().setDuration(180L));
@@ -354,6 +325,7 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
         renderer.render(selectedSource, playbackState, bluetoothState, libraryState,
                 radioState, application.radio(), false);
         attachPlayerIfReady();
+        renderVideoControls();
     }
 
     private void attachPlayerIfReady() {
@@ -375,18 +347,12 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
     @Override public void onBluetoothStateChanged(BluetoothUiState state) {
         bluetoothState = state; render();
     }
-    @Override public void onLibraryStateChanged(LibraryUiState state) {
-        boolean unavailableUsb = state.status == LibraryUiState.Status.REMOVED
-                || state.status == LibraryUiState.Status.ERROR
-                || state.status == LibraryUiState.Status.PERMISSION_REQUIRED
-                || state.status == LibraryUiState.Status.NO_USB;
-        if (unavailableUsb && playbackState.item != null
-                && playbackState.item.getId().startsWith("usb:")) {
-            application.playback().stopAndClear();
-        }
-        libraryState = state;
-        libraryBrowser.submit(state.items);
-        render();
+    @Override public void onYoutubeNavigationChanged(boolean canGoBack, boolean canReturnHome,
+            String url, boolean playbackKnown, boolean playing) {
+        youtubeCanNavigateBack = canReturnHome;
+        if (renderer != null) renderer.setYoutubePlaybackState(playbackKnown, playing);
+        renderVideoControls();
+        if (selectedSource == MediaSourceType.VIDEO) render();
     }
     @Override public void onRadioStateChanged(RadioUiState state) {
         radioState = state;
@@ -401,19 +367,6 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
         }
         demoController.exit(); selectedSource = MediaSourceType.RADIO;
         ensureNotificationPermission(); application.radio().play(station); revealPlayer(); render();
-    }
-
-    private void playLibraryItem(MediaItemModel item, List<MediaItemModel> queue) {
-        if (application.playback().getPlayer() == null) {
-            toast("Playback service is still connecting."); return;
-        }
-        demoController.exit(); selectedSource = MediaSourceType.LIBRARY;
-        int index = queue.indexOf(item);
-        if (index >= 0) {
-            ensureNotificationPermission();
-            application.playback().playQueue(queue, index);
-            revealPlayer();
-        }
     }
 
     private void revealPlayer() {
@@ -446,9 +399,6 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
             case ADD_STATION: radioBrowser.showAdd(); break;
             case BLUETOOTH_PERMISSION: requestBluetoothPermissionOrSettings(); break;
             case BLUETOOTH_SETTINGS: openBluetoothSettings(); break;
-            case SELECT_FOLDER: treePicker.launch(null); break;
-            case USB_VOLUME_PICKER: showUsbVolumePicker(); break;
-            case MEDIA_PERMISSION: requestOrScanDeviceMedia(); break;
             case RETRY:
                 if (selectedSource == MediaSourceType.RADIO
                         && application.radio().getError() != null) application.radio().retry();
@@ -457,48 +407,6 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
                 break;
             default: break;
         }
-    }
-
-    private void showUsbVolumePicker() {
-        List<UsbStorageMonitor.Volume> values = application.library().availableVolumes();
-        if (values.isEmpty()) { application.library().refreshVolumes(); return; }
-        String[] labels = new String[values.size()];
-        for (int i = 0; i < values.size(); i++) labels[i] = values.get(i).name;
-        new AlertDialog.Builder(this).setTitle("Choose mounted USB")
-                .setItems(labels, (dialog, which) -> application.library().selectVolume(values.get(which).id))
-                .show();
-    }
-
-    private void requestOrScanDeviceMedia() {
-        if (hasMediaPermission()) application.library().scanMediaStore();
-        else if (wasRequested("media_requested") && !shouldShowAnyMediaRationale()) openAppSettings();
-        else mediaPermissionLauncher.launch(mediaPermissions());
-    }
-
-    private String[] mediaPermissions() {
-        return Build.VERSION.SDK_INT >= 34
-                ? new String[]{Manifest.permission.READ_MEDIA_AUDIO, Manifest.permission.READ_MEDIA_VIDEO,
-                    Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED}
-                : Build.VERSION.SDK_INT >= 33
-                ? new String[]{Manifest.permission.READ_MEDIA_AUDIO, Manifest.permission.READ_MEDIA_VIDEO}
-                : new String[]{Manifest.permission.READ_EXTERNAL_STORAGE};
-    }
-
-    private boolean hasMediaPermission() {
-        if (Build.VERSION.SDK_INT >= 33) {
-            boolean audio = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_AUDIO) == PackageManager.PERMISSION_GRANTED;
-            boolean video = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED;
-            boolean selectedVideo = Build.VERSION.SDK_INT >= 34 && ContextCompat.checkSelfPermission(this,
-                    Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED) == PackageManager.PERMISSION_GRANTED;
-            return audio || video || selectedVideo;
-        }
-        return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
-    }
-
-    private boolean shouldShowAnyMediaRationale() {
-        if (Build.VERSION.SDK_INT >= 33) return shouldShowRequestPermissionRationale(Manifest.permission.READ_MEDIA_AUDIO)
-                || shouldShowRequestPermissionRationale(Manifest.permission.READ_MEDIA_VIDEO);
-        return shouldShowRequestPermissionRationale(Manifest.permission.READ_EXTERNAL_STORAGE);
     }
 
     private void requestBluetoothPermissionOrSettings() {
@@ -575,11 +483,6 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
         }
     }
 
-    private void openAppSettings() {
-        startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                Uri.fromParts("package", getPackageName(), null)));
-    }
-
     private void toggleFavorite() {
         if (selectedSource == MediaSourceType.RADIO && application.radio().getSelected() != null) {
             application.radioStations().toggleFavorite(application.radio().getSelected().id);
@@ -589,7 +492,6 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
                     .getStringSet("media_ids", Collections.emptySet()));
             if (!values.add(playbackState.item.getId())) values.remove(playbackState.item.getId());
             getSharedPreferences("hypernova_favorites", MODE_PRIVATE).edit().putStringSet("media_ids", values).apply();
-            libraryBrowser.refresh();
             toast(values.contains(playbackState.item.getId()) ? "Added to favorites" : "Removed from favorites");
         }
     }
@@ -615,12 +517,9 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
     }
 
     private void enterFullscreen() {
-        if (fullscreen || playbackState.item == null || !playbackState.item.isVideo()) return;
+        if (fullscreen || selectedSource != MediaSourceType.VIDEO) return;
         fullscreen = true;
-        View player = renderer.playerView();
-        ((ViewGroup) player.getParent()).removeView(player);
-        fullscreenVideoHost.addView(player, new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        application.youtubeWeb().attach(this, fullscreenVideoHost, this);
         fullscreenPanel.setVisibility(View.VISIBLE);
         new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView())
                 .hide(WindowInsetsCompat.Type.systemBars());
@@ -629,10 +528,16 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
     private void exitFullscreen() {
         if (!fullscreen) return;
         fullscreen = false;
-        View player = renderer.playerView();
-        ((ViewGroup) player.getParent()).removeView(player);
-        videoHost.addView(player, 0, new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        if (webFullscreen && webFullscreenCallback != null) {
+            android.webkit.WebChromeClient.CustomViewCallback callback = webFullscreenCallback;
+            webFullscreenCallback = null;
+            webFullscreen = false;
+            callback.onCustomViewHidden();
+        }
+        fullscreenVideoHost.removeAllViews();
+        if (selectedSource == MediaSourceType.VIDEO) {
+            attachYoutube();
+        }
         fullscreenPanel.setVisibility(View.GONE);
         new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView())
                 .hide(WindowInsetsCompat.Type.systemBars());
@@ -644,8 +549,20 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
             return;
         }
 
+        if (selectedSource == MediaSourceType.VIDEO
+                && application.youtubeWeb().canNavigateBackOrHome()) {
+            application.youtubeWeb().goBackOrHome();
+            return;
+        }
+
         if (demoMode) {
             demoController.exit();
+            return;
+        }
+
+        if (selectedSource == MediaSourceType.VIDEO) {
+            leaveVideo();
+            openLauncherHome();
             return;
         }
 
@@ -655,6 +572,10 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
             return;
         }
 
+        openLauncherHome();
+    }
+
+    private void openLauncherHome() {
         Intent homeIntent = new Intent(Intent.ACTION_MAIN);
         homeIntent.addCategory(Intent.CATEGORY_HOME);
         homeIntent.addFlags(
@@ -667,6 +588,40 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
     }
 
     private void toast(String message) { Toast.makeText(this, message, Toast.LENGTH_SHORT).show(); }
+
+    private void attachYoutube() {
+        if (videoRenderHost == null || fullscreen) return;
+        application.youtubeWeb().attach(this, videoRenderHost, this);
+    }
+
+    private void leaveVideo() {
+        if (fullscreen) exitFullscreen();
+        application.youtubeWeb().detach(true);
+    }
+
+    private void renderVideoControls() {
+        if (youtubeBackButton == null) return;
+        youtubeBackButton.setVisibility(selectedSource == MediaSourceType.VIDEO && youtubeCanNavigateBack
+                ? View.VISIBLE : View.INVISIBLE);
+    }
+
+    @Override public void onWebFullscreen(View view,
+            android.webkit.WebChromeClient.CustomViewCallback callback) {
+        if (fullscreen) return;
+        fullscreen = true;
+        webFullscreen = true;
+        webFullscreenCallback = callback;
+        fullscreenVideoHost.removeAllViews();
+        fullscreenVideoHost.addView(view, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        fullscreenPanel.setVisibility(View.VISIBLE);
+        new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView())
+                .hide(WindowInsetsCompat.Type.systemBars());
+    }
+
+    @Override public void onWebFullscreenHidden() {
+        if (webFullscreen) exitFullscreen();
+    }
 
     private void configureSystemBarAppearance() {
         boolean light = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)

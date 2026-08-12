@@ -1,0 +1,5 @@
+c782f8303008cdb179c374d824b55d9c7151585e3535333ec1d6d77a52b6a336  ./HyperNovaLauncher-release-unsigned.apk
+7bae49eb20d9e1c5097185fb93f82b59bd79ab2fe7a14c5eaf75a1d792ff6dc1  ./HyperNovaMedia-platform-runtime.apk
+eb2f3d77b995f7a69d831a60debdcc404321ac090a5473fe0448b70dfbd66654  ./HyperNovaMedia-release-unsigned.apk
+d4b60becc9a301d63876dec98534d5f56729d85613b0185168e233cdd0b77a47  ./HyperNovaNavigation-release-unsigned.apk
+3edf7814c74b1b2d611a2a58e7157c76fbeb9ce9ccd5def6f068464f001d653a  ./HyperNovaPhone-release-unsigned.apk

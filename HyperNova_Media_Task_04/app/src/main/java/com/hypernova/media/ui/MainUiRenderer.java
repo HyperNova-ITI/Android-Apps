@@ -76,6 +76,7 @@ public final class MainUiRenderer {
     private final View radioPanel;
     private final View nowPlayingPanel;
     private final View libraryPanel;
+    private final View videoPanel;
     private final TextView mediaBadge;
     private final TextView mediaTitle;
     private final TextView mediaSubtitle;
@@ -99,6 +100,8 @@ public final class MainUiRenderer {
             new Handler(Looper.getMainLooper());
 
     private boolean bluetoothProgressTickerRunning;
+    private boolean youtubePlaybackKnown;
+    private boolean youtubePlaying;
     private boolean bluetoothProgressPlaying;
     private boolean bluetoothLastReportedPlaying;
 
@@ -162,6 +165,7 @@ public final class MainUiRenderer {
         radioPanel = root.findViewById(R.id.radio_panel);
         nowPlayingPanel = root.findViewById(R.id.now_playing_panel);
         libraryPanel = root.findViewById(R.id.library_panel);
+        videoPanel = root.findViewById(R.id.video_panel);
         mediaBadge = root.findViewById(R.id.media_badge);
         mediaTitle = root.findViewById(R.id.media_title);
         mediaSubtitle = root.findViewById(R.id.media_subtitle);
@@ -191,6 +195,11 @@ public final class MainUiRenderer {
     }
 
     public void setUserSeeking(boolean value) { userSeeking = value; }
+    /** Real browser media state, only when the WebView reports a Media Session/video element. */
+    public void setYoutubePlaybackState(boolean known, boolean playing) {
+        youtubePlaybackKnown = known;
+        youtubePlaying = playing;
+    }
     public PlayerView playerView() { return playerView; }
     public HyperNovaImmersiveVisualizerView visualizer() { return visualizer; }
     public StateAction stateAction() {
@@ -212,6 +221,7 @@ public final class MainUiRenderer {
         updateSourceSubtitles(bluetooth, library);
         radioPanel.setVisibility(source == MediaSourceType.RADIO ? View.VISIBLE : View.GONE);
         libraryPanel.setVisibility(source == MediaSourceType.LIBRARY ? View.VISIBLE : View.GONE);
+        videoPanel.setVisibility(source == MediaSourceType.VIDEO ? View.VISIBLE : View.GONE);
         boolean radioControls =
                 source == MediaSourceType.RADIO;
 
@@ -300,6 +310,7 @@ public final class MainUiRenderer {
         if (source == MediaSourceType.HOME) renderHome(bluetooth, library);
         else if (source == MediaSourceType.RADIO) renderRadio(playback, radio, radioBackend);
         else if (source == MediaSourceType.BLUETOOTH) renderBluetooth(playback, bluetooth);
+        else if (source == MediaSourceType.VIDEO) renderVideo();
         else renderLibrary(playback, library);
         float progress;
 
@@ -336,19 +347,25 @@ public final class MainUiRenderer {
     private void renderHome(BluetoothUiState bluetooth, LibraryUiState library) {
         headerState.setText("SELECT SOURCE");
         setHero("IMMERSIVE MEDIA", "Your media. One cockpit.",
-                "Real Internet Radio, Bluetooth output, and USB media in one focused experience.",
+                "Internet Radio, Bluetooth output, and video in one focused experience.",
                 VisualizerMode.IDLE, false);
         showState(R.drawable.ic_music, "SYSTEM READY", "Choose a source",
-                homeSummary(bluetooth, library), null, StateAction.NONE);
+                homeSummary(bluetooth), null, StateAction.NONE);
     }
 
-    private String homeSummary(BluetoothUiState bluetooth, LibraryUiState library) {
+    private String homeSummary(BluetoothUiState bluetooth) {
         String bluetoothText = bluetooth.isConnected() ? bluetooth.activeDeviceName : "No active Bluetooth output";
-        String libraryText = library.status == LibraryUiState.Status.READY
-                ? (library.removable ? "USB" : "Local folder") + " · "
-                    + library.audioCount + " tracks · " + library.videoCount + " videos"
-                : library.status == LibraryUiState.Status.NO_USB ? "No USB detected" : library.sourceLabel;
-        return bluetoothText + " · " + libraryText;
+        return bluetoothText + " · YouTube ready";
+    }
+
+    private void renderVideo() {
+        headerState.setText("YOUTUBE · " + (youtubePlaybackKnown
+                ? youtubePlaying ? "PLAYING" : "PAUSED" : "READY"));
+        setHero("YOUTUBE", "YouTube", "", VisualizerMode.IDLE, true);
+        statePanel.setVisibility(View.GONE);
+        nowPlayingPanel.setVisibility(View.GONE);
+        playerView.setVisibility(View.GONE);
+        fullscreen.setVisibility(View.GONE);
     }
 
     private void renderRadio(PlaybackUiState playback, RadioUiState catalog,
@@ -826,18 +843,13 @@ public final class MainUiRenderer {
                 : bluetooth.status == BluetoothUiState.Status.OFF ? "Off"
                 : bluetooth.status == BluetoothUiState.Status.PERMISSION_REQUIRED ? "Access needed"
                 : "No active output");
-        if (library.status == LibraryUiState.Status.READY) {
-            librarySubtitle.setText(library.removable ? library.sourceLabel : "Local folder selected");
-        } else if (library.status == LibraryUiState.Status.SCANNING) librarySubtitle.setText("Scanning…");
-        else if (library.status == LibraryUiState.Status.PERMISSION_REQUIRED) librarySubtitle.setText("Permission required");
-        else if (library.status == LibraryUiState.Status.REMOVED) librarySubtitle.setText("USB removed");
-        else librarySubtitle.setText("No USB detected");
+        librarySubtitle.setText("YouTube");
     }
 
     private void selectCard(MediaSourceType source) {
         updateCard(radioCard, radioTitle, radioIcon, source == MediaSourceType.RADIO);
         updateCard(bluetoothCard, bluetoothTitle, bluetoothIcon, source == MediaSourceType.BLUETOOTH);
-        updateCard(libraryCard, libraryTitle, libraryIcon, source == MediaSourceType.LIBRARY);
+        updateCard(libraryCard, libraryTitle, libraryIcon, source == MediaSourceType.VIDEO);
     }
 
     private void updateCard(View card, TextView title, ImageView icon, boolean selected) {
@@ -861,6 +873,7 @@ public final class MainUiRenderer {
         demoBadge.setVisibility(View.VISIBLE);
         radioPanel.setVisibility(View.GONE);
         libraryPanel.setVisibility(View.GONE);
+        videoPanel.setVisibility(View.GONE);
         playerView.setVisibility(View.GONE);
         fullscreen.setVisibility(View.GONE);
         favorite.setVisibility(preview.source == MediaSourceType.RADIO ? View.VISIBLE : View.GONE);

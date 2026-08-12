@@ -8,10 +8,12 @@
     <string name="audio_output">Audio output</string>
     <string name="library">USB</string>
     <string name="local_usb">No USB detected</string>
+    <string name="video">Video</string>
+    <string name="video_subtitle">YouTube</string>
     <string name="select_source">SELECT SOURCE</string>
     <string name="immersive_audio">IMMERSIVE MEDIA</string>
     <string name="choose_source_title">Your media. One cockpit.</string>
-    <string name="choose_source_body">Choose Internet Radio, a Bluetooth output, or mounted USB media.</string>
+    <string name="choose_source_body">Choose Internet Radio, Bluetooth output, or Video.</string>
     <string name="back">Back</string>
     <string name="fullscreen">Fullscreen</string>
     <string name="play_pause">Play or pause</string>

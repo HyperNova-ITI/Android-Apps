@@ -2,19 +2,22 @@
 <resources>
 
     <!--
-        HyperNova tall portrait display profile.
+        HyperNova RPi5 portrait display profile.
 
-        The ARZOPA panel runs as a 1920x1080 HDMI scanout and Android
-        rotates the logical UI to portrait.
+        The previous 980dp hero forced the main Media screen to behave
+        like a vertically scrolling page.
 
-        At 240 dpi the usable portrait display is roughly 1280dp tall.
-        A ~980dp hero allows the Media home screen to occupy almost the
-        complete vertical canvas while keeping the source selector and
-        state panel visible.
+        The new layout keeps the hero prominent while leaving enough
+        room for source/status/playback panels inside the same window.
 
-        Smaller displays continue to use the normal 270dp hero value
-        from res/values/dimens.xml.
+        Radio and USB lists remain bounded internal lists because their
+        content can contain an arbitrary number of stations/tracks.
     -->
-    <dimen name="hn_hero_height">980dp</dimen>
+
+    <dimen name="hn_hero_height">420dp</dimen>
+
+    <dimen name="hn_radio_list_height">140dp</dimen>
+
+    <dimen name="hn_library_list_height">160dp</dimen>
 
 </resources>
