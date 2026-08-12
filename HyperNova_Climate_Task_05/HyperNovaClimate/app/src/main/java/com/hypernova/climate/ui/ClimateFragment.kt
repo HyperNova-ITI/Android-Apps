@@ -73,10 +73,31 @@ class ClimateFragment : Fragment() {
         val confirmed = state.confirmedState
 
         // Header mode + status dot.
-        tvClimateMode.text =
-            (confirmed?.mode ?: com.hypernova.climate.model.ClimateMode.UNAVAILABLE).name
+        tvClimateMode.text = when {
+            state.isCommandPending -> "APPLYING"
+            !state.canSendCommands -> "OFFLINE"
+            state.isStale -> "STALE"
+            else -> (confirmed?.mode ?: com.hypernova.climate.model.ClimateMode.UNAVAILABLE).name
+        }
         viewClimateStatusDot.backgroundTintList =
-            ColorStateList.valueOf(healthColor(confirmed?.health))
+            ColorStateList.valueOf(
+                if (state.isCommandPending) color(R.color.hn_warning)
+                else healthColor(confirmed?.health)
+            )
+
+        val commandEnabled = state.canSendCommands && !state.isCommandPending
+        listOf(
+            btnClimatePower,
+            btnDriverTemperatureMinus,
+            btnDriverTemperaturePlus,
+            btnPassengerTemperatureMinus,
+            btnPassengerTemperaturePlus,
+            btnFanMinus,
+            btnFanPlus,
+        ).forEach {
+            it.isEnabled = commandEnabled
+            it.alpha = if (commandEnabled) 1f else 0.45f
+        }
 
         // Environment.
         tvCabinTemperature.text = ClimateFormatter.temperature(confirmed?.cabinTemperatureC)
@@ -190,6 +211,20 @@ class ClimateFragment : Fragment() {
         cardPassengerZone.visibility =
             if (caps == null || caps.isDualZone) View.VISIBLE else View.GONE
 
+        cabinEnvironmentSection.visibility = visibleIf(
+            caps == null || caps.supportsCabinTemperature,
+        )
+        airQualityEnvironmentSection.visibility = visibleIf(
+            caps == null || caps.supportsAirQuality,
+        )
+        outsideEnvironmentSection.visibility = visibleIf(
+            caps == null || caps.supportsOutsideTemperature,
+        )
+        airQualityDivider.visibility = visibleIf(caps == null || caps.supportsAirQuality)
+        outsideTemperatureDivider.visibility = visibleIf(
+            caps == null || caps.supportsOutsideTemperature,
+        )
+
         // Sync only when supported.
         parentColumn(btnClimateSync)?.visibility =
             if (caps == null || caps.supportsZoneSync) View.VISIBLE else View.GONE
@@ -198,10 +233,37 @@ class ClimateFragment : Fragment() {
         parentColumn(btnClimateAc)?.visibility =
             if (caps == null || caps.supportsAc) View.VISIBLE else View.GONE
 
+        parentColumn(btnClimateAuto)?.visibility =
+            if (caps == null || caps.supportsAutoMode) View.VISIBLE else View.GONE
+
+        primaryControlsDivider.visibility = visibleIf(
+            caps == null || caps.supportsAc || caps.supportsZoneSync,
+        )
+
+        val airflowVisible = caps == null || caps.supportedAirflowModes.isNotEmpty()
+        listOf(
+            driverAirflowOption1,
+            driverAirflowOption2,
+            driverAirflowOption3,
+            passengerAirflowOption1,
+            passengerAirflowOption2,
+            passengerAirflowOption3,
+        ).forEach { it.visibility = visibleIf(airflowVisible) }
+
+        btnFreshAir.visibility = visibleIf(caps == null || caps.supportsFreshAir)
+        btnRecirculation.visibility = visibleIf(caps == null || caps.supportsRecirculation)
+        airSourceSection.visibility = visibleIf(
+            caps == null || caps.supportsFreshAir || caps.supportsRecirculation,
+        )
+
         // Defrost controls hidden when unsupported.
         btnFrontDefrost.visibility = visibleIf(caps == null || caps.supportsFrontDefrost)
         btnRearDefrost.visibility = visibleIf(caps == null || caps.supportsRearDefrost)
         btnMaxDefrost.visibility = visibleIf(caps == null || caps.supportsMaxDefrost)
+        defrostSection.visibility = visibleIf(
+            caps == null || caps.supportsFrontDefrost || caps.supportsRearDefrost ||
+                caps.supportsMaxDefrost,
+        )
     }
 
     // ----------------------------------------------------------------------

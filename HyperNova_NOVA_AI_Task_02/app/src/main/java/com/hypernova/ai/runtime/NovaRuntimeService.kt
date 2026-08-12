@@ -23,6 +23,7 @@ import com.hypernova.ai.network.NovaControlClient
 import com.hypernova.ai.protocol.AudioFrame
 import com.hypernova.ai.protocol.AudioFrameType
 import com.hypernova.ai.ui.NovaVisibleState
+import com.hypernova.ai.vehicle.VehicleGatewayStateClient
 import org.json.JSONObject
 
 class NovaRuntimeService : Service(),
@@ -34,6 +35,7 @@ class NovaRuntimeService : Service(),
     private lateinit var audioClient: NovaAudioClient
     private lateinit var player: NovaPcmPlayer
     private lateinit var commandCoordinator: CommandCoordinator
+    private lateinit var vehicleGatewayStateClient: VehicleGatewayStateClient
     private val stateCoordinator = NovaStateCoordinator()
     private var lastActionBlocked = false
 
@@ -51,9 +53,15 @@ class NovaRuntimeService : Service(),
             scheduler = HandlerCommandScheduler(),
             resultSink = ::onCommandResult,
         )
+        vehicleGatewayStateClient = VehicleGatewayStateClient(
+            context = this,
+            stateSink = controlClient::sendVehicleState,
+            faultSink = controlClient::sendFaultEvent,
+        )
 
         controlClient.start()
         audioClient.start()
+        vehicleGatewayStateClient.start()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -68,6 +76,7 @@ class NovaRuntimeService : Service(),
 
     override fun onDestroy() {
         if (::commandCoordinator.isInitialized) commandCoordinator.shutdown()
+        if (::vehicleGatewayStateClient.isInitialized) vehicleGatewayStateClient.shutdown()
         if (::player.isInitialized) player.stop()
         if (::controlClient.isInitialized) controlClient.stop()
         if (::audioClient.isInitialized) audioClient.stop()
@@ -79,6 +88,9 @@ class NovaRuntimeService : Service(),
 
     override fun onControlConnectionChanged(connected: Boolean) {
         NovaRuntimeState.publish(stateCoordinator.onControlConnectionChanged(connected))
+        if (connected && ::vehicleGatewayStateClient.isInitialized) {
+            vehicleGatewayStateClient.publishLatest()
+        }
     }
 
     override fun onAudioConnectionChanged(connected: Boolean) {

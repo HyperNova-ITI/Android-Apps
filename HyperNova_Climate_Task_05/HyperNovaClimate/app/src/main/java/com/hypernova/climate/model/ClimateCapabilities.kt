@@ -4,9 +4,9 @@ package com.hypernova.climate.model
  * What the connected vehicle actually supports (README §34).
  *
  * The UI shows/enables controls strictly from these values — never hard-coded.
- * Against today's TC397 the real capabilities are limited to temperature, fan
- * and zone (see IMPLEMENTATION_PLAN.md §1.5); the richer flags exist so the UI
- * lights up automatically when the controller gains those commands.
+ * The final TC397 capabilities are limited to temperature, fan and zone (see
+ * IMPLEMENTATION_PLAN.md §1.5). The generic provider model retains richer flags
+ * for API compatibility, but this vehicle runtime keeps them false.
  */
 data class ClimateCapabilities(
     val zoneMode: ClimateZoneMode,

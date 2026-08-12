@@ -546,7 +546,7 @@ Do not declare `CATEGORY_HOME`.
 
 ## 17. Demo API exclusions
 
-These may exist inside Climate but are not exposed to NOVA Demo API v1:
+These generic model/UI concepts are outside the final HyperNova TC397 product surface:
 
 ```text
 airflow direction
@@ -556,8 +556,8 @@ front/rear/max defrost
 driver/passenger seat heating
 ```
 
-Do not delay the frozen demo to add them to AIDL. A later compatible extension or API v2 can expose
-them.
+Advertise them as unsupported, hide their controls, and reject calls. Do not assign controller
+command IDs or present local toggles as vehicle state.
 
 ## 18. Tests Mahgoub must deliver
 

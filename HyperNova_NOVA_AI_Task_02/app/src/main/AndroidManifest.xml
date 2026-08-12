@@ -19,11 +19,23 @@
     <queries>
         <package android:name="com.hypernova.navigation" />
         <package android:name="com.hypernova.climate" />
+        <package android:name="com.hypernova.phone" />
+        <package android:name="com.hypernova.media" />
+        <package android:name="com.hypernova.vehiclegateway" />
         <intent>
             <action android:name="com.hypernova.navigation.action.BIND_COMMAND" />
         </intent>
         <intent>
             <action android:name="com.hypernova.climate.action.BIND_COMMAND" />
+        </intent>
+        <intent>
+            <action android:name="com.hypernova.phone.action.BIND_COMMAND" />
+        </intent>
+        <intent>
+            <action android:name="com.hypernova.vehiclegateway.action.BIND_GATEWAY" />
+        </intent>
+        <intent>
+            <action android:name="androidx.media3.session.MediaSessionService" />
         </intent>
     </queries>
 

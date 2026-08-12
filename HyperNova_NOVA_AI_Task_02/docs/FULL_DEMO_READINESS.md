@@ -1,172 +1,105 @@
-# HyperNova full-demo readiness and vehicle-network bridge
+# HyperNova full-demo readiness
 
-Status: **Android app demo ready; Pi voice integration ready to resume; physical TC397 actuation
-requires the gateway adapter and the controller protocol inputs below.**
+Status: **Android-to-TC397 Climate/Navigation slice proven; physical voice/fault demo remains**
+Target: Android 16/API 36 emulator now, Android 16 ARM64 NXP guest later
 
-Target: Android 16/API 36 on the laptop emulator now, then the Android 16 ARM64 NXP guest without
-changing the feature-app AIDL.
+## Current evidence
 
-## 1. What is working now
-
-| Layer | Current result | Proof |
+| Layer | State | Evidence |
 |---|---|---|
-| Android 16 emulator | Ready | API 36 AVD boots at the cockpit resolution with Vulkan enabled |
-| NOVA Android broker | Ready | Builds/tests pass; TCP requests are correlated with final AIDL callbacks |
-| Navigation | Ready for app demo | Real APK returns saved places and activates a route to the returned opaque ID |
-| Climate | Ready for app demo | Real APK exposes the shared AIDL service; debug commands update the UI and Launcher state |
-| Launcher | Ready for app demo | Real Climate state is shown as 22°C, fan 3, AUTO; Navigation opens correctly |
-| Pi command mapping | Ready to resume | Seven local agent tests pass, including accepted→final handling and saved Home/Work resolution |
-| Physical TC397 command | Not wired yet | Final gateway boundary is decided, but the Android gateway, laptop relay, and protocol mapping remain |
-| NXP Android/QNX integration | Waiting on platform | Requires the Android 16 guest and AAOS↔QNX virtual network supplied by the NXP image team |
+| RPi5 voice node | Previously proven; reconnect for combined test | Mic/wake/ASR/Qwen/TTS and NOVA TCP events worked in earlier runs |
+| NOVA Android | Built and live-tested on API 36 | Correlated requests and final domain callbacks work |
+| Launcher | Built/tested after merge | NOVA can remain active outside its activity |
+| Navigation | Built/tested after Ayman's merge | Saved/search/set-destination typed AIDL exists |
+| Phone | Existing AIDL service wired into NOVA | Real calls still require the final HFP-connected phone environment |
+| Media | Existing Media3 session wired into NOVA | Play/pause/next/previous/state/volume use the Media app's one session; no Media AIDL was added |
+| Climate frontend/service | Gateway-backed and live-tested | UI/service send typed requests and render controller-confirmed state |
+| Android Vehicle Gateway | Implemented and live-tested | Typed AIDL plus Android 16 debug APK tests pass |
+| Laptop/QNX relay | Implemented and live-tested | HNVG accepted then TC397-confirmed a real command |
+| TC397 feature firmware | Live and protocol-tested | 23/23 bench checks pass; telemetry-rate defect documented |
+| NXP Android/QNX integration | Waiting on platform image | Requires virtio-net/startup/security configuration, not an app API redesign |
 
-The current Climate debug confirmation proves Android UI/AIDL integration. It is not a controller
-ACK and must not be described as physical HVAC actuation.
-
-## 2. Best demo available immediately
-
-Use the Android 16 laptop emulator and the local NOVA command probe:
+## Showcase flow to finish
 
 ```text
-laptop probe TCP sockets
-  → NOVA Android broker
-  → real Climate AIDL service → Climate UI + Launcher card
-  → real Navigation AIDL service → active route UI
+"Hey NOVA, set the temperature to 22 and fan to 3"
+  -> NOVA typed Climate AIDL
+  -> Climate validates and shows pending
+  -> Vehicle Gateway AIDL
+  -> laptop relay now / QNX service final
+  -> TC397 controls the two fans
+  -> TC397 ACK
+  -> Climate + Launcher show confirmed state
+  -> NOVA speaks the final result
+
+Press fault-create button
+  -> TC397 real DTC event
+  -> gateway state/event
+  -> visible non-safety-critical warning and honest HVAC restriction
+
+Press fault-clear button
+  -> TC397 clear event
+  -> UI clears; no AI/software clear command exists
 ```
 
-Run `NOVA_END_TO_END_TEST_RUNBOOK.md` in laptop-only mode. The probe performs these checks and can
-hold the connection open for presentation:
+Follow with Navigation search/saved destination and Phone UI/service only after the physical HVAC
+slice is stable. Ambient light on RPi5 may mirror NOVA state as a visual flourish, but it is a separate
+output and must never block commands or enter the TC397 contract.
 
-1. Set the Climate state to 22°C and wait for `accepted` then `confirmed`.
-2. Request saved destinations.
-3. Select the opaque ID whose source is `saved_home`.
-4. Wait for Navigation to report an active route.
-5. Return to Launcher and show the updated Climate card.
-
-This is a useful app-integration demo even while the Pi and TC397 are disconnected.
-
-## 3. Voice demo after the Pi is powered on
-
-The Pi remains the microphone/wake-word/ASR/LLM/TTS-synthesis node. Android remains the speaker and
-cockpit UI. The user-facing UI never exposes that hardware placement.
-
-Recommended presentation order:
-
-1. “Hey NOVA, set the climate to 22 degrees.”
-2. Show the Climate app and Launcher card updating from the confirmed AIDL state.
-3. “Hey NOVA, take me home.”
-4. Show Navigation activating the saved Home route and NOVA speaking the final result.
-5. Demonstrate one honest rejection, such as an unsupported temperature, if time permits.
-
-Use the short deterministic commands first. Leave open-ended Qwen requests until after the typed
-command flow has been demonstrated because the current 30B model is the slowest part of the stack.
-
-Before the live run, copy the updated `agent_loop_v3.py` to the Pi, run its tests, start the llama and
-agent services, and build NOVA with the Pi's current IPv4 address. The exact commands are in the main
-runbook.
-
-## 4. Can the old router be used for a TC397 demo?
-
-**Yes.** Use it as an isolated Ethernet switch/access point, not as part of the production
-architecture. The laptop temporarily runs a QNX-relay simulator. Android still talks to a gateway
-endpoint; it does not open a raw TC397 socket. Replacing the laptop process with the real QNX service
-then leaves Climate and NOVA unchanged.
-
-Recommended lab topology:
+## Bench topology
 
 ```text
-Home/project Wi-Fi
-  ├── Raspberry Pi (microphone + NOVA runtime)
-  └── laptop Wi-Fi
-        └── Android 16 emulator → host at 10.0.2.2
+DES-1008D switch
+  laptop Ethernet 192.168.10.10/24  (relay + Android emulator host)
+  RPi5             192.168.10.20/24  (mic + voice runtime)
+  TC397            192.168.10.30/24  (TCP 6001 / UDP to .10:6000)
 
-laptop Ethernet, static TC397-side address
-  └── old router LAN port (WAN port unused; DHCP disabled)
-        └── TC397 Ethernet
-
-laptop QNX-relay simulator
-  ├── Android-facing gateway protocol on the emulator host interface
-  └── raw TC397 TCP/UDP protocol on the isolated Ethernet interface
+Android emulator -> laptop relay at 10.0.2.2:6100
+laptop Wi-Fi      -> Internet/default route; optionally shares Internet to RPi5
+laptop speaker    -> Android audio output during current bench test
 ```
 
-If the controller still uses `192.168.10.30/24` and expects its peer at `192.168.10.10`, assign the
-laptop Ethernet adapter `192.168.10.10/24`. Do not set a gateway or DNS server on that adapter. Keep
-the WAN port unused and disable the old router's DHCP server. This prevents it from stealing the
-laptop's default route. Confirm these addresses against the actual TC397 code before configuring
-them.
+The Ethernet profile has no gateway or DNS. TC397 supports one command client, so stop the bench tool
+before starting the relay and stop the relay before running the bench tool.
 
-Do not use this arrangement if the laptop's Wi-Fi LAN also uses `192.168.10.0/24`; two interfaces on
-the same subnet make routing ambiguous. In that case change the lab subnet if the controller allows
-it, or temporarily disconnect the conflicting network.
+## Remaining gates
 
-## 5. Temporary bridge versus final vehicle
+1. Build and flash the reviewed TC397 source so exact four-byte HVAC validation, true 1 Hz telemetry,
+   three-byte sensor telemetry, and prompt fault shutdown replace the older `b7a88ea` image.
+2. Reconnect RPi5 and prove voice request -> same typed path -> laptop/Android audio result.
+3. Exercise physical fault create/clear, controller rejection, timeout, and controller reconnect.
+4. Prove Phone commands with a real HFP-connected phone and Media commands with a selected real
+   station/track. The emulator alone can prove binding and honest unavailable states, not real HFP.
+5. Add and test the RPi5 ambient-light state renderer as a non-blocking parallel output.
+6. Freeze one short presentation script plus a recovery checklist.
 
-```text
-Temporary lab
-Climate → Android Vehicle Gateway → laptop QNX-relay simulator → TC397
+## Known issues that must remain visible
 
-Final NXP
-Climate → Android Vehicle Gateway → QNX guest network service → TC397
-```
+- TC397 `feat/real-dtcs-buttons-sensors` must be merged to its `main`; current `main` is stale.
+- The currently flashed `b7a88ea` image emits a fourth legacy-zero sensor byte, runs telemetry at
+  about 12.3 Hz, and accepts HVAC payloads longer than four bytes. The reviewed source fixes all
+  three, but the board must be rebuilt and reflashed. The relay temporarily accepts both 3- and
+  4-byte sensor frames during this transition while exposing only temperature/humidity/fuel.
+- TC frame CRC excludes sequence and length. Do not change one side alone.
+- TC397 watchdogs are disabled in demo firmware.
+- Cloud hybrid routing, latency improvements, and industry-rich LLM scenarios remain separate from
+  the deterministic vehicle action path. Cloud output must never bypass typed validation/TC authority.
 
-The invariant is that NOVA and Climate never own the controller socket. The QNX side owns the sole
-TC397 command client, serialization, frame/CRC encoding, ACK/reject mapping, and telemetry receive.
-The Android Vehicle Gateway owns connection/retry and AIDL fan-out to Android feature apps.
+## Definition of demo-ready
 
-The detailed boundary is in
-`../../HyperNova_Contracts/docs/VEHICLE_NETWORK_ARCHITECTURE.md`. Its architecture is frozen; the
-Android↔QNX JSON protocol fields and ports are still draft until the QNX side agrees.
+- Android is API 36 and all six relevant APKs remain alive across Launcher transitions.
+- One request ID can be traced through NOVA, Climate, HNVG correlation, TC sequence, and final ACK.
+- UI says pending/accepted/confirmed/rejected accurately and never drops the final state.
+- Target-temperature commands do not imply navigation trip start; destination selection and trip start
+  remain distinct Navigation actions.
+- Physical fan output and sensor/fuel values match TC397 telemetry.
+- Fault create/clear is visible, deterministic, and cannot be cleared through AI.
+- Voice begins promptly using deterministic command routing; the local 30B model is not placed in front
+  of known commands.
+- A laptop/QNX/TC disconnect produces unavailable/timeout, never false success.
 
-## 6. Inputs required before implementing physical actuation
+Authoritative vehicle documents:
 
-Provide the TC397 networking source files or an equivalent protocol document containing:
-
-- controller IPv4 address, prefix, and required peer address;
-- TCP and UDP ports and which side listens on each one;
-- binary frame layout, byte order, sequence rules, payload length rules, and CRC algorithm;
-- HVAC command IDs and payloads for power, target temperature, fan, A/C, AUTO, and recirculation;
-- ACK, rejection, timeout, fault, and telemetry message layouts;
-- mapping between a command sequence and its final ACK/rejection;
-- controller safety prerequisites and the commands already implemented in firmware;
-- at least one known-good request/response capture or hex example.
-
-Also select the first physical showcase. The smallest impressive vertical slice is:
-
-```text
-set target temperature → accepted UI → TC397 ACK → confirmed UI/speech
-```
-
-Add fan level as the second mutation, followed by a real controller rejection. That gives the demo a
-successful action, visible state, and safety/error behavior without trying to wire every Climate
-button at once.
-
-## 7. Implementation sequence after those inputs arrive
-
-1. Freeze the Android↔QNX relay port and JSON message names with the QNX owner.
-2. Add and generate the generic Vehicle Gateway AIDL in `HyperNova_Contracts`.
-3. Build `com.hypernova.vehiclegateway` with a configurable relay host and request correlation.
-4. Implement the laptop QNX-relay simulator using the real TC397 frame codec.
-5. Replace Climate's debug adapter with a `VehicleGatewayClimateBackend` binding.
-6. Prove confirmed, rejected, timeout, duplicate-request, reconnect, and telemetry cases.
-7. On NXP, change only the relay host/port and signing/preinstallation configuration.
-
-No direct Android→TC397 shortcut should be added for the demo; it would create throwaway code and
-violate the final one-client architecture.
-
-## 8. Demo gates
-
-The app demo is ready when:
-
-- Android reports release 16/API 36;
-- Launcher, Navigation, Climate, and NOVA remain alive with Vulkan enabled;
-- the probe prints its final PASS line;
-- Climate and Launcher show the same state;
-- Navigation uses an ID returned by saved/search results and reaches ACTIVE.
-
-The physical demo is ready only when:
-
-- the laptop relay is the sole TCP command client of TC397;
-- Climate reports `confirmed` only after the controller ACK/readback;
-- controller rejection and timeout are visible as rejection/timeout, never success;
-- disconnecting/reconnecting the controller does not require reinstalling Android apps;
-- packet/log evidence can correlate NOVA `request_id` → gateway request → TC397 sequence → final
-  Android callback.
+- `../../HyperNova_Contracts/docs/VEHICLE_NETWORK_ARCHITECTURE.md`
+- `../../HyperNova_Contracts/docs/VEHICLE_GATEWAY_PROTOCOL_V1.md`
+- `../../HyperNova_VehicleGateway_Task_10/qnx-service/README.md`

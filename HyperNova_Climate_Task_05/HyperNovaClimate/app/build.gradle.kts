@@ -33,10 +33,6 @@ android {
         // Compiled-in backend selector -> BuildConfig.CLIMATE_BACKEND.
         buildConfigField("String", "CLIMATE_BACKEND", "\"$climateBackend\"")
 
-        // Default TC397 direct-Ethernet endpoint (see TC397-Networking.md).
-        buildConfigField("String", "TC397_HOST", "\"192.168.10.30\"")
-        buildConfigField("int", "TC397_COMMAND_PORT", "6001")
-        buildConfigField("int", "TC397_TELEMETRY_PORT", "6000")
     }
 
     buildTypes {

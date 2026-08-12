@@ -6,6 +6,7 @@ import com.hypernova.climate.model.ClimateAvailability
 import com.hypernova.climate.model.ClimateMode
 import com.hypernova.climate.model.ClimateState
 import com.hypernova.climate.ui.state.ClimatePreview
+import com.hypernova.climate.ui.state.ClimateRequestedState
 import com.hypernova.climate.ui.state.ClimateUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,6 +38,26 @@ object ClimateStateOwner {
     /** Entry point for a future authoritative vehicle backend/readback. */
     fun publishBackendState(state: ClimateUiState) {
         mutableState.value = state
+    }
+
+    fun markPending(requested: ClimateRequestedState, message: String) {
+        synchronized(lock) {
+            mutableState.value = mutableState.value.copy(
+                requested = requested,
+                isCommandPending = true,
+                message = message,
+            )
+        }
+    }
+
+    fun finishPending(message: String) {
+        synchronized(lock) {
+            mutableState.value = mutableState.value.copy(
+                requested = null,
+                isCommandPending = false,
+                message = message,
+            )
+        }
     }
 
     fun togglePower(): Boolean {

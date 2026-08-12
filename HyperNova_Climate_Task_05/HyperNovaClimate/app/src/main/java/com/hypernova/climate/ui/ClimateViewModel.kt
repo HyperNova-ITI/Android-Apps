@@ -3,9 +3,11 @@ package com.hypernova.climate.ui
 import androidx.lifecycle.ViewModel
 import com.hypernova.climate.data.ClimateStateOwner
 import com.hypernova.climate.data.ClimateZone
+import com.hypernova.climate.backend.VehicleGatewayRuntime
 import com.hypernova.climate.model.AirflowMode
 import com.hypernova.climate.ui.state.ClimateUiState
 import kotlinx.coroutines.flow.StateFlow
+import com.hypernova.contracts.vehiclegateway.VehicleGatewayContract
 
 /**
  * Exposes the immutable [ClimateUiState] the screen renders from (README §36).
@@ -27,16 +29,19 @@ class ClimateViewModel : ViewModel() {
      * Demo builds confirm through the shared state owner. Release builds reject
      * the mutation until an authoritative backend enables commands.
      */
-    fun cycleAcMode() = ClimateStateOwner.cycleAcMode()
+    fun cycleAcMode() = Unit
 
     /** Toggle master power through the shared state owner. */
-    fun togglePower() = ClimateStateOwner.togglePower()
+    fun togglePower() {
+        val enabled = uiState.value.confirmedState?.powerEnabled?.not() ?: true
+        VehicleGatewayRuntime.setPowerFromUi(enabled)
+    }
 
     /** Toggle AUTO mode. */
-    fun toggleAuto() = ClimateStateOwner.toggleAutoMode()
+    fun toggleAuto() = Unit
 
     /** Toggle zone SYNC. */
-    fun toggleSync() = ClimateStateOwner.toggleZonesSynchronized()
+    fun toggleSync() = Unit
 
     fun adjustTargetTemperature(zone: ClimateZone, direction: Int) {
         val state = uiState.value
@@ -46,38 +51,45 @@ class ClimateViewModel : ViewModel() {
             ClimateZone.ALL,
             ClimateZone.DRIVER -> confirmed.driverTargetTemperatureC
             ClimateZone.PASSENGER -> confirmed.passengerTargetTemperatureC
-        } ?: return
+        } ?: 22f
         val step = capabilities.temperatureStepC ?: return
         val minimum = capabilities.minimumTemperatureC ?: return
         val maximum = capabilities.maximumTemperatureC ?: return
         val target = (current + step * direction.coerceIn(-1, 1)).coerceIn(minimum, maximum)
-        ClimateStateOwner.setTargetTemperature(zone, target)
+        val gatewayZone = when (zone) {
+            ClimateZone.ALL -> VehicleGatewayContract.ZONE_BOTH
+            ClimateZone.DRIVER -> VehicleGatewayContract.ZONE_DRIVER
+            ClimateZone.PASSENGER -> VehicleGatewayContract.ZONE_PASSENGER
+        }
+        VehicleGatewayRuntime.setTemperatureFromUi(gatewayZone, target.toInt())
     }
 
     fun adjustFanLevel(direction: Int) {
         val state = uiState.value
         val maximum = state.capabilities?.maximumFanLevel ?: return
-        val current = state.confirmedState?.fanLevel ?: return
-        ClimateStateOwner.setFanLevel((current + direction.coerceIn(-1, 1)).coerceIn(0, maximum))
+        val current = state.confirmedState?.fanLevel ?: 0
+        VehicleGatewayRuntime.setFanFromUi(
+            (current + direction.coerceIn(-1, 1)).coerceIn(0, maximum),
+        )
     }
 
-    fun toggleRecirculation() = ClimateStateOwner.toggleRecirculation()
+    fun toggleRecirculation() = Unit
 
-    fun enableFreshAir() = ClimateStateOwner.setRecirculationEnabled(false)
+    fun enableFreshAir() = Unit
 
 
     fun setAirflowMode(mode: AirflowMode) =
-        ClimateStateOwner.setAirflowMode(mode)
+        Unit
 
     fun setAirflowMode(zone: ClimateZone, mode: AirflowMode) =
-        ClimateStateOwner.setAirflowMode(zone, mode)
+        Unit
 
     fun toggleFrontDefrost() =
-        ClimateStateOwner.toggleFrontDefrost()
+        Unit
 
     fun toggleRearDefrost() =
-        ClimateStateOwner.toggleRearDefrost()
+        Unit
 
     fun toggleMaxDefrost() =
-        ClimateStateOwner.toggleMaxDefrost()
+        Unit
 }

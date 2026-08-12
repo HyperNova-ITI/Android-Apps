@@ -7,12 +7,12 @@ import com.hypernova.climate.BuildConfig
  *
  * The value is compiled in from the Gradle property `climate.backend`
  * (see gradle.properties) and exposed through [BuildConfig.CLIMATE_BACKEND].
- * Change it once, at build time, to switch the whole app between the direct
- * Ethernet link to the bare-metal TC397 and the standard AAOS CarProperty/VHAL
+ * Change it once, at build time, to switch the whole app between the typed
+ * Vehicle Gateway AIDL and the standard AAOS CarProperty/VHAL
  * path — no source edits required.
  */
 enum class BackendMode {
-    /** Direct TCP/UDP frame link to the TC397 (VehicleGatewayClimateBackend). */
+    /** Typed Binder link to the headless Vehicle Gateway APK. */
     ETHERNET,
 
     /** Standard AAOS CarPropertyManager, real values bridged inside a VHAL. */

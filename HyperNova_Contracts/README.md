@@ -2,8 +2,9 @@
 
 Status: **Demo API v1 with additive read-only Navigation status and route-preview extensions**
 
-This Android library is the source of truth for NOVA command integration with HyperNova Navigation
-and HyperNova Climate.
+This Android library is the source of truth for NOVA command integration with HyperNova Navigation,
+HyperNova Climate, HyperNova Phone, and the Android Vehicle Gateway. HyperNova Media deliberately
+uses its existing Media3 `MediaSession`; it does not define a second AIDL command contract here.
 
 Any incompatible method, model, status, or semantic change requires API v2. Implementations may add
 internal behavior without changing this ABI.
@@ -245,9 +246,35 @@ For Demo API v1, `ZONE_ALL` means every available cabin zone. If Climate is off,
 only after both power and the target value are authoritative. Any partial controller failure returns
 a rejected or timeout result with the latest real state.
 
-Defrost, airflow, zone sync, fresh air, and seat heating remain internal Climate features and are not
-part of NOVA Demo API v1. Adding them to the AI contract requires API v2 or a backward-compatible v1
-extension agreed by all owners.
+The final TC397 surface is temperature, fan/power, and zone only. A/C, AUTO, recirculation, defrost,
+airflow, zone sync, fresh air, and seat heating are outside the HyperNova product; capability flags
+remain false and attempts are rejected. Generic v1 method/type presence does not imply hardware
+support or reserve a future controller command.
+
+## Frozen Phone integration
+
+NOVA consumes the existing `IPhoneCommandService` in package `com.hypernova.phone`; Phone remains
+the only owner of contacts, call history, HFP state, and call actions. NOVA passes opaque contact,
+number, and history IDs returned by Phone and never invents them. It waits for Phone's final callback
+before saying that a call action succeeded. The signature permission
+`com.hypernova.permission.CONTROL_COCKPIT_APPS` protects the exported service.
+
+The demo voice surface is: get phone state, search contacts, call a uniquely resolved contact or
+explicit number, answer/decline/end, mute/unmute, hold/resume, select audio route, and DTMF. Multiple
+contact or number matches require user selection; disconnected HFP returns an honest unavailable
+result.
+
+## Frozen Media integration
+
+There is intentionally no custom Media AIDL. HyperNova Media already owns an exported Media3
+`MediaSessionService` at
+`com.hypernova.media.playback.HyperNovaPlaybackService`. Launcher, Android system media surfaces,
+and NOVA must all control that same session through a Media3 `MediaController`.
+
+The demo voice surface is: current playback state, play, pause, next, previous, and media-stream
+volume. A track/station must first exist in the real Media queue; NOVA returns unavailable rather
+than fabricating playback. Future media search or source-selection commands belong in the existing
+MediaSession as Media3 custom session commands, not in a competing Binder interface.
 
 ## Result models
 

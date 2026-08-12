@@ -327,7 +327,7 @@ authoritative.
 
 ### Climate v1 exclusions
 
-These can remain inside Mahgoub's app but are not part of the NOVA Demo API v1:
+These generic model/UI concepts are outside the final HyperNova TC397 product surface:
 
 ```text
 airflow direction
@@ -337,8 +337,8 @@ front/rear/max defrost
 driver/passenger seat heating
 ```
 
-They should not delay the frozen showcase. Adding them to NOVA later requires a compatible contract
-extension or API v2.
+NOVA must read the false capability flags and never route these requests. Climate hides the controls
+and rejects calls rather than presenting local state as a vehicle action.
 
 ### Climate failure behavior
 

@@ -2,7 +2,9 @@
 """Minimal laptop-side Pi substitute for the Android command bridge.
 
 Run NOVA with -PnovaHost=10.0.2.2, then launch this probe before starting the app. It verifies the
-real TCP -> NOVA broker -> AIDL -> provider callback path on the Android emulator.
+real TCP -> NOVA broker -> existing app-contract -> provider callback path on the Android emulator.
+Navigation, Climate, and Phone use their existing AIDL services; Media uses its existing Media3
+session and never a second AIDL.
 """
 
 import argparse
@@ -144,10 +146,21 @@ def main(hold_connection=False):
             )
             if route_states != ["accepted", "confirmed"]:
                 raise RuntimeError(f"Route callback sequence was {route_states}")
-            if route.get("data", {}).get("navigation_state") != "ACTIVE":
-                raise RuntimeError(f"Navigation did not become active: {route}")
+            if route.get("data", {}).get("navigation_state") != "IDLE":
+                raise RuntimeError(f"Setting a destination unexpectedly started the trip: {route}")
 
-            print("PASS: TCP -> NOVA -> AIDL -> Climate/Navigation -> final callback", flush=True)
+            phone, _ = command(reader, writer, "phone", "get_current_state", {})
+            if "phone_state" not in phone.get("data", {}):
+                raise RuntimeError(f"Phone did not return its authoritative state: {phone}")
+
+            media, _ = command(reader, writer, "media", "get_current_state", {})
+            if "playback_state" not in media.get("data", {}):
+                raise RuntimeError(f"MediaSession did not return playback state: {media}")
+
+            print(
+                "PASS: TCP -> NOVA -> Climate/TC397 + Navigation/Phone AIDL + Media3 session",
+                flush=True,
+            )
             if hold_connection:
                 print(
                     "Holding both NOVA connections open for UI inspection; press Ctrl+C to stop.",

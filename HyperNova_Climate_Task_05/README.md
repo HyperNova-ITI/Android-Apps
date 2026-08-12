@@ -10,18 +10,26 @@
 > **Implementation language:** Kotlin  
 > **UI technology:** Android XML Views + ViewBinding  
 > **Architecture:** Single Activity + MVVM + capability-driven Climate Service + backend abstraction  
-> **Vehicle integration:** Android CarPropertyManager / VHAL or protected Vehicle Gateway  
+> **Vehicle integration:** protected Vehicle Gateway AIDL -> QNX/laptop relay -> TC397
 > **Zone support:** Single-zone and dual-zone capable  
 > **Data policy:** Real vehicle state only — no production dummy data  
-> **Status:** Ready for implementation  
+> **Status:** Implemented and bench-proven on Android 16/API 36
 
 ---
+
+> **Final hardware scope lock:** the reference design below describes a reusable visual/capability
+> system, but the HyperNova product enables only the final TC397 functions: dual-zone target
+> temperature, fan/power, cabin telemetry, fuel telemetry, and physical fault events. A/C, AUTO,
+> recirculation, airflow direction, defrost, and seat heating are not vehicle functions in this
+> product. Their runtime capabilities are false and their controls are hidden. No later section of
+> this visual specification overrides that boundary. See `BACKEND_PLAN.md` for implementation truth.
 
 # 1. Approved Visual Reference
 
 ![HyperNova Climate Reference](assets/hypernova_climate_reference.png)
 
-The image above is the approved visual reference for Task 05.
+The image above is the approved visual reference for layout, color, typography, and interaction
+language. It is not the hardware capability list.
 
 It defines the primary **dual-zone Climate Home** screen and the shared HyperNova visual language:
 

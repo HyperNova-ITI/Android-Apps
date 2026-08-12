@@ -36,6 +36,8 @@ Android → Pi:
 {"type":"playback","v":1,"seq":4,"turn_id":"uuid","value":"started"}
 {"type":"playback","v":1,"seq":5,"turn_id":"uuid","value":"ended"}
 {"type":"command_result","v":1,"seq":6,"turn_id":"uuid","request_id":"uuid","domain":"navigation","operation":"set_destination","status":"confirmed","message":"Destination set. Route is ready.","data":{"selected_destination":{"id":"opaque-id","title":"Coffee Lab"},"eta_seconds":900,"distance_meters":8200}}
+{"type":"vehicle_state","v":1,"seq":7,"connection_state":"connected","cabin_temp_c":31,"humidity_pct":44,"fuel_pct":55,"zone1_target_temp_c":22,"zone1_fan_level":3,"active_dtcs":["P0217"],"telemetry_fresh":true,"updated_at_epoch_millis":1786579200000}
+{"type":"fault_event","v":1,"seq":8,"code":"P0217","active":true,"tc_event_sequence":41,"received_at_epoch_millis":1786579200000}
 ```
 
 Pi → Android:
@@ -98,9 +100,9 @@ maps protocol state into the following compact driver language:
 `route.tier` remains internal telemetry. Progress wording describes useful work (“Checking traffic
 and your schedule”) rather than infrastructure (“Calling cloud model”).
 
-## Destination-command extension
+## Typed Android command bridge
 
-`command_request` asks NOVA Android to invoke the frozen Navigation or Climate AIDL service.
+`command_request` asks NOVA Android to invoke a frozen Android app contract.
 `command_result` returns its intermediate or final callback to the Pi.
 
 Rules:
@@ -116,6 +118,17 @@ Rules:
   `cancel_navigation`.
 - Climate operations are `get_capabilities`, `get_current_state`, `set_power`, `set_temperature`,
   `set_fan_level`, `set_ac`, `set_auto`, and `set_recirculation`.
+- Phone operations map directly to the existing `IPhoneCommandService`: state/contact/history queries,
+  call by opaque contact/number/history reference, answer/decline/end, mute/hold, audio route, and DTMF.
+- Media operations are `get_current_state`, `play`, `pause`, `next`, `previous`, and `set_volume`.
+  Android implements them with a Media3 controller connected to HyperNova Media's existing session;
+  there is no Media AIDL.
+
+`vehicle_state` and `fault_event` travel in the opposite direction. NOVA Android registers a
+read-only listener with the Vehicle Gateway, publishes the latest authoritative snapshot after each
+Pi reconnect, and forwards real TC397 DTC set/clear events. The Pi replaces its active DTC set from a
+snapshot and applies an event per code; clearing one DTC must not clear the others. These messages do
+not create an Android-to-TC397 mutation path.
 
 Exact arguments, result payloads, AIDL methods, and showcase scenarios are frozen in
 [NAVIGATION_CLIMATE_COMMAND_HANDOFF.md](NAVIGATION_CLIMATE_COMMAND_HANDOFF.md).

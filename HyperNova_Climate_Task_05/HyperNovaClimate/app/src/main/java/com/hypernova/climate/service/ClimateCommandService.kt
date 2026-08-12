@@ -8,6 +8,7 @@ import android.os.SystemClock
 import android.util.Log
 import com.hypernova.climate.data.ClimateStateOwner
 import com.hypernova.climate.data.ClimateZone
+import com.hypernova.climate.backend.VehicleGatewayRuntime
 import com.hypernova.climate.model.ClimateAvailability
 import com.hypernova.climate.model.ClimateCapabilities as InternalClimateCapabilities
 import com.hypernova.climate.model.ClimateState as InternalClimateState
@@ -19,18 +20,20 @@ import com.hypernova.contracts.climate.ClimateResult
 import com.hypernova.contracts.climate.ClimateState
 import com.hypernova.contracts.climate.IClimateCommandCallback
 import com.hypernova.contracts.climate.IClimateCommandService
+import com.hypernova.contracts.vehiclegateway.VehicleGatewayContract
+import com.hypernova.contracts.vehiclegateway.VehicleGatewayResult
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.math.abs
 import kotlin.math.round
+import kotlin.math.roundToInt
 
 /**
  * Signature-protected Climate API backed by the same state owner as the UI.
  *
- * Demo builds confirm mutations immediately in [ClimateStateOwner]. Release
- * builds start unavailable, so no simulated controller values or confirmations
- * escape into production while the real vehicle backend is unfinished.
+ * Temperature, fan, and power mutations are confirmed only by the Vehicle
+ * Gateway/TC397 path. Unsupported UI-only features are rejected by capability.
  */
 class ClimateCommandService : Service() {
     private val executor: ExecutorService = Executors.newSingleThreadExecutor()
@@ -79,8 +82,13 @@ class ClimateCommandService : Service() {
             requestId: String?,
             enabled: Boolean,
             callback: IClimateCommandCallback?,
-        ) = mutate(requestId, ClimateContract.OP_SET_POWER, callback) {
-            ClimateStateOwner.setPowerEnabled(enabled)
+        ) = gatewayMutation(requestId, ClimateContract.OP_SET_POWER, callback) {
+            val state = ClimateStateOwner.currentState().confirmedState
+            GatewayCommand(
+                target = state?.driverTargetTemperatureC?.roundToInt() ?: 22,
+                fan = if (enabled) (state?.fanLevel ?: 0).coerceAtLeast(1) else 0,
+                zone = VehicleGatewayContract.ZONE_BOTH,
+            )
         }
 
         override fun setTargetTemperature(
@@ -88,26 +96,37 @@ class ClimateCommandService : Service() {
             zone: Int,
             temperatureC: Float,
             callback: IClimateCommandCallback?,
-        ) = mutate(
+        ) = gatewayMutation(
             requestId = requestId,
             operation = ClimateContract.OP_SET_TEMPERATURE,
             callback = callback,
             validate = { id -> validateTemperature(id, zone, temperatureC) },
         ) {
-            ClimateStateOwner.setTargetTemperature(zone.toInternalZone(), temperatureC)
+            val fan = (ClimateStateOwner.currentState().confirmedState?.fanLevel ?: 0)
+                .coerceAtLeast(1)
+            GatewayCommand(
+                target = temperatureC.roundToInt(),
+                fan = fan,
+                zone = zone.toGatewayZone(),
+            )
         }
 
         override fun setFanLevel(
             requestId: String?,
             fanLevel: Int,
             callback: IClimateCommandCallback?,
-        ) = mutate(
+        ) = gatewayMutation(
             requestId = requestId,
             operation = ClimateContract.OP_SET_FAN_LEVEL,
             callback = callback,
             validate = { id -> validateFanLevel(id, fanLevel) },
         ) {
-            ClimateStateOwner.setFanLevel(fanLevel)
+            GatewayCommand(
+                target = ClimateStateOwner.currentState().confirmedState
+                    ?.driverTargetTemperatureC?.roundToInt() ?: 22,
+                fan = fanLevel,
+                zone = VehicleGatewayContract.ZONE_BOTH,
+            )
         }
 
         override fun setAcEnabled(
@@ -156,6 +175,11 @@ class ClimateCommandService : Service() {
         }
     }
 
+    override fun onCreate() {
+        super.onCreate()
+        VehicleGatewayRuntime.start(this)
+    }
+
     override fun onBind(intent: Intent?): IBinder? =
         if (intent?.action == ClimateContract.BIND_COMMAND_ACTION) binder else null
 
@@ -163,6 +187,87 @@ class ClimateCommandService : Service() {
         executor.shutdownNow()
         resultCache.clear()
         super.onDestroy()
+    }
+
+    private fun gatewayMutation(
+        requestId: String?,
+        operation: String,
+        callback: IClimateCommandCallback?,
+        validate: (String) -> ClimateResult? = { null },
+        command: () -> GatewayCommand,
+    ) {
+        if (callback == null) return
+        executor.execute {
+            val id = requestId.orEmpty()
+            if (id.isBlank()) {
+                send(callback, rejected(id, operation, "Request ID is required"))
+                return@execute
+            }
+
+            purgeExpiredResults()
+            resultCache[id]?.let {
+                send(callback, it.result)
+                return@execute
+            }
+            serviceUnavailable(id, operation)?.let {
+                cacheAndSend(callback, id, it)
+                return@execute
+            }
+            validate(id)?.let {
+                cacheAndSend(callback, id, it)
+                return@execute
+            }
+
+            val spec = try {
+                command()
+            } catch (error: Exception) {
+                Log.e(TAG, "Cannot construct gateway command", error)
+                cacheAndSend(
+                    callback,
+                    id,
+                    rejected(id, operation, "Invalid climate command"),
+                )
+                return@execute
+            }
+            val submitted = VehicleGatewayRuntime.submit(
+                requestId = id,
+                targetTemperatureC = spec.target,
+                fanLevel = spec.fan,
+                zone = spec.zone,
+                caller = VehicleGatewayContract.CALLER_AI,
+            ) { gatewayResult ->
+                executor.execute {
+                    val mapped = result(
+                        requestId = id,
+                        operation = operation,
+                        status = gatewayResult.status,
+                        message = gatewayResult.message ?: "Vehicle gateway result",
+                        errorCode = gatewayResult.errorCode ?: HyperNovaContract.ERROR_INTERNAL,
+                    )
+                    if (gatewayResult.status == HyperNovaContract.STATUS_ACCEPTED) {
+                        send(callback, mapped)
+                    } else {
+                        cacheAndSend(callback, id, mapped)
+                    }
+                }
+            }
+            if (!submitted) {
+                cacheAndSend(
+                    callback,
+                    id,
+                    unavailable(id, operation, "Vehicle gateway unavailable"),
+                )
+            }
+        }
+    }
+
+    private fun cacheAndSend(
+        callback: IClimateCommandCallback,
+        requestId: String,
+        climateResult: ClimateResult,
+    ) {
+        resultCache[requestId] = CachedResult(SystemClock.elapsedRealtime(), climateResult)
+        send(callback, climateResult)
     }
 
     private fun mutate(
@@ -428,6 +533,19 @@ class ClimateCommandService : Service() {
     }
 
     private fun Int.toInternalZone(): ClimateZone = requireNotNull(toInternalZoneOrNull())
+
+    private fun Int.toGatewayZone(): Int = when (this) {
+        ClimateContract.ZONE_ALL -> VehicleGatewayContract.ZONE_BOTH
+        ClimateContract.ZONE_DRIVER -> VehicleGatewayContract.ZONE_DRIVER
+        ClimateContract.ZONE_PASSENGER -> VehicleGatewayContract.ZONE_PASSENGER
+        else -> throw IllegalArgumentException("Unsupported climate zone")
+    }
+
+    private data class GatewayCommand(
+        val target: Int,
+        val fan: Int,
+        val zone: Int,
+    )
 
     private data class CachedResult(
         val createdAtElapsedMillis: Long,

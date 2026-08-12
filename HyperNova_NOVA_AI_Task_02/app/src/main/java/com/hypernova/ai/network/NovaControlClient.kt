@@ -5,6 +5,10 @@ import com.hypernova.ai.BuildConfig
 import com.hypernova.ai.command.CommandResult
 import com.hypernova.ai.command.CommandWireCodec
 import com.hypernova.ai.runtime.NovaEndpoint
+import com.hypernova.contracts.vehiclegateway.VehicleFaultEvent
+import com.hypernova.contracts.vehiclegateway.VehicleGatewayContract
+import com.hypernova.contracts.vehiclegateway.VehicleState
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.BufferedWriter
@@ -13,6 +17,7 @@ import java.io.OutputStreamWriter
 import java.net.InetSocketAddress
 import java.net.Socket
 import java.util.UUID
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicLong
 
 class NovaControlClient(
@@ -27,9 +32,13 @@ class NovaControlClient(
     @Volatile private var running = false
     @Volatile private var socket: Socket? = null
     @Volatile private var writer: BufferedWriter? = null
+    @Volatile private var authenticated = false
     private val sequence = AtomicLong(0)
     private val lifecycleGeneration = AtomicLong(0)
     private val writerLock = Any()
+    private val sendExecutor = Executors.newSingleThreadExecutor { task ->
+        Thread(task, "nova-control-writer").apply { isDaemon = true }
+    }
     private var worker: Thread? = null
 
     @Synchronized
@@ -50,7 +59,7 @@ class NovaControlClient(
     }
 
     fun sendCommand(text: String, turnId: String = UUID.randomUUID().toString()): Boolean =
-        send(JSONObject().apply {
+        enqueue(JSONObject().apply {
             put("type", "command")
             put("v", 1)
             put("seq", sequence.incrementAndGet())
@@ -58,7 +67,7 @@ class NovaControlClient(
             put("text", text)
         })
 
-    fun sendPlayback(turnId: String?, value: String): Boolean = send(JSONObject().apply {
+    fun sendPlayback(turnId: String?, value: String): Boolean = enqueue(JSONObject().apply {
         put("type", "playback")
         put("v", 1)
         put("seq", sequence.incrementAndGet())
@@ -67,9 +76,49 @@ class NovaControlClient(
     })
 
     fun sendCommandResult(result: CommandResult): Boolean =
-        send(CommandWireCodec.toJson(result).apply {
+        enqueue(CommandWireCodec.toJson(result).apply {
             put("seq", sequence.incrementAndGet())
         })
+
+    fun sendVehicleState(state: VehicleState): Boolean = enqueue(JSONObject().apply {
+        put("type", "vehicle_state")
+        put("v", 1)
+        put("seq", sequence.incrementAndGet())
+        put("connection_state", when (state.connectionState) {
+            VehicleGatewayContract.CONNECTION_CONNECTED -> "connected"
+            VehicleGatewayContract.CONNECTION_CONNECTING -> "connecting"
+            VehicleGatewayContract.CONNECTION_DEGRADED -> "degraded"
+            else -> "disconnected"
+        })
+        putIfKnown("cabin_temp_c", state.cabinTemperatureC)
+        putIfKnown("humidity_pct", state.humidityPercent)
+        putIfKnown("fuel_pct", state.fuelPercent)
+        putIfKnown("zone1_target_temp_c", state.zone1TargetTemperatureC)
+        putIfKnown("zone2_target_temp_c", state.zone2TargetTemperatureC)
+        putIfKnown("zone1_fan_level", state.zone1FanLevel)
+        putIfKnown("zone2_fan_level", state.zone2FanLevel)
+        put("active_dtcs", JSONArray().apply {
+            state.activeDtcs.forEach { put(dtcName(it)) }
+        })
+        put("telemetry_fresh", state.isTelemetryFresh)
+        put("updated_at_epoch_millis", state.updatedAtEpochMillis)
+    })
+
+    fun sendFaultEvent(event: VehicleFaultEvent): Boolean = enqueue(JSONObject().apply {
+        put("type", "fault_event")
+        put("v", 1)
+        put("seq", sequence.incrementAndGet())
+        put("code", dtcName(event.dtc))
+        put("active", event.isActive)
+        put("tc_event_sequence", event.tcEventSequence)
+        put("received_at_epoch_millis", event.receivedAtEpochMillis)
+    })
+
+    private fun JSONObject.putIfKnown(name: String, value: Int) {
+        if (value >= 0) put(name, value)
+    }
+
+    private fun dtcName(value: Int): String = "P%04X".format(value and 0xFFFF)
 
     private fun runLoop(generation: Long) {
         var backoffMs = 250L
@@ -105,6 +154,9 @@ class NovaControlClient(
                             val message = JSONObject(line)
                             when (message.optString("type")) {
                                 "hello_ack" -> if (!authenticated) {
+                                    synchronized(writerLock) {
+                                        this@NovaControlClient.authenticated = true
+                                    }
                                     authenticated = true
                                     listener.onControlConnectionChanged(true)
                                 }
@@ -143,7 +195,7 @@ class NovaControlClient(
         running && lifecycleGeneration.get() == generation
 
     private fun sendHello(): Boolean =
-        send(JSONObject().apply {
+        sendNow(JSONObject().apply {
             put("type", "hello")
             put("v", 1)
             put("seq", sequence.incrementAndGet())
@@ -152,9 +204,19 @@ class NovaControlClient(
             if (BuildConfig.NOVA_LINK_TOKEN.isNotBlank()) {
                 put("auth", BuildConfig.NOVA_LINK_TOKEN)
             }
-        })
+        }, requireAuthentication = false)
 
-    private fun send(message: JSONObject): Boolean = synchronized(writerLock) {
+    private fun enqueue(message: JSONObject): Boolean {
+        if (!running) return false
+        sendExecutor.execute { sendNow(message) }
+        return true
+    }
+
+    private fun sendNow(
+        message: JSONObject,
+        requireAuthentication: Boolean = true,
+    ): Boolean = synchronized(writerLock) {
+        if (requireAuthentication && !authenticated) return@synchronized false
         val activeWriter = writer ?: return@synchronized false
         try {
             activeWriter.write(message.toString())
@@ -179,6 +241,7 @@ class NovaControlClient(
                 return
             }
             writer = null
+            authenticated = false
             try {
                 activeSocket?.close()
             } catch (_: Exception) {

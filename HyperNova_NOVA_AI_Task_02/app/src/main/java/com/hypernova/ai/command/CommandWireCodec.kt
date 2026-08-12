@@ -3,6 +3,7 @@ package com.hypernova.ai.command
 import com.hypernova.contracts.HyperNovaContract
 import com.hypernova.contracts.climate.ClimateContract
 import com.hypernova.contracts.navigation.NavigationContract
+import com.hypernova.contracts.phone.PhoneContract
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -26,6 +27,8 @@ object CommandWireCodec {
         val arguments = when (domain) {
             DOMAIN_NAVIGATION -> parseNavigation(operation, args)
             DOMAIN_CLIMATE -> parseClimate(operation, args)
+            DOMAIN_PHONE -> parsePhone(operation, args)
+            DOMAIN_MEDIA -> parseMedia(operation, args)
             else -> throw CommandParseException("Unsupported command domain: $domain")
         }
 
@@ -105,6 +108,84 @@ object CommandWireCodec {
             else -> throw CommandParseException("Unsupported Climate operation: $operation")
         }
 
+    private fun parsePhone(operation: String, args: JSONObject): CommandArguments =
+        when (operation) {
+            PhoneContract.OP_GET_CURRENT_STATE,
+            PhoneContract.OP_ANSWER_CALL,
+            PhoneContract.OP_DECLINE_CALL,
+            PhoneContract.OP_END_CALL,
+            -> CommandArguments.None
+
+            PhoneContract.OP_SEARCH_CONTACTS -> CommandArguments.ContactSearch(
+                query = args.requiredText("query"),
+                limit = args.optionalInt("limit")
+                    ?.coerceIn(1, PhoneContract.MAX_CONTACT_RESULT_LIMIT)
+                    ?: PhoneContract.DEFAULT_CONTACT_RESULT_LIMIT,
+            )
+
+            PhoneContract.OP_GET_CONTACT ->
+                CommandArguments.Contact(args.requiredText("contact_id"))
+
+            PhoneContract.OP_GET_CALL_HISTORY -> CommandArguments.CallHistory(
+                contactId = null,
+                filter = args.optionalInt("filter") ?: PhoneContract.HISTORY_FILTER_ALL,
+                limit = args.optionalInt("limit")
+                    ?.coerceIn(1, PhoneContract.MAX_CALL_HISTORY_LIMIT)
+                    ?: PhoneContract.DEFAULT_CALL_HISTORY_LIMIT,
+            )
+
+            PhoneContract.OP_GET_CONTACT_CALL_HISTORY -> CommandArguments.CallHistory(
+                contactId = args.requiredText("contact_id"),
+                filter = args.optionalInt("filter") ?: PhoneContract.HISTORY_FILTER_ALL,
+                limit = args.optionalInt("limit")
+                    ?.coerceIn(1, PhoneContract.MAX_CALL_HISTORY_LIMIT)
+                    ?: PhoneContract.DEFAULT_CALL_HISTORY_LIMIT,
+            )
+
+            PhoneContract.OP_CALL_CONTACT -> CommandArguments.ContactCall(
+                contactId = args.requiredText("contact_id"),
+                numberId = args.optionalText("number_id"),
+            )
+
+            PhoneContract.OP_CALL_NUMBER ->
+                CommandArguments.PhoneNumber(args.requiredText("phone_number"))
+
+            PhoneContract.OP_CALL_HISTORY_ENTRY ->
+                CommandArguments.CallHistoryEntry(args.requiredText("call_id"))
+
+            PhoneContract.OP_SET_MUTED,
+            PhoneContract.OP_SET_HELD,
+            -> CommandArguments.Enabled(args.requiredBoolean("enabled"))
+
+            PhoneContract.OP_SET_AUDIO_ROUTE ->
+                CommandArguments.AudioRoute(args.requiredInt("route"))
+
+            PhoneContract.OP_SEND_DTMF ->
+                CommandArguments.Dtmf(args.requiredText("digit"))
+
+            else -> throw CommandParseException("Unsupported Phone operation: $operation")
+        }
+
+    private fun parseMedia(operation: String, args: JSONObject): CommandArguments =
+        when (operation) {
+            MediaWireContract.OP_GET_CURRENT_STATE,
+            MediaWireContract.OP_PLAY,
+            MediaWireContract.OP_PAUSE,
+            MediaWireContract.OP_NEXT,
+            MediaWireContract.OP_PREVIOUS,
+            -> CommandArguments.None
+
+            MediaWireContract.OP_SET_VOLUME -> {
+                val percent = args.requiredInt("volume_percent")
+                if (percent !in 0..100) {
+                    throw CommandParseException("volume_percent must be between 0 and 100")
+                }
+                CommandArguments.VolumePercent(percent)
+            }
+
+            else -> throw CommandParseException("Unsupported Media operation: $operation")
+        }
+
     private fun JSONObject.requiredText(name: String): String =
         optionalText(name) ?: throw CommandParseException("Missing or blank $name")
 
@@ -124,6 +205,16 @@ object CommandWireCodec {
         if (!has(name) || isNull(name) || get(name) !is Number) {
             throw CommandParseException("$name must be an integer")
         }
+        val number = getDouble(name)
+        if (!number.isFinite() || number % 1.0 != 0.0) {
+            throw CommandParseException("$name must be an integer")
+        }
+        return number.toInt()
+    }
+
+    private fun JSONObject.optionalInt(name: String): Int? {
+        if (!has(name) || isNull(name)) return null
+        if (get(name) !is Number) throw CommandParseException("$name must be an integer")
         val number = getDouble(name)
         if (!number.isFinite() || number % 1.0 != 0.0) {
             throw CommandParseException("$name must be an integer")
@@ -171,4 +262,6 @@ object CommandWireCodec {
 
     const val DOMAIN_NAVIGATION = "navigation"
     const val DOMAIN_CLIMATE = "climate"
+    const val DOMAIN_PHONE = "phone"
+    const val DOMAIN_MEDIA = "media"
 }

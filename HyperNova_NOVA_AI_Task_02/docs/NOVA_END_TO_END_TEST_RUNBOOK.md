@@ -225,12 +225,13 @@ navigation.get_saved_destinations: accepted
 navigation.get_saved_destinations: confirmed
 navigation.set_destination: accepted
 navigation.set_destination: confirmed
-PASS: TCP -> NOVA -> AIDL -> Climate/Navigation -> final callback
+PASS: TCP -> NOVA -> Climate/TC397 + Navigation route-ready callbacks
 ```
 
-Open Launcher after the pass. Its Climate card should show 22°C, fan 3, and AUTO, and Navigation
-should show the prepared route preview for the returned saved-home destination. Press Ctrl+C when
-finished.
+Open Launcher after the pass. Its Climate card should show the controller-confirmed 22°C target
+while retaining the current confirmed fan setting and MANUAL/OFF state. Navigation should show the
+prepared route preview for the returned saved-home destination but must not start the trip. Press
+Ctrl+C when finished.
 
 ## 8B. Live Pi integration mode
 

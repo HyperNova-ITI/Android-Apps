@@ -7,6 +7,12 @@ import com.hypernova.contracts.climate.ClimateState
 import com.hypernova.contracts.navigation.NavigationContract
 import com.hypernova.contracts.navigation.NavigationDestination
 import com.hypernova.contracts.navigation.NavigationResult
+import com.hypernova.contracts.phone.PhoneCallHistoryEntry
+import com.hypernova.contracts.phone.PhoneContact
+import com.hypernova.contracts.phone.PhoneContactNumber
+import com.hypernova.contracts.phone.PhoneContract
+import com.hypernova.contracts.phone.PhoneResult
+import com.hypernova.contracts.phone.PhoneState
 
 object AndroidResultMapper {
     fun navigation(request: CommandRequest, result: NavigationResult?): CommandResult {
@@ -44,6 +50,35 @@ object AndroidResultMapper {
         val status = CommandStatus.fromContract(result.status) ?: return invalidProviderResult(request)
         val data = linkedMapOf<String, Any?>()
         result.capabilities?.let { data["capabilities"] = it.toWireMap() }
+        result.confirmedState?.let { data["confirmed_state"] = it.toWireMap() }
+        return CommandResult(
+            request = request,
+            status = status,
+            message = result.message.orEmpty().ifBlank { status.wireValue },
+            errorCode = result.errorCode?.takeIf(String::isNotBlank),
+            data = data,
+        )
+    }
+
+    fun phone(request: CommandRequest, result: PhoneResult?): CommandResult {
+        if (result == null) return invalidProviderResult(request)
+        if (result.requestId != request.requestId || result.operation != request.operation) {
+            return invalidProviderResult(request)
+        }
+        val status = CommandStatus.fromContract(result.status) ?: return invalidProviderResult(request)
+        val data = linkedMapOf<String, Any?>()
+        if (result.totalMatches >= 0) data["total_matches"] = result.totalMatches
+        if (result.contacts.isNotEmpty()) {
+            data["contacts"] = result.contacts
+                .take(PhoneContract.MAX_CONTACT_RESULT_LIMIT)
+                .map { it.toWireMap() }
+        }
+        result.contact?.let { data["contact"] = it.toWireMap() }
+        if (result.callHistory.isNotEmpty()) {
+            data["call_history"] = result.callHistory
+                .take(PhoneContract.MAX_CALL_HISTORY_LIMIT)
+                .map { it.toWireMap() }
+        }
         result.confirmedState?.let { data["confirmed_state"] = it.toWireMap() }
         return CommandResult(
             request = request,
@@ -95,6 +130,65 @@ object AndroidResultMapper {
         "ac_enabled" to isAcEnabled,
         "auto_enabled" to isAutoModeEnabled,
         "recirculation_enabled" to isRecirculationEnabled,
+        "updated_at_epoch_millis" to updatedAtEpochMillis,
+    ).filterValues { it != null }
+
+    private fun PhoneContact.toWireMap(): Map<String, Any?> = linkedMapOf(
+        "id" to contactId,
+        "display_name" to displayName,
+        "numbers" to numbers.map { it.toWireMap() },
+    )
+
+    private fun PhoneContactNumber.toWireMap(): Map<String, Any?> = linkedMapOf(
+        "id" to numberId,
+        "label" to label,
+        "display_number" to displayNumber,
+        "primary" to isPrimary,
+    )
+
+    private fun PhoneCallHistoryEntry.toWireMap(): Map<String, Any?> = linkedMapOf(
+        "id" to callId,
+        "contact_id" to contactId,
+        "display_name" to displayName,
+        "phone_number" to phoneNumber,
+        "presentation" to numberPresentation,
+        "call_type" to callType,
+        "timestamp_epoch_millis" to timestampEpochMillis,
+        "duration_seconds" to durationSeconds,
+    ).filterValues { it != null }
+
+    private fun PhoneState.toWireMap(): Map<String, Any?> = linkedMapOf(
+        "availability" to when (availability) {
+            PhoneContract.AVAILABILITY_READY -> "ready"
+            PhoneContract.AVAILABILITY_CONNECTING -> "connecting"
+            PhoneContract.AVAILABILITY_DISCONNECTED -> "disconnected"
+            else -> "unavailable"
+        },
+        "connected_device_name" to connectedDeviceName,
+        "hfp_connected" to isHfpConnected,
+        "call_state" to when (callState) {
+            PhoneContract.CALL_STATE_INCOMING -> "incoming"
+            PhoneContract.CALL_STATE_DIALING -> "dialing"
+            PhoneContract.CALL_STATE_ACTIVE -> "active"
+            PhoneContract.CALL_STATE_HELD -> "held"
+            PhoneContract.CALL_STATE_DISCONNECTING -> "disconnecting"
+            PhoneContract.CALL_STATE_ENDED -> "ended"
+            PhoneContract.CALL_STATE_FAILED -> "failed"
+            else -> "idle"
+        },
+        "active_contact_id" to activeContactId,
+        "active_contact_name" to activeContactName,
+        "active_phone_number" to activePhoneNumber,
+        "call_duration_seconds" to callDurationSeconds,
+        "muted" to isMuted,
+        "held" to isHeld,
+        "audio_route" to audioRoute,
+        "can_answer" to canAnswer(),
+        "can_decline" to canDecline(),
+        "can_end" to canEnd(),
+        "can_hold" to canHold(),
+        "can_mute" to canMute(),
+        "can_send_dtmf" to canSendDtmf(),
         "updated_at_epoch_millis" to updatedAtEpochMillis,
     ).filterValues { it != null }
 

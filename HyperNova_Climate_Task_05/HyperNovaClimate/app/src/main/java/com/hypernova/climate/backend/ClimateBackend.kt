@@ -7,12 +7,12 @@ import kotlinx.coroutines.flow.StateFlow
  * Abstraction over the vehicle climate implementation (README §38).
  *
  * The UI never knows which backend is active. Two implementations exist:
- *  - [VehicleGatewayClimateBackend] — direct Ethernet frame link to the TC397.
+ *  - [VehicleGatewayClimateBackend] — typed AIDL link to the Android Gateway APK.
  *  - [CarPropertyClimateBackend]    — AAOS CarPropertyManager / VHAL.
  *
  * The [ClimateBackendFactory] selects one at runtime from the compiled-in
  * backend macro. This UI-phase interface exposes only the connection lifecycle;
- * state, capabilities and `execute(command)` are added in the domain phase.
+ * Physical commands are submitted by the service/UI through [VehicleGatewayRuntime].
  */
 interface ClimateBackend {
 
