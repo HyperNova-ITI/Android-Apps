@@ -73,6 +73,12 @@ class MainActivity : AppCompatActivity() {
     private var animatedNovaState: AssistantRuntimeState? = null
     private var navigationMapView: MapView? = null
     private var navigationMapController: LauncherNavigationMapController? = null
+
+    /*
+     * Shown only when the real MapLibre renderer is unavailable.
+     * Keeps the HOME widget useful and clickable on the RPi.
+     */
+    private var navigationIdleFallbackOverlay: android.widget.TextView? = null
     private var cockpitIntegrationsReady = false
     private var activityStarted = false
     private var activityResumed = false
@@ -387,11 +393,14 @@ class MainActivity : AppCompatActivity() {
         }
 
     private fun initializeNavigationMap(savedInstanceState: Bundle?) {
-        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_VULKAN_HARDWARE_VERSION)) {
-            Log.i(TAG, "Vulkan is not advertised; retaining Canvas Navigation fallback")
-            stateController.updateNavigationMapAvailability(false)
-            return
-        }
+        /*
+         * RPi5:
+         *
+         * Do not require Vulkan advertisement before creating MapLibre.
+         * Let MapLibre/native graphics choose the available Android graphics
+         * path. If creation still fails, the existing Canvas fallback remains.
+         */
+        Log.i(TAG, "RPi Navigation: attempting MapLibre without Vulkan gate")
 
         runCatching {
             MapLibre.getInstance(this)
@@ -413,6 +422,28 @@ class MainActivity : AppCompatActivity() {
                 view.onCreate(savedInstanceState)
             }
             navigationMapView = mapView
+
+            /*
+             * Real MapLibre is available.
+             * Remove the temporary fixed-point overlay completely so it can
+             * never obscure roads, labels, buildings or map touch events.
+             */
+            navigationIdleFallbackOverlay?.let { oldFallback ->
+                (oldFallback.parent as? android.view.ViewGroup)
+                    ?.removeView(oldFallback)
+            }
+            navigationIdleFallbackOverlay = null
+
+            /*
+             * MapView is now real and attached.
+             * Bind Navigation click HERE rather than relying on the earlier
+             * nullable navigationMapView reference.
+             */
+            mapView.isClickable = true
+            mapView.isFocusable = true
+            mapView.setOnClickListener {
+                openNavigationFromHomeWidget()
+            }
             navigationMapController =
                 LauncherNavigationMapController(this, mapView).also { controller ->
                     controller.initialize(
@@ -605,6 +636,18 @@ class MainActivity : AppCompatActivity() {
      * Configure the Navigation dashboard card.
      */
     private fun configureNavigationCard() {
+        /*
+         * The complete Navigation map area opens HyperNova Navigation.
+         *
+         * This listener belongs to the container, not only MapView, so it
+         * also works when the RPi is using the Canvas fallback.
+         */
+        binding.navigationMapContainer.isClickable = true
+        binding.navigationMapContainer.isFocusable = true
+        binding.navigationMapContainer.setOnClickListener {
+            openNavigationFromHomeWidget()
+        }
+
         configureDestinationClick(
             view = binding.navigationCard,
             destination = AppDestination.NAVIGATION
@@ -699,6 +742,136 @@ class MainActivity : AppCompatActivity() {
     /**
      * Configure the fixed bottom navigation.
      */
+    /**
+     * Open HyperNova Navigation directly from the HOME Navigation widget.
+     */
+    private fun openNavigationFromHomeWidget() {
+        val openIntent =
+            android.content.Intent(
+                "com.hypernova.navigation.action.OPEN"
+            ).apply {
+                setPackage("com.hypernova.navigation")
+            }
+
+        runCatching {
+            startActivity(openIntent)
+        }.onFailure { primaryFailure ->
+            Log.w(
+                TAG,
+                "Navigation OPEN action failed; trying launcher activity",
+                primaryFailure,
+            )
+
+            val fallbackIntent =
+                packageManager.getLaunchIntentForPackage(
+                    "com.hypernova.navigation"
+                )
+
+            if (fallbackIntent != null) {
+                runCatching {
+                    startActivity(fallbackIntent)
+                }.onFailure { fallbackFailure ->
+                    Log.e(
+                        TAG,
+                        "Could not open HyperNova Navigation",
+                        fallbackFailure,
+                    )
+                }
+            } else {
+                Log.e(
+                    TAG,
+                    "HyperNova Navigation has no launch intent",
+                )
+            }
+        }
+    }
+
+    /**
+     * Deterministic idle fallback for RPi graphics configurations where the
+     * MapLibre surface cannot become available.
+     *
+     * It is not used when MapLibre is healthy.
+     */
+    private fun ensureNavigationIdleFallbackOverlay() {
+        if (navigationIdleFallbackOverlay != null) return
+
+        val nightMask =
+            resources.configuration.uiMode and
+                android.content.res.Configuration.UI_MODE_NIGHT_MASK
+
+        val isNight =
+            nightMask ==
+                android.content.res.Configuration.UI_MODE_NIGHT_YES
+
+        val overlay =
+            android.widget.TextView(this).apply {
+                text =
+                    "●\nITI DEMO LOCATION\n30.07112, 31.02075"
+
+                gravity = android.view.Gravity.CENTER
+
+                textSize = 16f
+
+                setTextColor(
+                    if (isNight) {
+                        android.graphics.Color.rgb(
+                            67,
+                            242,
+                            244,
+                        )
+                    } else {
+                        android.graphics.Color.rgb(
+                            11,
+                            132,
+                            147,
+                        )
+                    }
+                )
+
+                setBackgroundColor(
+                    if (isNight) {
+                        android.graphics.Color.rgb(
+                            7,
+                            21,
+                            33,
+                        )
+                    } else {
+                        android.graphics.Color.rgb(
+                            238,
+                            243,
+                            247,
+                        )
+                    }
+                )
+
+                setPadding(
+                    24,
+                    24,
+                    24,
+                    24,
+                )
+
+                isClickable = true
+                isFocusable = true
+
+                setOnClickListener {
+                    openNavigationFromHomeWidget()
+                }
+
+                elevation = 12f
+            }
+
+        binding.navigationMapContainer.addView(
+            overlay,
+            android.view.ViewGroup.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+            ),
+        )
+
+        navigationIdleFallbackOverlay = overlay
+    }
+
     private fun configureBottomNavigation() {
         binding.navHome.isClickable = true
         binding.navHome.isFocusable = true
@@ -1010,9 +1183,30 @@ class MainActivity : AppCompatActivity() {
 
 
         val showMap = navigation.mapAvailable && navigation.routePoints.size >= 2
-        navigationMapView?.visibility = if (showMap) View.VISIBLE else View.INVISIBLE
+        /*
+         * HOME always displays the real MapLibre map.
+         * Route presence only changes the geometry drawn on top.
+         */
+        navigationMapView?.visibility = View.VISIBLE
+
+        /*
+         * Actual MapLibre renderer wins whenever it is available.
+         * Otherwise show the fixed ITI fallback only in idle/no-route state.
+         */
+        /*
+         * MapLibre is the HOME Navigation renderer in both idle and
+         * active-route states.
+         *
+         * The temporary fixed-point TextView fallback must never cover
+         * the actual OpenFreeMap surface.
+         */
+        navigationIdleFallbackOverlay?.visibility = View.GONE
         binding.navigationRoutePreview.visibility =
-            if (showMap) View.INVISIBLE else View.VISIBLE
+            if (navigationMapView != null) {
+                View.INVISIBLE
+            } else {
+                View.VISIBLE
+            }
     }
 
     /**
