@@ -43,6 +43,13 @@ android {
         debug {
             versionNameSuffix = "-dev"
         }
+        create("demo") {
+            initWith(getByName("debug"))
+            // RPi cockpit demo: debug ClimatePreview behavior, production identity.
+            applicationIdSuffix = ""
+            versionNameSuffix = "-demo"
+            matchingFallbacks += listOf("debug")
+        }
         release {
             optimization {
                 enable = false
@@ -63,6 +70,9 @@ android {
     sourceSets {
         getByName("main") {
             res.srcDir("src/main/res-icons")
+        }
+        getByName("demo") {
+            kotlin.directories.add("src/debug/java")
         }
     }
 

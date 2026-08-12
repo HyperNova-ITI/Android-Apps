@@ -2,16 +2,16 @@ package com.hypernova.climate.service
 
 import android.app.Service
 import android.content.Intent
-import android.os.Handler
 import android.os.IBinder
-import android.os.Looper
-import com.hypernova.climate.BuildConfig
-import com.hypernova.climate.model.AcMode
-import com.hypernova.climate.model.ClimateAvailability as AppClimateAvailability
-import com.hypernova.climate.model.ClimateMode
-import com.hypernova.climate.model.ClimateState as AppClimateState
+import android.os.RemoteException
+import android.os.SystemClock
+import android.util.Log
+import com.hypernova.climate.data.ClimateStateOwner
+import com.hypernova.climate.data.ClimateZone
+import com.hypernova.climate.model.ClimateAvailability
+import com.hypernova.climate.model.ClimateCapabilities as InternalClimateCapabilities
+import com.hypernova.climate.model.ClimateState as InternalClimateState
 import com.hypernova.climate.model.ClimateZoneMode
-import com.hypernova.climate.runtime.ClimateStateStore
 import com.hypernova.contracts.HyperNovaContract
 import com.hypernova.contracts.climate.ClimateCapabilities
 import com.hypernova.contracts.climate.ClimateContract
@@ -19,311 +19,333 @@ import com.hypernova.contracts.climate.ClimateResult
 import com.hypernova.contracts.climate.ClimateState
 import com.hypernova.contracts.climate.IClimateCommandCallback
 import com.hypernova.contracts.climate.IClimateCommandService
-import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import kotlin.math.abs
 import kotlin.math.round
 
 /**
- * Frozen NOVA/Launcher Climate API.
+ * Signature-protected Climate API backed by the same state owner as the UI.
  *
- * The debug variant uses the shared preview state as an explicit laptop demo backend. Release
- * mutations stay unavailable until the Android vehicle-gateway/QNX backend replaces this adapter;
- * release code never reports a local UI mutation as a hardware confirmation.
+ * Demo builds confirm mutations immediately in [ClimateStateOwner]. Release
+ * builds start unavailable, so no simulated controller values or confirmations
+ * escape into production while the real vehicle backend is unfinished.
  */
 class ClimateCommandService : Service() {
-    private data class Cached(val result: ClimateResult, val storedAt: Long)
-
-    private val handler = Handler(Looper.getMainLooper())
-    private val cache = ConcurrentHashMap<String, Cached>()
-    private val pendingCallbacks =
-        ConcurrentHashMap<String, CopyOnWriteArrayList<IClimateCommandCallback>>()
+    private val executor: ExecutorService = Executors.newSingleThreadExecutor()
+    private val resultCache = ConcurrentHashMap<String, CachedResult>()
 
     private val binder = object : IClimateCommandService.Stub() {
         override fun getApiVersion(): Int = HyperNovaContract.API_VERSION
 
-        override fun getCapabilities(requestId: String, callback: IClimateCommandCallback) {
-            if (replay(requestId, callback)) return
-            if (!validRequestId(requestId, ClimateContract.OP_GET_CAPABILITIES, callback)) return
-            val capabilities = contractCapabilities()
-            if (capabilities == null) {
-                unavailable(requestId, ClimateContract.OP_GET_CAPABILITIES, callback)
-                return
+        override fun getCapabilities(
+            requestId: String?,
+            callback: IClimateCommandCallback?,
+        ) = submit(requestId, ClimateContract.OP_GET_CAPABILITIES, callback) { id ->
+            val state = ClimateStateOwner.currentState()
+            val capabilities = state.capabilities?.toContract()
+            if (capabilities == null || !state.hasAuthoritativeState()) {
+                unavailable(id, ClimateContract.OP_GET_CAPABILITIES, "Climate capabilities unavailable")
+            } else {
+                result(
+                    requestId = id,
+                    operation = ClimateContract.OP_GET_CAPABILITIES,
+                    status = HyperNovaContract.STATUS_CONFIRMED,
+                    message = "Climate capabilities available",
+                    capabilities = capabilities,
+                )
             }
-            finish(callback, result(
-                requestId,
-                ClimateContract.OP_GET_CAPABILITIES,
-                HyperNovaContract.STATUS_CONFIRMED,
-                "Climate capabilities available",
-                capabilities = capabilities,
-            ))
         }
 
-        override fun getCurrentState(requestId: String, callback: IClimateCommandCallback) {
-            if (replay(requestId, callback)) return
-            if (!validRequestId(requestId, ClimateContract.OP_GET_CURRENT_STATE, callback)) return
-            val state = contractState()
-            if (state == null) {
-                unavailable(requestId, ClimateContract.OP_GET_CURRENT_STATE, callback)
-                return
+        override fun getCurrentState(
+            requestId: String?,
+            callback: IClimateCommandCallback?,
+        ) = submit(requestId, ClimateContract.OP_GET_CURRENT_STATE, callback) { id ->
+            val state = ClimateStateOwner.currentState()
+            if (state.hasAuthoritativeState()) {
+                result(
+                    requestId = id,
+                    operation = ClimateContract.OP_GET_CURRENT_STATE,
+                    status = HyperNovaContract.STATUS_CONFIRMED,
+                    message = "Climate state available",
+                )
+            } else {
+                unavailable(id, ClimateContract.OP_GET_CURRENT_STATE, "Climate state unavailable")
             }
-            finish(callback, result(
-                requestId,
-                ClimateContract.OP_GET_CURRENT_STATE,
-                HyperNovaContract.STATUS_CONFIRMED,
-                "Climate state is available",
-                state = state,
-            ))
         }
 
         override fun setPowerEnabled(
-            requestId: String,
+            requestId: String?,
             enabled: Boolean,
-            callback: IClimateCommandCallback,
-        ) = mutate(requestId, ClimateContract.OP_SET_POWER, callback) { state ->
-            state.copy(
-                powerEnabled = enabled,
-                mode = if (enabled) {
-                    if (state.autoModeEnabled == true) ClimateMode.AUTO else ClimateMode.MANUAL
-                } else {
-                    ClimateMode.OFF
-                },
-                acMode = if (enabled) state.acMode else AcMode.OFF,
-            ) to "Climate power ${if (enabled) "on" else "off"}"
+            callback: IClimateCommandCallback?,
+        ) = mutate(requestId, ClimateContract.OP_SET_POWER, callback) {
+            ClimateStateOwner.setPowerEnabled(enabled)
         }
 
         override fun setTargetTemperature(
-            requestId: String,
+            requestId: String?,
             zone: Int,
             temperatureC: Float,
-            callback: IClimateCommandCallback,
+            callback: IClimateCommandCallback?,
+        ) = mutate(
+            requestId = requestId,
+            operation = ClimateContract.OP_SET_TEMPERATURE,
+            callback = callback,
+            validate = { id -> validateTemperature(id, zone, temperatureC) },
         ) {
-            if (replay(requestId, callback)) return
-            if (!validRequestId(requestId, ClimateContract.OP_SET_TEMPERATURE, callback)) return
-            if (!BuildConfig.DEBUG) {
-                unavailable(requestId, ClimateContract.OP_SET_TEMPERATURE, callback)
-                return
-            }
-
-            val capabilities = ClimateStateStore.snapshot().capabilities
-            val supportedZones = if (capabilities?.zoneMode == ClimateZoneMode.DUAL) {
-                setOf(ClimateContract.ZONE_ALL, ClimateContract.ZONE_DRIVER, ClimateContract.ZONE_PASSENGER)
-            } else {
-                setOf(ClimateContract.ZONE_ALL, ClimateContract.ZONE_DRIVER)
-            }
-            if (zone !in supportedZones) {
-                reject(
-                    requestId,
-                    ClimateContract.OP_SET_TEMPERATURE,
-                    "That climate zone is unsupported",
-                    ClimateContract.ERROR_UNSUPPORTED_ZONE,
-                    callback,
-                )
-                return
-            }
-
-            val minimum = capabilities?.minimumTemperatureC
-            val maximum = capabilities?.maximumTemperatureC
-            val step = capabilities?.temperatureStepC
-            if (
-                minimum == null || maximum == null || step == null ||
-                temperatureC !in minimum..maximum || !alignedToStep(temperatureC, minimum, step)
-            ) {
-                reject(
-                    requestId,
-                    ClimateContract.OP_SET_TEMPERATURE,
-                    "Temperature is outside the supported range",
-                    ClimateContract.ERROR_OUT_OF_RANGE,
-                    callback,
-                )
-                return
-            }
-
-            mutate(
-                requestId,
-                ClimateContract.OP_SET_TEMPERATURE,
-                callback,
-                alreadyChecked = true,
-            ) { state ->
-                val updated = when (zone) {
-                    ClimateContract.ZONE_DRIVER -> state.copy(driverTargetTemperatureC = temperatureC)
-                    ClimateContract.ZONE_PASSENGER -> state.copy(passengerTargetTemperatureC = temperatureC)
-                    else -> state.copy(
-                        driverTargetTemperatureC = temperatureC,
-                        passengerTargetTemperatureC = temperatureC,
-                    )
-                }.copy(
-                    powerEnabled = true,
-                    mode = if (state.autoModeEnabled == true) ClimateMode.AUTO else ClimateMode.MANUAL,
-                )
-                updated to "Climate set to ${temperatureC.pretty()}°C"
-            }
+            ClimateStateOwner.setTargetTemperature(zone.toInternalZone(), temperatureC)
         }
 
         override fun setFanLevel(
-            requestId: String,
-            level: Int,
-            callback: IClimateCommandCallback,
+            requestId: String?,
+            fanLevel: Int,
+            callback: IClimateCommandCallback?,
+        ) = mutate(
+            requestId = requestId,
+            operation = ClimateContract.OP_SET_FAN_LEVEL,
+            callback = callback,
+            validate = { id -> validateFanLevel(id, fanLevel) },
         ) {
-            if (replay(requestId, callback)) return
-            if (!validRequestId(requestId, ClimateContract.OP_SET_FAN_LEVEL, callback)) return
-            if (!BuildConfig.DEBUG) {
-                unavailable(requestId, ClimateContract.OP_SET_FAN_LEVEL, callback)
-                return
-            }
-            val maximum = ClimateStateStore.snapshot().capabilities?.maximumFanLevel
-            if (maximum == null || level !in 0..maximum) {
-                reject(
-                    requestId,
-                    ClimateContract.OP_SET_FAN_LEVEL,
-                    "Fan level is outside the supported range",
-                    ClimateContract.ERROR_OUT_OF_RANGE,
-                    callback,
-                )
-                return
-            }
-            mutate(
-                requestId,
-                ClimateContract.OP_SET_FAN_LEVEL,
-                callback,
-                alreadyChecked = true,
-            ) { state ->
-                state.copy(fanLevel = level) to "Fan set to level $level"
-            }
+            ClimateStateOwner.setFanLevel(fanLevel)
         }
 
         override fun setAcEnabled(
-            requestId: String,
+            requestId: String?,
             enabled: Boolean,
-            callback: IClimateCommandCallback,
-        ) = mutate(requestId, ClimateContract.OP_SET_AC, callback) { state ->
-            state.copy(
-                powerEnabled = state.powerEnabled || enabled,
-                acMode = if (enabled) AcMode.COOL else AcMode.OFF,
-                mode = when {
-                    enabled -> ClimateMode.COOLING
-                    state.autoModeEnabled == true -> ClimateMode.AUTO
-                    state.powerEnabled -> ClimateMode.MANUAL
-                    else -> ClimateMode.OFF
-                },
-            ) to "Air conditioning ${if (enabled) "on" else "off"}"
+            callback: IClimateCommandCallback?,
+        ) = mutate(
+            requestId = requestId,
+            operation = ClimateContract.OP_SET_AC,
+            callback = callback,
+            validate = { id -> requireCapability(id, ClimateContract.OP_SET_AC) { it.supportsAc } },
+        ) {
+            ClimateStateOwner.setAcEnabled(enabled)
         }
 
         override fun setAutoModeEnabled(
-            requestId: String,
+            requestId: String?,
             enabled: Boolean,
-            callback: IClimateCommandCallback,
-        ) = mutate(requestId, ClimateContract.OP_SET_AUTO, callback) { state ->
-            state.copy(
-                autoModeEnabled = enabled,
-                mode = when {
-                    !state.powerEnabled -> ClimateMode.OFF
-                    enabled -> ClimateMode.AUTO
-                    else -> ClimateMode.MANUAL
-                },
-            ) to "Automatic climate ${if (enabled) "enabled" else "disabled"}"
+            callback: IClimateCommandCallback?,
+        ) = mutate(
+            requestId = requestId,
+            operation = ClimateContract.OP_SET_AUTO,
+            callback = callback,
+            validate = { id ->
+                requireCapability(id, ClimateContract.OP_SET_AUTO) { it.supportsAutoMode }
+            },
+        ) {
+            ClimateStateOwner.setAutoModeEnabled(enabled)
         }
 
         override fun setRecirculationEnabled(
-            requestId: String,
+            requestId: String?,
             enabled: Boolean,
-            callback: IClimateCommandCallback,
-        ) = mutate(requestId, ClimateContract.OP_SET_RECIRCULATION, callback) { state ->
-            state.copy(
-                recirculationEnabled = enabled,
-                freshAirEnabled = if (enabled) false else state.freshAirEnabled,
-            ) to "Recirculation ${if (enabled) "enabled" else "disabled"}"
+            callback: IClimateCommandCallback?,
+        ) = mutate(
+            requestId = requestId,
+            operation = ClimateContract.OP_SET_RECIRCULATION,
+            callback = callback,
+            validate = { id ->
+                requireCapability(id, ClimateContract.OP_SET_RECIRCULATION) {
+                    it.supportsRecirculation
+                }
+            },
+        ) {
+            ClimateStateOwner.setRecirculationEnabled(enabled)
         }
     }
 
     override fun onBind(intent: Intent?): IBinder? =
-        binder.takeIf { intent?.action == ClimateContract.BIND_COMMAND_ACTION }
+        if (intent?.action == ClimateContract.BIND_COMMAND_ACTION) binder else null
 
     override fun onDestroy() {
-        handler.removeCallbacksAndMessages(null)
-        pendingCallbacks.clear()
+        executor.shutdownNow()
+        resultCache.clear()
         super.onDestroy()
     }
 
     private fun mutate(
-        requestId: String,
+        requestId: String?,
         operation: String,
-        callback: IClimateCommandCallback,
-        alreadyChecked: Boolean = false,
-        update: (AppClimateState) -> Pair<AppClimateState, String>,
+        callback: IClimateCommandCallback?,
+        validate: (String) -> ClimateResult? = { null },
+        mutation: () -> Boolean,
+    ) = submit(requestId, operation, callback) { id ->
+        serviceUnavailable(id, operation)?.let { return@submit it }
+        validate(id)?.let { return@submit it }
+
+        send(
+            callback,
+            result(
+                requestId = id,
+                operation = operation,
+                status = HyperNovaContract.STATUS_ACCEPTED,
+                message = "Climate request accepted",
+            ),
+        )
+
+        if (mutation()) {
+            result(
+                requestId = id,
+                operation = operation,
+                status = HyperNovaContract.STATUS_CONFIRMED,
+                message = "Climate request confirmed",
+            )
+        } else {
+            unavailable(id, operation, "Climate service unavailable")
+        }
+    }
+
+    private fun submit(
+        requestId: String?,
+        operation: String,
+        callback: IClimateCommandCallback?,
+        task: (String) -> ClimateResult,
     ) {
-        if (!alreadyChecked && replay(requestId, callback)) return
-        if (!alreadyChecked && !validRequestId(requestId, operation, callback)) return
-        if (!BuildConfig.DEBUG || ClimateStateStore.snapshot().confirmedState == null) {
-            unavailable(requestId, operation, callback)
-            return
+        if (callback == null) return
+        executor.execute {
+            val id = requestId.orEmpty()
+            if (id.isBlank()) {
+                send(callback, rejected(id, operation, "Request ID is required"))
+                return@execute
+            }
+
+            purgeExpiredResults()
+            resultCache[id]?.let {
+                send(callback, it.result)
+                return@execute
+            }
+
+            val finalResult = try {
+                task(id)
+            } catch (exception: Exception) {
+                Log.e(TAG, "Climate contract request failed", exception)
+                result(
+                    requestId = id,
+                    operation = operation,
+                    status = HyperNovaContract.STATUS_REJECTED,
+                    message = "Climate request failed",
+                    errorCode = HyperNovaContract.ERROR_INTERNAL,
+                )
+            }
+            resultCache[id] = CachedResult(SystemClock.elapsedRealtime(), finalResult)
+            send(callback, finalResult)
+        }
+    }
+
+    private fun validateTemperature(
+        requestId: String,
+        zone: Int,
+        temperatureC: Float,
+    ): ClimateResult? {
+        val operation = ClimateContract.OP_SET_TEMPERATURE
+        val state = ClimateStateOwner.currentState()
+        val capabilities = state.capabilities ?: return unavailable(
+            requestId,
+            operation,
+            "Climate service unavailable",
+        )
+        val internalZone = zone.toInternalZoneOrNull() ?: return result(
+            requestId = requestId,
+            operation = operation,
+            status = HyperNovaContract.STATUS_REJECTED,
+            message = "Unsupported climate zone",
+            errorCode = ClimateContract.ERROR_UNSUPPORTED_ZONE,
+        )
+        if (internalZone == ClimateZone.PASSENGER && capabilities.zoneMode != ClimateZoneMode.DUAL) {
+            return result(
+                requestId = requestId,
+                operation = operation,
+                status = HyperNovaContract.STATUS_REJECTED,
+                message = "Unsupported climate zone",
+                errorCode = ClimateContract.ERROR_UNSUPPORTED_ZONE,
+            )
         }
 
-        finish(callback, result(
-            requestId,
-            operation,
-            HyperNovaContract.STATUS_ACCEPTED,
-            "Waiting for climate confirmation",
-        ))
-        handler.postDelayed({
-            var message = "Climate updated"
-            val updated = ClimateStateStore.updateConfirmed { state ->
-                update(state).also { message = it.second }.first
-            }
-            finish(callback, result(
-                requestId,
-                operation,
-                HyperNovaContract.STATUS_CONFIRMED,
-                message,
-                state = updated.confirmedState?.toContract(),
-            ))
-        }, DEMO_CONFIRMATION_DELAY_MILLIS)
+        val minimum = capabilities.minimumTemperatureC
+        val maximum = capabilities.maximumTemperatureC
+        val step = capabilities.temperatureStepC
+        if (minimum == null || maximum == null || step == null || step <= 0f) {
+            return unsupported(requestId, operation)
+        }
+        val increments = (temperatureC - minimum) / step
+        if (
+            !temperatureC.isFinite() ||
+            temperatureC < minimum ||
+            temperatureC > maximum ||
+            abs(increments - round(increments)) > STEP_EPSILON
+        ) {
+            return result(
+                requestId = requestId,
+                operation = operation,
+                status = HyperNovaContract.STATUS_REJECTED,
+                message = "Temperature is outside the supported range",
+                errorCode = ClimateContract.ERROR_OUT_OF_RANGE,
+            )
+        }
+        return null
     }
 
-    private fun validRequestId(
+    private fun validateFanLevel(requestId: String, fanLevel: Int): ClimateResult? {
+        val operation = ClimateContract.OP_SET_FAN_LEVEL
+        val maximum = ClimateStateOwner.currentState().capabilities?.maximumFanLevel
+            ?: return unavailable(requestId, operation, "Climate service unavailable")
+        return if (fanLevel in 0..maximum) {
+            null
+        } else {
+            result(
+                requestId = requestId,
+                operation = operation,
+                status = HyperNovaContract.STATUS_REJECTED,
+                message = "Fan level is outside the supported range",
+                errorCode = ClimateContract.ERROR_OUT_OF_RANGE,
+            )
+        }
+    }
+
+    private fun requireCapability(
         requestId: String,
         operation: String,
-        callback: IClimateCommandCallback,
-    ): Boolean {
-        if (requestId.isNotBlank()) return true
-        reject(
-            requestId,
-            operation,
-            "requestId must not be blank",
-            HyperNovaContract.ERROR_INVALID_ARGUMENT,
-            callback,
+        supported: (InternalClimateCapabilities) -> Boolean,
+    ): ClimateResult? {
+        val capabilities = ClimateStateOwner.currentState().capabilities
+            ?: return unavailable(requestId, operation, "Climate service unavailable")
+        return if (supported(capabilities)) null else unsupported(requestId, operation)
+    }
+
+    private fun serviceUnavailable(requestId: String, operation: String): ClimateResult? =
+        if (ClimateStateOwner.currentState().canAcceptCommands()) {
+            null
+        } else {
+            unavailable(requestId, operation, "Climate service unavailable")
+        }
+
+    private fun unsupported(requestId: String, operation: String): ClimateResult = result(
+        requestId = requestId,
+        operation = operation,
+        status = HyperNovaContract.STATUS_REJECTED,
+        message = "Climate operation is not supported",
+        errorCode = HyperNovaContract.ERROR_UNSUPPORTED_OPERATION,
+    )
+
+    private fun rejected(requestId: String, operation: String, message: String): ClimateResult =
+        result(
+            requestId = requestId,
+            operation = operation,
+            status = HyperNovaContract.STATUS_REJECTED,
+            message = message,
+            errorCode = HyperNovaContract.ERROR_INVALID_ARGUMENT,
         )
-        return false
-    }
 
-    private fun unavailable(
-        requestId: String,
-        operation: String,
-        callback: IClimateCommandCallback,
-    ) = finish(callback, result(
-        requestId,
-        operation,
-        HyperNovaContract.STATUS_UNAVAILABLE,
-        "Vehicle climate gateway is unavailable",
-        HyperNovaContract.ERROR_SERVICE_UNAVAILABLE,
-        state = contractState(),
-    ))
-
-    private fun reject(
-        requestId: String,
-        operation: String,
-        message: String,
-        errorCode: String,
-        callback: IClimateCommandCallback,
-    ) = finish(callback, result(
-        requestId,
-        operation,
-        HyperNovaContract.STATUS_REJECTED,
-        message,
-        errorCode,
-        state = contractState(),
-    ))
+    private fun unavailable(requestId: String, operation: String, message: String): ClimateResult =
+        result(
+            requestId = requestId,
+            operation = operation,
+            status = HyperNovaContract.STATUS_UNAVAILABLE,
+            message = message,
+            errorCode = HyperNovaContract.ERROR_SERVICE_UNAVAILABLE,
+        )
 
     private fun result(
         requestId: String,
@@ -332,108 +354,88 @@ class ClimateCommandService : Service() {
         message: String,
         errorCode: String = HyperNovaContract.ERROR_NONE,
         capabilities: ClimateCapabilities? = null,
-        state: ClimateState? = null,
-    ) = ClimateResult(
+    ): ClimateResult = ClimateResult(
         requestId,
         operation,
         status,
         message,
         errorCode,
         capabilities,
-        state,
+        ClimateStateOwner.currentState().confirmedState.toContract(),
     )
 
-    private fun contractCapabilities(): ClimateCapabilities? =
-        ClimateStateStore.snapshot().capabilities?.let { capabilities ->
-            ClimateCapabilities(
-                if (capabilities.zoneMode == ClimateZoneMode.DUAL) {
-                    ClimateContract.ZONE_MODE_DUAL
-                } else {
-                    ClimateContract.ZONE_MODE_SINGLE
-                },
-                capabilities.minimumTemperatureC ?: Float.NaN,
-                capabilities.maximumTemperatureC ?: Float.NaN,
-                capabilities.temperatureStepC ?: Float.NaN,
-                capabilities.maximumFanLevel ?: -1,
-                true,
-                capabilities.minimumTemperatureC != null && capabilities.maximumTemperatureC != null,
-                capabilities.supportsAc,
-                capabilities.supportsAutoMode,
-                capabilities.supportsRecirculation,
-            )
-        }
-
-    private fun contractState(): ClimateState? =
-        ClimateStateStore.snapshot().confirmedState?.toContract()
-
-    private fun AppClimateState.toContract() = ClimateState(
-        when (availability) {
-            AppClimateAvailability.AVAILABLE -> ClimateContract.AVAILABILITY_AVAILABLE
-            AppClimateAvailability.STALE -> ClimateContract.AVAILABILITY_STALE
-            AppClimateAvailability.UNAVAILABLE -> ClimateContract.AVAILABILITY_UNAVAILABLE
-        },
-        powerEnabled,
-        driverTargetTemperatureC ?: Float.NaN,
-        passengerTargetTemperatureC ?: Float.NaN,
-        fanLevel ?: -1,
-        acMode != AcMode.OFF,
-        autoModeEnabled == true,
-        recirculationEnabled == true,
-        updatedAtEpochMillis,
-    )
-
-    private fun alignedToStep(value: Float, minimum: Float, step: Float): Boolean {
-        if (!value.isFinite() || !minimum.isFinite() || !step.isFinite() || step <= 0f) return false
-        val steps = (value - minimum) / step
-        return abs(steps - round(steps)) < 0.001f
-    }
-
-    private fun finish(callback: IClimateCommandCallback, result: ClimateResult) {
-        pruneCache()
-        if (result.status == HyperNovaContract.STATUS_ACCEPTED) {
-            pendingCallbacks.computeIfAbsent(result.requestId) { CopyOnWriteArrayList() }
-                .addIfAbsent(callback)
-        }
-        cache[result.requestId] = Cached(result, System.currentTimeMillis())
-
-        val callbacks = if (result.status == HyperNovaContract.STATUS_ACCEPTED) {
-            listOf(callback)
-        } else {
-            val waiting = pendingCallbacks.remove(result.requestId)?.toMutableList() ?: mutableListOf()
-            if (callback !in waiting) waiting += callback
-            waiting
-        }
-        callbacks.forEach { deliver(it, result) }
-    }
-
-    private fun deliver(callback: IClimateCommandCallback, result: ClimateResult) {
+    private fun send(callback: IClimateCommandCallback?, result: ClimateResult) {
         try {
-            callback.onResult(result)
-        } catch (_: Exception) {
-            // The caller owns reconnection and timeout recovery.
+            callback?.onResult(result)
+        } catch (_: RemoteException) {
+            // The caller went away; the authoritative state remains valid.
         }
     }
 
-    private fun replay(requestId: String, callback: IClimateCommandCallback): Boolean {
-        pruneCache()
-        val cached = cache[requestId]?.result ?: return false
-        if (cached.status == HyperNovaContract.STATUS_ACCEPTED) {
-            pendingCallbacks.computeIfAbsent(requestId) { CopyOnWriteArrayList() }
-                .addIfAbsent(callback)
-        }
-        deliver(callback, cached)
-        return true
+    private fun purgeExpiredResults() {
+        val cutoff = SystemClock.elapsedRealtime() - HyperNovaContract.REQUEST_DEDUP_TTL_MILLIS
+        resultCache.entries.removeIf { it.value.createdAtElapsedMillis < cutoff }
     }
 
-    private fun pruneCache() {
-        val cutoff = System.currentTimeMillis() - HyperNovaContract.REQUEST_DEDUP_TTL_MILLIS
-        cache.entries.removeAll { it.value.storedAt < cutoff }
+    private fun com.hypernova.climate.ui.state.ClimateUiState.hasAuthoritativeState(): Boolean =
+        confirmedState?.availability == ClimateAvailability.AVAILABLE ||
+            confirmedState?.availability == ClimateAvailability.STALE
+
+    private fun com.hypernova.climate.ui.state.ClimateUiState.canAcceptCommands(): Boolean =
+        canSendCommands && confirmedState?.availability == ClimateAvailability.AVAILABLE
+
+    private fun InternalClimateCapabilities.toContract(): ClimateCapabilities = ClimateCapabilities(
+        if (zoneMode == ClimateZoneMode.DUAL) {
+            ClimateContract.ZONE_MODE_DUAL
+        } else {
+            ClimateContract.ZONE_MODE_SINGLE
+        },
+        minimumTemperatureC ?: Float.NaN,
+        maximumTemperatureC ?: Float.NaN,
+        temperatureStepC ?: Float.NaN,
+        maximumFanLevel ?: 0,
+        true,
+        minimumTemperatureC != null && maximumTemperatureC != null && temperatureStepC != null,
+        supportsAc,
+        supportsAutoMode,
+        supportsRecirculation,
+    )
+
+    private fun InternalClimateState?.toContract(): ClimateState {
+        val state = this
+        return ClimateState(
+            when (state?.availability) {
+                ClimateAvailability.AVAILABLE -> ClimateContract.AVAILABILITY_AVAILABLE
+                ClimateAvailability.STALE -> ClimateContract.AVAILABILITY_STALE
+                else -> ClimateContract.AVAILABILITY_UNAVAILABLE
+            },
+            state?.powerEnabled ?: false,
+            state?.driverTargetTemperatureC ?: Float.NaN,
+            state?.passengerTargetTemperatureC ?: Float.NaN,
+            state?.fanLevel ?: -1,
+            state?.acMode != null && state.acMode != com.hypernova.climate.model.AcMode.OFF,
+            state?.autoModeEnabled ?: false,
+            state?.recirculationEnabled ?: false,
+            state?.updatedAtEpochMillis ?: 0L,
+        )
     }
 
-    private fun Float.pretty(): String =
-        if (this % 1f == 0f) toInt().toString() else String.format(Locale.US, "%.1f", this)
+    private fun Int.toInternalZoneOrNull(): ClimateZone? = when (this) {
+        ClimateContract.ZONE_ALL -> ClimateZone.ALL
+        ClimateContract.ZONE_DRIVER -> ClimateZone.DRIVER
+        ClimateContract.ZONE_PASSENGER -> ClimateZone.PASSENGER
+        else -> null
+    }
+
+    private fun Int.toInternalZone(): ClimateZone = requireNotNull(toInternalZoneOrNull())
+
+    private data class CachedResult(
+        val createdAtElapsedMillis: Long,
+        val result: ClimateResult,
+    )
 
     private companion object {
-        const val DEMO_CONFIRMATION_DELAY_MILLIS = 350L
+        const val TAG = "HN-ClimateCommand"
+        const val STEP_EPSILON = 0.001f
     }
 }

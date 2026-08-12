@@ -44,15 +44,6 @@
             android:scaleType="centerInside"
             android:contentDescription="@string/cd_back" />
 
-        <ImageView
-            android:id="@+id/ivClimateLogo"
-            android:layout_width="@dimen/hn_icon_medium"
-            android:layout_height="@dimen/hn_icon_medium"
-            android:layout_marginStart="@dimen/hn_space_4"
-            android:src="@drawable/ic_logo"
-            app:tint="@color/hn_primary_cyan"
-            android:contentDescription="@string/cd_climate_logo" />
-
         <TextView
             android:id="@+id/tvClimateTitle"
             style="@style/HnText.AppTitle"
@@ -81,14 +72,15 @@
             android:layout_marginStart="@dimen/hn_space_8"
             android:background="@drawable/bg_status_dot" />
 
-        <TextView
+        <TextClock
             android:id="@+id/tvCurrentTime"
-            style="@style/HnText.Label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/hn_space_8"
+            android:format12Hour="h:mm"
+            android:format24Hour="HH:mm"
             android:textColor="@color/hn_text_primary"
-            android:textSize="@dimen/hn_text_env_value"
+            android:textSize="13sp"
             tools:text="19:28" />
     </LinearLayout>
 
@@ -380,16 +372,18 @@
         <!-- Central vehicle visualization: dark render + airflow overlay. -->
         <FrameLayout
             android:layout_width="@dimen/hn_vehicle_width"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_marginHorizontal="@dimen/hn_space_4">
 
             <ImageView
                 android:id="@+id/ivVehicleVisualization"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:background="@drawable/bg_vehicle_stage"
+                android:clipToOutline="true"
                 android:contentDescription="@string/app_name"
-                android:scaleType="fitStart"
-                android:src="@drawable/vehicle_top_dark" />
+                android:scaleType="fitCenter"
+                android:src="@drawable/vehicle_top_theme" />
 
             <com.hypernova.climate.ui.view.CabinAirflowView
                 android:id="@+id/airflowView"
@@ -680,58 +674,57 @@
             android:contentDescription="@string/cd_fan_plus" />
     </LinearLayout>
 
-    <!-- ========= AIRFLOW DIRECTION + FRESH / RECIRCULATE ========= -->
+    <!-- ================ AIRFLOW + FRESH/RECIRCULATE ================ -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="@dimen/hn_airflow_row_height"
         android:layout_marginTop="@dimen/hn_section_gap"
-        android:orientation="vertical"
-        android:gravity="center_vertical"
-        android:background="@drawable/bg_card"
-        android:paddingHorizontal="@dimen/hn_space_12"
-        android:paddingVertical="@dimen/hn_space_8">
+        android:orientation="horizontal"
+        android:baselineAligned="false">
 
-        <TextView
-            style="@style/HnText.SectionTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/label_airflow" />
-
-        <!-- One row: 3 airflow icons | divider | fresh air, recirculate -->
+        <!-- Fresh air / recirculate -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/hn_space_8"
+            android:layout_height="match_parent"
             android:orientation="horizontal"
-            android:gravity="center_vertical">
-
-            <ImageButton android:id="@+id/btnAirflowFace" style="@style/HnControlButton"
+            android:gravity="center_vertical"
+            android:background="@drawable/bg_card"
+            android:padding="@dimen/hn_space_8">
+            <LinearLayout
+                android:id="@+id/btnFreshAir"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
                 android:background="@drawable/bg_control_selected"
-                android:src="@drawable/car_fan_mid_left_24px" app:tint="@color/hn_primary_cyan"
-                android:contentDescription="@string/cd_airflow_face" />
-            <ImageButton android:id="@+id/btnAirflowFeet" style="@style/HnControlButton"
+                android:padding="@dimen/hn_space_8">
+                <ImageView android:layout_width="@dimen/hn_icon_medium"
+                    android:layout_height="@dimen/hn_icon_medium"
+                    android:src="@drawable/ic_fresh_air" app:tint="@color/hn_primary_cyan"
+                    android:contentDescription="@string/label_fresh_air" />
+                <TextView style="@style/HnText.Label" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:layout_marginTop="@dimen/hn_space_4"
+                    android:text="@string/label_fresh_air" />
+            </LinearLayout>
+            <LinearLayout
+                android:id="@+id/btnRecirculation"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:layout_marginStart="@dimen/hn_space_8"
-                android:src="@drawable/car_fan_low_left_24px" app:tint="@color/hn_text_secondary"
-                android:contentDescription="@string/cd_airflow_feet" />
-            <ImageButton android:id="@+id/btnAirflowFaceFeet" style="@style/HnControlButton"
-                android:layout_marginStart="@dimen/hn_space_8"
-                android:src="@drawable/car_fan_low_mid_left_24px" app:tint="@color/hn_text_secondary"
-                android:contentDescription="@string/cd_airflow_face_feet" />
-
-            <View
-                android:layout_width="1dp"
-                android:layout_height="40dp"
-                android:layout_marginHorizontal="@dimen/hn_space_12"
-                android:background="@color/hn_border_subtle" />
-
-            <ImageButton android:id="@+id/btnFreshAir" style="@style/HnControlButton"
-                android:background="@drawable/bg_control_selected"
-                android:src="@drawable/ic_fresh_air" app:tint="@color/hn_primary_cyan"
-                android:contentDescription="@string/label_fresh_air" />
-            <ImageButton android:id="@+id/btnRecirculation" style="@style/HnControlButton"
-                android:layout_marginStart="@dimen/hn_space_8"
-                android:src="@drawable/ic_recirculate" app:tint="@color/hn_text_secondary"
-                android:contentDescription="@string/label_recirculate" />
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="@drawable/bg_control_toggle"
+                android:padding="@dimen/hn_space_8">
+                <ImageView android:layout_width="@dimen/hn_icon_medium"
+                    android:layout_height="@dimen/hn_icon_medium"
+                    android:src="@drawable/ic_recirculate" app:tint="@color/hn_text_secondary"
+                    android:contentDescription="@string/label_recirculate" />
+                <TextView style="@style/HnText.Label" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:layout_marginTop="@dimen/hn_space_4"
+                    android:text="@string/label_recirculate" />
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 
@@ -774,84 +767,7 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- ====================== SEAT HEATING ====================== -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/hn_seat_row_height"
-        android:layout_marginTop="@dimen/hn_section_gap"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:baselineAligned="false">
 
-        <LinearLayout
-            android:id="@+id/btnDriverSeatHeating"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:background="@drawable/bg_card"
-            android:paddingHorizontal="@dimen/hn_space_12">
-            <ImageView android:layout_width="@dimen/hn_icon_medium" android:layout_height="@dimen/hn_icon_medium"
-                android:src="@drawable/ic_seat_heat" app:tint="@color/hn_warning"
-                android:contentDescription="@string/label_driver_seat_heating" />
-            <TextView style="@style/HnText.Label" android:layout_width="0dp"
-                android:layout_height="wrap_content" android:layout_weight="1"
-                android:layout_marginStart="@dimen/hn_space_8"
-                android:text="@string/label_driver_seat_heating" />
-            <LinearLayout android:id="@+id/driverSeatHeatingLevel"
-                android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:orientation="horizontal">
-                <View android:layout_width="8dp" android:layout_height="8dp" android:layout_marginEnd="3dp"
-                    android:background="@drawable/bg_seg_off" />
-                <View android:layout_width="8dp" android:layout_height="8dp" android:layout_marginEnd="3dp"
-                    android:background="@drawable/bg_seg_off" />
-                <View android:layout_width="8dp" android:layout_height="8dp"
-                    android:background="@drawable/bg_seg_off" />
-            </LinearLayout>
-        </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/btnPassengerSeatHeating"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:layout_marginStart="@dimen/hn_section_gap"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:background="@drawable/bg_card"
-            android:paddingHorizontal="@dimen/hn_space_12">
-            <ImageView android:layout_width="@dimen/hn_icon_medium" android:layout_height="@dimen/hn_icon_medium"
-                android:src="@drawable/ic_seat_heat" app:tint="@color/hn_warning"
-                android:contentDescription="@string/label_passenger_seat_heating" />
-            <TextView style="@style/HnText.Label" android:layout_width="0dp"
-                android:layout_height="wrap_content" android:layout_weight="1"
-                android:layout_marginStart="@dimen/hn_space_8"
-                android:text="@string/label_passenger_seat_heating" />
-            <LinearLayout android:id="@+id/passengerSeatHeatingLevel"
-                android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:orientation="horizontal">
-                <View android:layout_width="8dp" android:layout_height="8dp" android:layout_marginEnd="3dp"
-                    android:background="@drawable/bg_seg_off" />
-                <View android:layout_width="8dp" android:layout_height="8dp" android:layout_marginEnd="3dp"
-                    android:background="@drawable/bg_seg_off" />
-                <View android:layout_width="8dp" android:layout_height="8dp"
-                    android:background="@drawable/bg_seg_off" />
-            </LinearLayout>
-        </LinearLayout>
-    </LinearLayout>
-
-    <!-- ==================== CONFIRMATION BAR ==================== -->
-    <TextView
-        android:id="@+id/tvConfirmationMessage"
-        style="@style/HnText.Label"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/hn_section_gap"
-        android:gravity="center"
-        android:drawablePadding="@dimen/hn_space_8"
-        app:drawableStartCompat="@drawable/ic_check"
-        app:drawableTint="@color/hn_success"
-        android:text="@string/confirmation_hint" />
 
 </LinearLayout>

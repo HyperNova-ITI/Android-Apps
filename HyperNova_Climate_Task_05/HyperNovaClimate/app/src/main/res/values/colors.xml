@@ -4,36 +4,39 @@
     Do not redefine these values locally in components.
 -->
 <resources>
-    <!-- Backgrounds & surfaces -->
-    <color name="hn_background_primary">#020A13</color>
-    <color name="hn_background_secondary">#06121F</color>
-    <color name="hn_surface_primary">#071524</color>
-    <color name="hn_surface_secondary">#0B1B2C</color>
-    <color name="hn_surface_overlay">#102337</color>
+    <!-- Backgrounds & surfaces: light HyperNova palette. -->
+    <color name="hn_background_primary">#EEF4F8</color>
+    <color name="hn_background_secondary">#E3EDF3</color>
+    <color name="hn_surface_primary">#F7FBFD</color>
+    <color name="hn_surface_secondary">#EAF2F6</color>
+    <color name="hn_surface_overlay">#DDEAF0</color>
+    <color name="hn_vehicle_stage">#020A13</color>
 
     <!-- Borders -->
-    <color name="hn_border_primary">#506174</color>
-    <color name="hn_border_subtle">#293847</color>
+    <color name="hn_border_primary">#8298A7</color>
+    <color name="hn_border_subtle">#B8C8D2</color>
 
     <!-- Primary interaction (cyan) -->
-    <color name="hn_primary_cyan">#25D9E8</color>
-    <color name="hn_primary_cyan_pressed">#1FC2D0</color>
-    <color name="hn_primary_cyan_dark">#0B8493</color>
+    <color name="hn_primary_cyan">#087F91</color>
+    <color name="hn_primary_cyan_pressed">#066D7D</color>
+    <color name="hn_primary_cyan_dark">#075B69</color>
 
     <!-- Text -->
-    <color name="hn_text_primary">#F5F7FA</color>
-    <color name="hn_text_secondary">#A7B0BE</color>
-    <color name="hn_text_disabled">#687486</color>
+    <color name="hn_text_primary">#071722</color>
+    <color name="hn_text_secondary">#4E616E</color>
+    <color name="hn_text_disabled">#82919B</color>
 
     <!-- Status -->
-    <color name="hn_success">#39EA4B</color>
-    <color name="hn_warning">#F5A623</color>
-    <color name="hn_error">#FF5E68</color>
+    <color name="hn_success">#087B34</color>
+    <color name="hn_warning">#9A5900</color>
+    <color name="hn_error">#C62B42</color>
 
     <color name="hn_white">#FFFFFF</color>
     <color name="hn_transparent">#00000000</color>
+    <color name="hn_icon_background">#EEF4F8</color>
+    <color name="hn_icon_foreground">#075B69</color>
 
     <!-- Convenience translucent tints for selected/glow states -->
-    <color name="hn_cyan_tint_16">#2925D9E8</color>
-    <color name="hn_amber_tint_16">#29F5A623</color>
+    <color name="hn_cyan_tint_16">#29087F91</color>
+    <color name="hn_amber_tint_16">#299A5900</color>
 </resources>
