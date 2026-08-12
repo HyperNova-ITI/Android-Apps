@@ -2,7 +2,14 @@ package com.hypernova.launcher.ui
 
 import android.animation.ValueAnimator
 import android.content.Context
+import android.content.pm.PackageManager
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
+import android.os.Bundle
+import android.os.Looper
 import android.os.SystemClock
+import android.util.Log
 import android.view.Gravity
 import androidx.core.content.ContextCompat
 import com.hypernova.launcher.R
@@ -62,12 +69,53 @@ class LauncherNavigationMapController(
     private var availabilityChanged: ((Boolean) -> Unit)? = null
     private var currentNightMode = false
 
+    /*
+     * HOME current-position source.
+     *
+     * Navigation route geometry still belongs to HyperNova Navigation,
+     * but the Launcher marker comes from Android's real LocationManager.
+     *
+     * This deliberately prevents the Launcher HOME widget from drawing
+     * Navigation's simulated route-following vehicle position.
+     */
+    private val locationManager =
+        context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+
+    private var liveLocationPosition: NavigationPreviewPoint? = null
+    private var liveLocationBearingDegrees: Float? = null
+    private var locationUpdatesStarted = false
+
+    private val locationListener =
+        object : LocationListener {
+            override fun onLocationChanged(location: Location) {
+                handleLiveLocation(location)
+            }
+
+            @Suppress("DEPRECATION")
+            override fun onStatusChanged(
+                provider: String?,
+                status: Int,
+                extras: Bundle?,
+            ) = Unit
+
+            override fun onProviderEnabled(provider: String) = Unit
+
+            override fun onProviderDisabled(provider: String) = Unit
+        }
+
     private val failureListener =
         MapView.OnDidFailLoadingMapListener {
             if (destroyed || styleReady) return@OnDidFailLoadingMapListener
             if (!fallbackAttempted) {
                 fallbackAttempted = true
-                map?.let { readyMap -> loadStyle(readyMap, FALLBACK_STYLE_URL) }
+
+                /*
+                 * Remote map failed. Keep HOME usable and visible instead
+                 * of leaving the Navigation widget black.
+                 */
+                map?.let { readyMap ->
+                    loadIdleStyle(readyMap)
+                }
             } else {
                 availabilityChanged?.invoke(false)
             }
@@ -84,6 +132,13 @@ class LauncherNavigationMapController(
         currentNightMode = isNightMode
         availabilityChanged = onAvailabilityChanged
         onAvailabilityChanged(false)
+
+        /*
+         * HOME widget uses the configured HyperNova demo origin
+         * when no Navigation route is active.
+         *
+         * No GPS / fused provider is required here.
+         */
         mapView.getMapAsync { readyMap ->
             if (destroyed) return@getMapAsync
             map = readyMap
@@ -100,6 +155,21 @@ class LauncherNavigationMapController(
                 logoGravity = Gravity.TOP or Gravity.END
                 attributionGravity = Gravity.TOP or Gravity.END
             }
+            /*
+             * HOME initially has no active route.
+             *
+             * Do NOT wait for a remote style before showing the fixed
+             * HyperNova ITI position. Load a bundled in-memory MapLibre
+             * style immediately.
+             */
+            /*
+             * Always start with the real themed map.
+             *
+             * Light -> OpenFreeMap Positron
+             * Dark  -> OpenFreeMap Dark
+             *
+             * The local zero-network style remains failure fallback only.
+             */
             loadStyle(
                 readyMap,
                 if (isNightMode) DARK_STYLE_URL else LIGHT_STYLE_URL,
@@ -154,8 +224,14 @@ class LauncherNavigationMapController(
             return
         }
 
-        updateMarkerSmoothly(newCurrentPosition, newBearingDegrees)
-        if (newCurrentPosition != null) followPosition(newCurrentPosition)
+        /*
+         * Do not animate or follow Navigation's route-owned position here.
+         * That position is currently simulation-backed.
+         *
+         * HOME uses Android's live LocationManager position instead.
+         * The OSRM route itself remains fully authoritative and unchanged.
+         */
+        reapplyScene()
     }
 
     fun clearNavigation() {
@@ -168,6 +244,17 @@ class LauncherNavigationMapController(
         renderedPosition = null
         renderedBearingDegrees = null
         pendingRouteFit = false
+
+        /*
+         * Route ended / no route:
+         *
+         * Never reload the MapLibre style here. HOME may render this state
+         * repeatedly and continuous style reloads prevent the map from ever
+         * settling.
+         *
+         * reapplyScene() keeps the current style and publishes the fixed
+         * ITI HOME position immediately.
+         */
         reapplyScene()
     }
 
@@ -187,6 +274,7 @@ class LauncherNavigationMapController(
 
     fun destroy() {
         destroyed = true
+        stopLiveLocationUpdates()
         markerAnimator?.cancel()
         markerAnimator = null
         availabilityChanged = null
@@ -201,6 +289,47 @@ class LauncherNavigationMapController(
             readyMap,
             if (currentNightMode) DARK_STYLE_URL else LIGHT_STYLE_URL,
         )
+    }
+
+    /**
+     * Deterministic HOME idle renderer.
+     *
+     * This style contains no remote sources, tiles, fonts or icons.
+     * Therefore the HOME widget can always become drawable even when
+     * the online OpenFreeMap style is unavailable.
+     *
+     * HyperNova route/vehicle sources and layers are added afterwards
+     * by addSourcesAndLayers().
+     */
+    private fun loadIdleStyle(readyMap: MapLibreMap) {
+        styleReady = false
+        fallbackAttempted = false
+
+        val styleJson =
+            if (currentNightMode) {
+                IDLE_DARK_STYLE_JSON
+            } else {
+                IDLE_LIGHT_STYLE_JSON
+            }
+
+        readyMap.setStyle(
+            Style.Builder().fromJson(styleJson)
+        ) { style ->
+            if (destroyed) return@setStyle
+
+            styleReady = true
+
+            addSourcesAndLayers(style)
+
+            /*
+             * reapplyScene() will select DEFAULT_HOME_POSITION whenever
+             * routePoints is empty and centerIdleLocation() will move the
+             * camera to the ITI demo location.
+             */
+            reapplyScene()
+
+            availabilityChanged?.invoke(true)
+        }
     }
 
     private fun loadStyle(readyMap: MapLibreMap, styleUrl: String) {
@@ -294,19 +423,51 @@ class LauncherNavigationMapController(
                     ?: emptyArray(),
             ),
         )
+        /*
+         * Prefer real Android location for the HOME marker.
+         *
+         * When a route exists we intentionally do NOT fall back to
+         * Navigation's simulated currentPosition.
+         */
+        /*
+         * HOME behavior:
+         *
+         * No route:
+         *   Always show the fixed HyperNova ITI demo origin.
+         *
+         * Active route:
+         *   Keep Navigation's route-owned position.
+         */
+        val effectivePosition =
+            if (routePoints.isEmpty()) {
+                DEFAULT_HOME_POSITION
+            } else {
+                currentPosition
+            }
+
+        val effectiveBearing =
+            if (routePoints.isEmpty()) {
+                0.0f
+            } else {
+                currentBearingDegrees
+            }
+
         updatePointSource(
             style,
             START_SOURCE,
-            routePoints.firstOrNull().takeIf { currentPosition == null },
+            routePoints.firstOrNull().takeIf { effectivePosition == null },
         )
         updatePointSource(style, DESTINATION_SOURCE, routePoints.lastOrNull())
-        renderedPosition = currentPosition
-        renderedBearingDegrees = currentBearingDegrees
+
+        renderedPosition = effectivePosition
+        renderedBearingDegrees = effectiveBearing
         updateVehicleSource(style, renderedPosition, renderedBearingDegrees)
 
         if (pendingRouteFit) {
             pendingRouteFit = false
             fitRoute()
+        } else if (routePoints.size < 2 && effectivePosition != null) {
+            centerIdleLocation(effectivePosition)
         }
     }
 
@@ -426,6 +587,155 @@ class LauncherNavigationMapController(
         )
     }
 
+    private fun startLiveLocationUpdates() {
+        if (locationUpdatesStarted || destroyed) return
+
+        val fineGranted =
+            ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.ACCESS_FINE_LOCATION,
+            ) == PackageManager.PERMISSION_GRANTED
+
+        val coarseGranted =
+            ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.ACCESS_COARSE_LOCATION,
+            ) == PackageManager.PERMISSION_GRANTED
+
+        if (!fineGranted && !coarseGranted) {
+            Log.w(TAG, "HOME location unavailable: location permission not granted")
+            return
+        }
+
+        val provider =
+            listOf(
+                FUSED_PROVIDER,
+                LocationManager.GPS_PROVIDER,
+                LocationManager.NETWORK_PROVIDER,
+            ).firstOrNull { candidate ->
+                runCatching {
+                    locationManager.getProvider(candidate) != null &&
+                        locationManager.isProviderEnabled(candidate)
+                }.getOrDefault(false)
+            }
+
+        if (provider == null) {
+            Log.w(TAG, "HOME location unavailable: no enabled location provider")
+            return
+        }
+
+        runCatching {
+            locationManager.getLastKnownLocation(provider)
+        }.getOrNull()?.let(::handleLiveLocation)
+
+        try {
+            locationManager.requestLocationUpdates(
+                provider,
+                LOCATION_UPDATE_INTERVAL_MS,
+                LOCATION_UPDATE_MIN_DISTANCE_METERS,
+                locationListener,
+                Looper.getMainLooper(),
+            )
+
+            locationUpdatesStarted = true
+            Log.i(TAG, "HOME live location started provider=$provider")
+        } catch (security: SecurityException) {
+            Log.w(TAG, "HOME live location permission rejected", security)
+        } catch (failure: Exception) {
+            Log.w(TAG, "HOME live location could not start", failure)
+        }
+    }
+
+    private fun stopLiveLocationUpdates() {
+        if (!locationUpdatesStarted) return
+
+        runCatching {
+            locationManager.removeUpdates(locationListener)
+        }
+
+        locationUpdatesStarted = false
+    }
+
+    private fun handleLiveLocation(location: Location) {
+        val latitude = location.latitude
+        val longitude = location.longitude
+
+        if (
+            !latitude.isFinite() ||
+            !longitude.isFinite() ||
+            latitude !in -90.0..90.0 ||
+            longitude !in -180.0..180.0
+        ) {
+            return
+        }
+
+        val point =
+            NavigationPreviewPoint(
+                latitude = latitude,
+                longitude = longitude,
+            )
+
+        liveLocationPosition = point
+        liveLocationBearingDegrees =
+            location.bearing
+                .takeIf { location.hasBearing() && it.isFinite() }
+
+        mapView.post {
+            if (destroyed || !styleReady) return@post
+
+            val style = map?.style ?: return@post
+
+            renderedPosition = point
+            renderedBearingDegrees = liveLocationBearingDegrees
+
+            updatePointSource(
+                style,
+                START_SOURCE,
+                routePoints.firstOrNull().takeIf { point == null },
+            )
+
+            updateVehicleSource(
+                style,
+                point,
+                liveLocationBearingDegrees,
+            )
+
+            if (routePoints.size < 2) {
+                centerIdleLocation(point)
+            }
+        }
+    }
+
+    private fun centerIdleLocation(position: NavigationPreviewPoint) {
+        val readyMap = map ?: return
+        if (!styleReady || mapView.width <= 0 || mapView.height <= 0) {
+            mapView.post {
+                if (!destroyed && routePoints.size < 2) {
+                    liveLocationPosition?.let(::centerIdleLocation)
+                }
+            }
+            return
+        }
+
+        val camera =
+            CameraPosition.Builder()
+                .target(
+                    LatLng(
+                        position.latitude,
+                        position.longitude,
+                    ),
+                )
+                .zoom(IDLE_LOCATION_ZOOM)
+                .bearing(0.0)
+                .tilt(0.0)
+                .build()
+
+        readyMap.easeCamera(
+            CameraUpdateFactory.newCameraPosition(camera),
+            IDLE_CAMERA_EASE_MILLIS,
+        )
+    }
+
     private fun interpolateBearing(
         start: Float?,
         end: Float?,
@@ -441,6 +751,48 @@ class LauncherNavigationMapController(
         (value * context.resources.displayMetrics.density).toInt()
 
     companion object {
+        /*
+         * Local zero-network HOME styles.
+         *
+         * These guarantee that the HOME Navigation widget has a valid
+         * MapLibre style even when no online map style is available.
+         */
+        private val IDLE_LIGHT_STYLE_JSON =
+            """
+            {
+              "version": 8,
+              "name": "HyperNova Home Light",
+              "sources": {},
+              "layers": [
+                {
+                  "id": "hypernova-idle-background",
+                  "type": "background",
+                  "paint": {
+                    "background-color": "#EEF3F7"
+                  }
+                }
+              ]
+            }
+            """.trimIndent()
+
+        private val IDLE_DARK_STYLE_JSON =
+            """
+            {
+              "version": 8,
+              "name": "HyperNova Home Dark",
+              "sources": {},
+              "layers": [
+                {
+                  "id": "hypernova-idle-background",
+                  "type": "background",
+                  "paint": {
+                    "background-color": "#071521"
+                  }
+                }
+              ]
+            }
+            """.trimIndent()
+
         const val DARK_STYLE_URL = "https://tiles.openfreemap.org/styles/dark"
         const val LIGHT_STYLE_URL = "https://tiles.openfreemap.org/styles/positron"
         const val FALLBACK_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
@@ -461,5 +813,25 @@ class LauncherNavigationMapController(
         private const val FOLLOW_CAMERA_INTERVAL_MILLIS = 800L
         private const val FOLLOW_ZOOM = 15.8
         private const val FOLLOW_TOP_PADDING_FRACTION = 0.28
+
+        /*
+         * HyperNova demo origin / ITI fixed position.
+         *
+         * This is intentionally fixed and does not represent
+         * live GPS position.
+         */
+        private val DEFAULT_HOME_POSITION =
+            NavigationPreviewPoint(
+                latitude = 30.07112,
+                longitude = 31.02075,
+            )
+
+        private const val FUSED_PROVIDER = "fused"
+        private const val LOCATION_UPDATE_INTERVAL_MS = 1_000L
+        private const val LOCATION_UPDATE_MIN_DISTANCE_METERS = 1f
+        private const val IDLE_LOCATION_ZOOM = 14.7
+        private const val IDLE_CAMERA_EASE_MILLIS = 550
+
+        private const val TAG = "LauncherNavigationMap"
     }
 }

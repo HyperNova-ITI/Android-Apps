@@ -2263,6 +2263,28 @@ class MainActivity : AppCompatActivity() {
             onReady = {
                 mapReady = true
                 mapLoadFailed = false
+
+                /*
+                 * HYPERNOVA_MAPLIBRE_BRANDING_DISABLED_FINAL
+                 *
+                 * NavigationMapController has completed its MapLibre
+                 * initialization at this point.
+                 *
+                 * Disable BOTH MapLibre UI branding controls here so
+                 * later map/style initialization cannot leave them visible.
+                 */
+                mapView.getMapAsync { readyMap ->
+                    readyMap.uiSettings.apply {
+                        setLogoEnabled(false)
+                        setAttributionEnabled(false)
+                    }
+
+                    Log.i(
+                        TAG_NAVIGATION,
+                        "MapLibre logo + attribution disabled"
+                    )
+                }
+
                 mainHandler.removeCallbacks(mapLoadTimeout)
                 updateMapStateCardVisibility()
                 renderMapScene()
