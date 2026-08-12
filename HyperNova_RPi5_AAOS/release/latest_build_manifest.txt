@@ -1,0 +1,37 @@
+HyperNova Raspberry Pi 5 AAOS final build
+Generated: 2026-08-12T21:13:26+03:00
+
+Product:
+hypernova_rpi5_car-trunk_staging-userdebug
+
+Source Git:
+034e24a25e48c96bd0cc4b4860b07b886278c466
+
+Launcher source APK:
+c782f8303008cdb179c374d824b55d9c7151585e3535333ec1d6d77a52b6a336  /home/ayman/ITI/Android-Apps/HyperNova_Launcher_Task_01/app/build/outputs/apk/release/app-release-unsigned.apk
+
+Navigation source APK:
+d4b60becc9a301d63876dec98534d5f56729d85613b0185168e233cdd0b77a47  /home/ayman/ITI/Android-Apps/HyperNova_Navigation_Task_03/HyperNovaNavigation/app/build/outputs/apk/release/app-release-unsigned.apk
+
+Climate preserved AOSP prebuilt:
+22e48640e70c12a1ee958a5053bc4f6c019a9801cecf525079599f29c7bbabba  /media/ayman/5d150459-9442-4a28-abb0-2da4c090069f/aosp_15_rpi/AOSP15/vendor/hypernova/rpi5/apps/HyperNovaClimate/HyperNovaClimate.apk
+
+Baked system Launcher:
+203aca74d5da752a9b1620245a75153ab4cd0b8abc513dbef36a963f0249e993  /media/ayman/5d150459-9442-4a28-abb0-2da4c090069f/aosp_15_rpi/AOSP15/out/target/product/rpi5/system/system_ext/priv-app/HyperNovaLauncher/HyperNovaLauncher.apk
+
+Baked system Navigation:
+a16c0378aefea5ec3eac0b4c0fccf4ae7f1165cd455543837fdba204c337bf07  /media/ayman/5d150459-9442-4a28-abb0-2da4c090069f/aosp_15_rpi/AOSP15/out/target/product/rpi5/system/system_ext/app/HyperNovaNavigation/HyperNovaNavigation.apk
+
+Baked system Climate:
+77b088dc35e72a002acde98b3eef5c3c0751058ac545df90abdc812458b92083  /media/ayman/5d150459-9442-4a28-abb0-2da4c090069f/aosp_15_rpi/AOSP15/out/target/product/rpi5/system/system_ext/app/HyperNovaClimate/HyperNovaClimate.apk
+
+Partition images:
+a0f8f9de9507fc0cb684cd12601c6307c6b33aec92eae027a64a0849b70e4c09  /media/ayman/5d150459-9442-4a28-abb0-2da4c090069f/aosp_15_rpi/AOSP15/out/target/product/rpi5/boot.img
+f2179b7e489956494582feb5d47464411e748ddb4a925cdad2e02e9d6f5bc1cd  /media/ayman/5d150459-9442-4a28-abb0-2da4c090069f/aosp_15_rpi/AOSP15/out/target/product/rpi5/system.img
+f3c65af472c16fd79235932605c68b1d76bdeb63f5085ba7d6dc79aafbbecb89  /media/ayman/5d150459-9442-4a28-abb0-2da4c090069f/aosp_15_rpi/AOSP15/out/target/product/rpi5/vendor.img
+
+Full image:
+2ef291e1e105e8b4a815317bc0f854dcf43e267456089d61b2603c21deabe701  RaspberryVanillaAOSP15-20260812-hypernova_rpi5_car-HyperNova-FINAL-20260812-210913.img
+
+Full image path:
+/media/ayman/5d150459-9442-4a28-abb0-2da4c090069f/aosp_15_rpi/AOSP15/out/target/product/rpi5/RaspberryVanillaAOSP15-20260812-hypernova_rpi5_car-HyperNova-FINAL-20260812-210913.img

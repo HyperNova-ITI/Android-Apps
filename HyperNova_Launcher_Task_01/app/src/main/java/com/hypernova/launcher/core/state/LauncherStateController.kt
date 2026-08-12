@@ -230,6 +230,21 @@ class LauncherStateController(
         val unavailableStatus = createAvailabilityStatus(availability, getAppName(destination))
         val status = when {
             unavailableStatus != null -> unavailableStatus
+
+            /*
+             * HOME has a deterministic fixed ITI demo location even while
+             * the Navigation binder is still connecting.
+             *
+             * Do not show "Connecting..." as the idle map subtitle.
+             */
+            !isActive &&
+                runtimeState != NavigationRuntimeState.CALCULATING &&
+                runtimeState != NavigationRuntimeState.ARRIVED &&
+                runtimeState != NavigationRuntimeState.ERROR ->
+                applicationContext.getString(
+                    R.string.navigation_no_active_route_hint
+                )
+
             appState.connectionState == RuntimeConnectionState.CONNECTING ->
                 applicationContext.getString(R.string.state_connecting)
             appState.connectionState == RuntimeConnectionState.DISCONNECTED ->
