@@ -45,10 +45,16 @@
         android:name="android.permission.ACCESS_FINE_LOCATION"
         tools:node="remove" />
 
-    <!-- This application is designed for Android Automotive OS. -->
+    <!--
+        HyperNova Launcher supports both:
+        - Android Automotive OS
+        - Standard Android 16 NXP guest
+
+        Automotive must therefore remain optional on the NXP branch.
+    -->
     <uses-feature
         android:name="android.hardware.type.automotive"
-        android:required="true" />
+        android:required="false" />
 
     <!-- MapLibre must not make the boot-critical HOME depend on Vulkan. -->
     <uses-feature
