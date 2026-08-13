@@ -19,6 +19,7 @@
 
 # Generated packages, profiles, and logs
 *.apk
+*.idsig
 *.aab
 *.ap_
 *.hprof

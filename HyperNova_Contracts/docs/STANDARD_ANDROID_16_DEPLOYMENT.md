@@ -16,25 +16,26 @@ feature.
 | Climate | Vehicle Gateway AIDL only; no CarProperty/VHAL backend |
 | Vehicle Gateway | normal headless bound service; HNVG to QNX `192.168.0.51:6100` |
 | Media | Media3, WebView/Internet radio, local media, and optional Bluetooth phone audio |
-| Phone | normal Telecom/dialer APIs plus optional platform HFP-client bridge |
+| Phone | normal Telecom/dialer APIs; HFP client only if already exposed by the guest |
 
 Do not install the `HyperNovaSettings` CarSettings fork or other APK/source snapshots under
 `HyperNova_RPi5_AAOS` on this guest. Those artifacts are retained only for the earlier AAOS target.
 
-## Base-image capabilities still required
+## ADB-only deployment boundary
 
-These are Android platform capabilities, not Android Automotive dependencies:
+The team will not rebuild the Android image. Every HyperNova application is installed with ADB.
 
-1. Make HyperNova Launcher the persistent/default HOME application.
-2. Sign Launcher, NOVA, Navigation, Climate, Phone, and Vehicle Gateway with the same agreed
-   certificate so their signature-protected AIDL permissions work.
-3. Provide Internet, a working WebView implementation, audio output, and the required runtime
-   permission policy.
-4. If the demo includes phone-call control, enable the Bluetooth HFP Client profile and preinstall
-   the platform-signed `HyperNovaConnectivityService`. It uses platform Bluetooth APIs but no
-   `android.car` API. Without this image capability Phone must show HFP unavailable honestly.
-5. If the demo includes phone audio in Media, enable A2DP Sink/AVRCP Controller in the Bluetooth
-   stack. Without it Media still supports its other sources and reports phone audio unavailable.
+1. Sign Launcher, NOVA, Navigation, Climate, Phone, and Vehicle Gateway with one local demo
+   certificate so their signature-protected AIDL permissions work. This does not need the Android
+   platform certificate.
+2. Install the packages with `adb install`, grant only their declared runtime permissions, and use
+   `cmd package set-home-activity` to select Launcher.
+3. Use the guest's existing Internet, WebView, audio output, and Bluetooth capabilities.
+4. An ordinary ADB-installed APK cannot add system Bluetooth profiles or acquire platform-only HFP
+   client privileges. Real paired-phone HFP is available only if the current guest already exposes
+   a compatible service/profile; otherwise Phone must report unavailable honestly.
+5. Phone audio in Media similarly requires A2DP Sink/AVRCP Controller already enabled in the guest.
+   Without it Media still supports YouTube, Internet radio, and local playback.
 
 The Launcher Settings card first opens `com.hypernova.settings` when that optional app exists, then
 falls back to the stock `android.settings.SETTINGS` activity on the NXP guest.
@@ -43,4 +44,7 @@ falls back to the stock `android.settings.SETTINGS` activity on the NXP guest.
 
 All endpoints share bridged `192.168.0.0/24`: RPi5 `.20`, TC397 `.30`, laptop `.40`, NXP host `.50`,
 QNX `.51`, and Android `.100`. QNX remains the only process allowed to own the TC397 TCP command
-connection even though the devices are mutually reachable.
+connection even though the devices are mutually reachable. For the separate CARLA/SOME-IP path,
+the same laptop Ethernet connection also owns `192.168.1.10/24` and QNX owns
+`192.168.1.51/24`. Neither laptop Ethernet subnet has a default gateway; Wi-Fi remains the laptop's
+Internet/default route.

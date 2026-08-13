@@ -8,14 +8,18 @@ Target: NXP i.MX 8QM with standard Android 16 guest and QNX 8 guest
 |---|---:|
 | RPi5 | `192.168.0.20/24` |
 | TC397 | `192.168.0.30/24` |
-| laptop | `192.168.0.40/24` |
+| laptop, HyperNova vehicle network | `192.168.0.40/24` |
 | NXP hypervisor host | `192.168.0.50/24` |
-| QNX guest | `192.168.0.51/24` |
+| QNX guest, HyperNova vehicle network | `192.168.0.51/24` |
 | Android guest | `192.168.0.100/24` |
+| laptop, CARLA/SOME-IP network | `192.168.1.10/24` |
+| QNX guest, CARLA/SOME-IP network | `192.168.1.51/24` |
 
 The NXP inter-guest network must be bridged to the physical switch. Do not proceed while any two
 nodes claim the same address. QNX owns `.51`; a laptop may claim `.51` only when QNX is stopped for
-an isolated relay test.
+an isolated relay test. The laptop and QNX guest deliberately have one address on each subnet. Put
+both laptop addresses on the same Ethernet connection, with no gateway or DNS on that connection;
+the laptop's Wi-Fi remains its Internet/default route.
 
 From Android, verify Pi and QNX reachability:
 
@@ -60,10 +64,12 @@ hypernova-qnx-gateway --tc-address 192.168.0.30
 Only this process may connect to TC397. Production/interconnected use requires an authenticated
 Android/QNX transport; plaintext is a documented demo exception on the isolated switch.
 
-## 4. Build Android APKs
+## 4. Build Android APKs for ADB installation
 
-All applications must be signed by the same certificate because the AIDL permissions use
-`protectionLevel="signature"`. Never mix independently signed debug and release APKs.
+The Android image is not rebuilt. Every application is installed through ADB. All applications must
+be signed by the same local certificate because the AIDL permissions use
+`protectionLevel="signature"`. The certificate does not have to be the Android platform certificate
+for this application-to-application IPC. Never mix independently signed APKs.
 
 Generate or retrieve the private Pi/Android link token without committing it:
 
@@ -87,8 +93,9 @@ Climate, and isolated-demo Vehicle Gateway APKs. The Gateway artifact is built f
 `192.168.0.51:6100` with plaintext explicitly enabled. NOVA is deliberately excluded because its
 private token must be injected locally.
 
-Sign every APK—including the locally built NOVA APK—with the same demo or product key using Android
-SDK `apksigner`. Verify each result with `apksigner verify --verbose APK`.
+For the first isolated demo, use the same local Android debug key for every APK. Sign every
+APK—including the locally built NOVA APK—with Android SDK `apksigner`, then verify each result with
+`apksigner verify --verbose --print-certs APK`. This is a non-production identity.
 
 ## 5. Install order
 
@@ -124,18 +131,18 @@ adb shell am force-stop com.hypernova.launcher
 adb shell am start -a android.intent.action.MAIN -c android.intent.category.HOME
 ```
 
-Grant only the runtime permissions used in the chosen demo. Phone may need Bluetooth, contacts,
-call-log, call, and notification permissions; Media may need Bluetooth, notifications, and media
-access. The final image should own this policy instead of showing dialogs during the presentation.
+Grant only the runtime permissions used in the chosen demo through ADB. Phone may need Bluetooth,
+contacts, call-log, call, and notification permissions; Media may need Bluetooth, notifications,
+and media access.
 
 ## 6. Standard-Android capability check
 
 The APKs have no `android.car`, CarService, VHAL, or Automotive hardware-feature dependency.
 
 - Launcher falls back to stock Android Settings; do not install the old HyperNova CarSettings fork.
-- Phone UI, contacts, call history, and Telecom work with standard Android APIs. Paired-phone HFP
-  control additionally needs HFP Client enabled plus the platform-signed HyperNova connectivity
-  bridge in the image.
+- Phone UI, contacts, call history, and Telecom use standard Android APIs. An ADB-installed app cannot
+  create an HFP Client profile or install the existing system-UID connectivity bridge as an ordinary
+  APK. Paired-phone HFP is therefore conditional on a suitable capability already in the guest.
 - Media Internet radio, YouTube/WebView, and local playback use standard Android. Phone audio
   additionally needs A2DP Sink and AVRCP Controller enabled in the Bluetooth stack.
 - If those Bluetooth profiles are absent, Phone/Media must report unavailable; they must not show a
@@ -165,5 +172,5 @@ adb logcat -v time \
 
 - the QNX image team's working cross-toolchain/package/startup mechanism;
 - the actual bridge/tap configuration that exposes the inter-guest network on Ethernet;
-- a common APK signing key or image-side platform signing procedure;
+- the shared local demo signer (the current laptop debug key is prepared for the first test);
 - HFP Client and A2DP Sink/AVRCP Controller support if Phone/phone-audio are in demo scope.
