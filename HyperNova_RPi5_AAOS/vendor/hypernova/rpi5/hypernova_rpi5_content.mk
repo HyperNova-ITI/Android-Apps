@@ -4,6 +4,7 @@
 
 PRODUCT_PACKAGES += \
     HyperNovaLauncher \
+    HyperNovaAI \
     HyperNovaNavigation \
     HyperNovaMedia \
     HyperNovaClimate \
