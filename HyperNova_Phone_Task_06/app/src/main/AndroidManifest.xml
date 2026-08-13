@@ -23,8 +23,9 @@
     <uses-permission
         android:name="android.permission.CALL_PHONE" />
 
-    <uses-permission
-        android:name="android.permission.CONTROL_INCALL_EXPERIENCE" />
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
 
     <!-- Real contacts -->
     <uses-permission

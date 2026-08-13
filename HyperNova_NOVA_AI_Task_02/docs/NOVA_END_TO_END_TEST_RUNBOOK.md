@@ -30,7 +30,7 @@ ssh -i ~/.ssh/id_ed25519_hypernova_nova nova@hnc-ai30.local hostname -I
 Save the returned LAN address for the rest of the session:
 
 ```bash
-PI_IP=192.168.10.20
+PI_IP=192.168.0.20
 NOVA_LINK_TOKEN="$(openssl rand -hex 32)"
 ```
 

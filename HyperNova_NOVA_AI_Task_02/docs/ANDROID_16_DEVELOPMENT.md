@@ -11,7 +11,7 @@ NXP i.MX 8QM Android 16 guest.
 - Display: 1080 × 1920 portrait
 - Audio: emulator output enabled for NOVA PCM playback
 - HOME app: `com.hypernova.launcher.dev/com.hypernova.launcher.MainActivity`
-- NOVA endpoint default: `192.168.10.20:8765` control and `:8766` audio on HyperNova-LAN
+- NOVA endpoint default: `192.168.0.20:8765` control and `:8766` audio on HyperNova-LAN
 
 The older `Medium_Phone` API 35 AVD remains installed as a fallback, but it is not the project target.
 

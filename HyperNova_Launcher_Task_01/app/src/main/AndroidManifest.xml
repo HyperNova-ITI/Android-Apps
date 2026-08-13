@@ -45,17 +45,6 @@
         android:name="android.permission.ACCESS_FINE_LOCATION"
         tools:node="remove" />
 
-    <!--
-        HyperNova Launcher supports both:
-        - Android Automotive OS
-        - Standard Android 16 NXP guest
-
-        Automotive must therefore remain optional on the NXP branch.
-    -->
-    <uses-feature
-        android:name="android.hardware.type.automotive"
-        android:required="false" />
-
     <!-- MapLibre must not make the boot-critical HOME depend on Vulkan. -->
     <uses-feature
         android:name="android.hardware.vulkan.version"
@@ -142,6 +131,11 @@
         <intent>
             <action android:name="com.hypernova.settings.action.OPEN" />
             <category android:name="android.intent.category.DEFAULT" />
+        </intent>
+
+        <!-- Stock Settings fallback on the standard Android 16 NXP guest. -->
+        <intent>
+            <action android:name="android.settings.SETTINGS" />
         </intent>
 
     </queries>

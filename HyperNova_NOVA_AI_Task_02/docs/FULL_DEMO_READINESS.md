@@ -50,17 +50,21 @@ output and must never block commands or enter the TC397 contract.
 
 ```text
 DES-1008D switch
-  laptop Ethernet 192.168.10.10/24  (relay + Android emulator host)
-  RPi5             192.168.10.20/24  (mic + voice runtime)
-  TC397            192.168.10.30/24  (TCP 6001 / UDP to .10:6000)
+  RPi5             192.168.0.20/24   (mic + voice runtime)
+  TC397            192.168.0.30/24   (TCP 6001 / UDP to QNX .51:6000)
+  laptop Ethernet  192.168.0.40/24   (administration/emulator host)
+  NXP host          192.168.0.50/24
+  QNX guest         192.168.0.51/24   (HNVG 6100 / TC telemetry 6000)
+  Android 16 guest  192.168.0.100/24
 
 Android emulator -> laptop relay at 10.0.2.2:6100
-laptop Wi-Fi      -> Internet/default route; optionally shares Internet to RPi5
+laptop Wi-Fi      -> Internet/default route
 laptop speaker    -> Android audio output during current bench test
 ```
 
-The Ethernet profile has no gateway or DNS. TC397 supports one command client, so stop the bench tool
-before starting the relay and stop the relay before running the bench tool.
+The Ethernet profile has no gateway, DNS, or DHCP. The NXP virtual network must be bridged to the
+physical switch. TC397 supports one command client, so stop the bench tool before starting the relay
+and stop the relay before running the bench tool.
 
 ## Remaining gates
 

@@ -8,7 +8,7 @@ Contract: `../../HyperNova_Contracts/docs/VEHICLE_GATEWAY_PROTOCOL_V1.md`
 ## Responsibilities
 
 - listen for one Android Gateway APK at TCP `:6100`;
-- maintain/reconnect the TC397 TCP session at `192.168.10.30:6001`;
+- maintain/reconnect the TC397 TCP session at `192.168.0.30:6001`;
 - receive TC397 UDP telemetry on `:6000`;
 - validate and translate only the implemented HVAC command;
 - serialize one command in flight and correlate ACK/rejection by TC sequence;
@@ -31,11 +31,15 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-With laptop Ethernet configured as `192.168.10.10/24` and TC397 reachable:
+With QNX stopped, TC397 reachable, and the laptop temporarily holding both its frozen `.40` address
+and QNX's `.51` address so it can receive the unicast telemetry:
 
 ```bash
 ./build/hypernova-qnx-gateway
 ```
+
+Remove the temporary `.51` address before starting QNX. Never let the laptop and QNX claim `.51` at
+the same time.
 
 In a second terminal:
 
@@ -65,13 +69,18 @@ the Gateway service from Climate. No port forwarding is required for the standar
 
 The service uses portable POSIX sockets, `poll`, C++17, and CMake. The QNX owner should:
 
+Frozen deployment addresses are QNX `192.168.0.51/24`, Android `192.168.0.100/24`, hypervisor host
+`192.168.0.50/24`, TC397 `192.168.0.30/24`, RPi5 `192.168.0.20/24`, and laptop
+`192.168.0.40/24`. The NXP virtual network must be bridged to the physical switch before starting
+the service. TC397 telemetry is compiled to QNX `192.168.0.51:6000`.
+
 1. source the matching QNX SDP environment;
 2. configure CMake with the QNX toolchain file supplied by the image project;
 3. build and run `ctest` for the protocol codec;
 4. install `hypernova-qnx-gateway` in the image-owned executable location;
 5. supervise it with the image's process manager and restart-on-failure policy;
 6. give it only the network/resource privileges needed for the TC397 and virtio-net interfaces;
-7. set Android-facing and TC397-facing routes/interfaces in image configuration;
+7. bridge/expose the inter-guest network to the external Ethernet switch and set QNX `.51`;
 8. provision authenticated Android/QNX transport before leaving the isolated demo bench.
 
 Do not hardcode a developer filesystem path in service scripts. The image owner selects the target

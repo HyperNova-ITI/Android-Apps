@@ -26,6 +26,9 @@
 **/__pycache__/
 *.py[cod]
 
+# Curated release handoff bundles are reviewed and hashed before commit.
+!release-apks/**/*.apk
+
 # Local secrets and signing material
 .env
 .env.*

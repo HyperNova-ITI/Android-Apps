@@ -9,7 +9,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 /**
  * Full-screen portrait host for the Climate Home screen (README §7).
  *
- * Runs immersive: the AAOS status and navigation bars are hidden so the app
+ * Runs immersive: the Android status and navigation bars are hidden so the app
  * uses the entire 1080x1920 panel, matching the approved reference. Bars can be
  * revealed with a swipe and auto-hide again.
  */

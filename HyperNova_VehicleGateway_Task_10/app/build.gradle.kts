@@ -4,6 +4,9 @@ plugins {
 
 val relayHost = providers.gradleProperty("gatewayHost").orElse("10.0.2.2")
 val relayPort = providers.gradleProperty("gatewayPort").orElse("6100")
+val allowPlaintextGateway = providers.gradleProperty("gatewayAllowPlaintext")
+    .map { it.toBooleanStrict() }
+    .orElse(false)
 
 android {
     namespace = "com.hypernova.vehiclegateway"
@@ -32,7 +35,11 @@ android {
         }
         release {
             optimization.enable = false
-            buildConfigField("boolean", "ALLOW_PLAINTEXT_GATEWAY", "false")
+            buildConfigField(
+                "boolean",
+                "ALLOW_PLAINTEXT_GATEWAY",
+                allowPlaintextGateway.get().toString(),
+            )
         }
     }
 

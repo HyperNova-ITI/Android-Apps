@@ -34,13 +34,18 @@ listen address changes when it moves from Linux to the QNX guest.
 
 | Node | Address | Role |
 |---|---|---|
-| Laptop relay today / QNX final | `192.168.10.10/24` on the TC397 network | TC397 command authority and telemetry receiver |
-| RPi5 | `192.168.10.20/24` | NOVA voice node |
-| TC397 | `192.168.10.30/24` | TCP server `6001`; UDP telemetry producer to `.10:6000` |
+| NXP hypervisor host | `192.168.0.50/24` | Platform management |
+| QNX guest | `192.168.0.51/24` | HNVG server `6100`; TC397 UDP receiver `6000` |
+| Android 16 guest | `192.168.0.100/24` | HyperNova application runtime |
+| RPi5 | `192.168.0.20/24` | NOVA voice node |
+| TC397 | `192.168.0.30/24` | TCP server `6001`; UDP telemetry producer to `.51:6000` |
+| Laptop | `192.168.0.40/24` | Administration and bench tests; never the final command authority |
 | Android emulator -> laptop | `10.0.2.2:6100` | Emulator alias for the host relay |
-| Android guest -> QNX | Build-time configured inter-guest address, TCP `6100` | Final HNVG v1 link |
+| Android guest -> QNX | `192.168.0.51:6100` | Final HNVG v1 link |
 
-The Ethernet network has no DHCP, gateway, or DNS. The laptop may keep Wi-Fi as its default route.
+The frozen deployment is one bridged `192.168.0.0/24` Layer-2 subnet with no DHCP, gateway, or DNS.
+The laptop may keep Wi-Fi as its default route. Even though TC397 is reachable at Layer 3, only QNX
+may open its single TCP command connection; Android applications use the typed Gateway AIDL.
 
 ## 3. Android/QNX transport
 

@@ -4,11 +4,6 @@ plugins {
     alias(libs.plugins.android.application)
 }
 
-// Deployment macro: which vehicle backend is compiled in as the default.
-// Read from gradle.properties (climate.backend), overridable with -Pclimate.backend=VHAL.
-val climateBackend: String =
-    (project.findProperty("climate.backend") as String? ?: "ETHERNET").uppercase()
-
 android {
     namespace = "com.hypernova.climate"
 
@@ -29,9 +24,6 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        // Compiled-in backend selector -> BuildConfig.CLIMATE_BACKEND.
-        buildConfigField("String", "CLIMATE_BACKEND", "\"$climateBackend\"")
 
     }
 
@@ -56,7 +48,6 @@ android {
     buildFeatures {
         aidl = true
         viewBinding = true
-        buildConfig = true
     }
 
     // Keep downloadable icon assets in a dedicated folder, separate from the

@@ -39,9 +39,6 @@
         </intent>
     </queries>
 
-    <uses-feature
-        android:name="android.hardware.type.automotive"
-        android:required="false" />
     <application
         android:allowBackup="false"
         android:enableOnBackInvokedCallback="true"

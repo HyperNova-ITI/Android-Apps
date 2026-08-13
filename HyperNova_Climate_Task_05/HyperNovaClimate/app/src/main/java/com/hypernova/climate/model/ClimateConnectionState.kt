@@ -1,7 +1,7 @@
 package com.hypernova.climate.model
 
 /**
- * Lifecycle of the link to the vehicle backend (Ethernet or VHAL).
+ * Lifecycle of the typed Vehicle Gateway backend link.
  * Kept deliberately small for the UI phase; the full [ClimateState] /
  * [ClimateCapabilities] models are implemented in the domain phase.
  */

@@ -1,28 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!--
-        HyperNova Climate supports both:
-        - Android Automotive OS / VHAL deployments
-        - Standard Android 16 NXP guest through VehicleGateway
-
-        Automotive is optional on the NXP branch so PackageManager does not
-        treat AAOS hardware as a deployment requirement.
-    -->
-    <uses-feature
-        android:name="android.hardware.type.automotive"
-        android:required="false" />
-
-    <!--
-        INTERNET / ACCESS_NETWORK_STATE are used by the NXP VehicleGateway path.
-
-        android.car permissions remain declared for the optional AAOS/VHAL
-        backend. They are not required by the NXP Ethernet/VehicleGateway path.
-    -->
+    <!-- Standard Android 16 NXP guest; vehicle access is typed Gateway AIDL. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.car.permission.CONTROL_CAR_CLIMATE" />
-    <uses-permission android:name="android.car.permission.CAR_INFO" />
     <uses-permission android:name="com.hypernova.permission.CONTROL_COCKPIT_APPS" />
 
     <queries>

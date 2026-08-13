@@ -4,19 +4,16 @@ import com.hypernova.climate.model.ClimateConnectionState
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * Abstraction over the vehicle climate implementation (README §38).
+ * Abstraction over the vehicle climate implementation.
  *
- * The UI never knows which backend is active. Two implementations exist:
- *  - [VehicleGatewayClimateBackend] — typed AIDL link to the Android Gateway APK.
- *  - [CarPropertyClimateBackend]    — AAOS CarPropertyManager / VHAL.
- *
- * The [ClimateBackendFactory] selects one at runtime from the compiled-in
- * backend macro. This UI-phase interface exposes only the connection lifecycle;
- * Physical commands are submitted by the service/UI through [VehicleGatewayRuntime].
+ * The standard Android 16 deployment has one implementation:
+ * [VehicleGatewayClimateBackend], a typed AIDL link to the Android Gateway APK.
+ * This UI-phase interface exposes only the connection lifecycle; physical
+ * commands are submitted by the service/UI through [VehicleGatewayRuntime].
  */
 interface ClimateBackend {
 
-    /** Human-readable id for logging (e.g. "ethernet-gateway", "car-property"). */
+    /** Human-readable id for logging. */
     val id: String
 
     /** Observable link lifecycle. */

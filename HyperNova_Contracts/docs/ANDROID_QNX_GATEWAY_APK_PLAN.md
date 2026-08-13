@@ -40,7 +40,7 @@ Exit: one repeatable script/runbook proves speech/request ID through TC sequence
 
 - Cross-compile `qnx-service` with the NXP QNX SDP toolchain.
 - Run it as a supervised QNX process with least privilege and fixed resource limits.
-- Configure the TC397-facing address/route and Android/QNX virtio-net listen interface.
+- Bridge the inter-guest network to the physical switch and configure QNX `192.168.0.51/24`.
 - Persist no credentials in source; provision the authenticated inter-guest channel in the image.
 
 Exit: the same protocol corpus and smoke sequence pass on QNX before TC397 is attached, then with the
@@ -48,7 +48,7 @@ controller attached.
 
 ### 3. Android 16 image packaging
 
-- Set the QNX guest address in the product build configuration.
+- Set Android `192.168.0.100/24` and build Gateway for QNX `192.168.0.51:6100`.
 - Preinstall and sign the Gateway and consuming apps with the agreed HyperNova certificate.
 - If boot-time telemetry is required, add only the necessary package lifecycle/power allow-list.
 - Disable plaintext/debug flags, verbose payload logging, ADB assumptions, and emulator host aliases.
@@ -67,13 +67,12 @@ Exit: identical feature-app AIDL runs on the ARM64 guest with no source API chan
 - Disconnects are fail-closed and actuator commands are never automatically retried after an
   ambiguous result.
 
-## Platform-team inputs (non-blocking until NXP integration)
+## Platform-team inputs still required
 
-- Android/QNX virtio-net addresses and route;
+- bridge/tap name that exposes the frozen inter-guest subnet to physical Ethernet;
 - QNX service startup/supervision mechanism and filesystem location;
 - QNX SDP cross-file/toolchain details;
 - authenticated inter-guest transport/key provisioning mechanism;
 - Android APK preinstallation and common signing procedure.
 
-The native NXP/trout Android-image construction can continue independently. Development and Binder
-integration stay on Android 16 API 36 now; no Android 15 compatibility baseline is needed.
+The current target is standard Android 16/API 36, not Android Automotive OS and not Android 15.

@@ -58,21 +58,30 @@ feature and does not use this service.
 Only Climate consumes the vehicle command API. Navigation and Phone retain their own typed Android
 AIDL services. Ambient lighting is owned by the RPi5 runtime.
 
-## Bench mapping
+## Frozen deployment addressing
 
 ```text
-DES-1008D unmanaged switch
-  laptop Ethernet  192.168.10.10/24
-  RPi5              192.168.10.20/24
-  TC397             192.168.10.30/24
+Frozen HyperNova network 192.168.0.0/24
+  RPi5                 192.168.0.20/24   NOVA :8765/:8766
+  TC397                192.168.0.30/24   TCP :6001; UDP -> QNX .51:6000
+  laptop Ethernet      192.168.0.40/24   administration/test only
+  NXP hypervisor host  192.168.0.50/24   platform management
+  QNX guest            192.168.0.51/24   HNVG :6100; TC telemetry :6000
+  Android 16 guest     192.168.0.100/24  HyperNova application runtime
 ```
 
-No DHCP, DNS, or default gateway is configured on this Ethernet link. Laptop Wi-Fi remains the
-Internet route and may be shared to the RPi5 separately. The Android emulator reaches the laptop
-relay at `10.0.2.2:6100`.
+These values are frozen. The NXP network configuration must bridge/expose the Android/QNX inter-guest
+network to the physical Ethernet switch so every endpoint is on this same Layer-2 subnet. No DHCP,
+DNS, NAT, IP forwarding, or default gateway is needed on the isolated demo link. The laptop may keep
+Wi-Fi as its Internet default route.
 
-The final NXP mapping uses an Android/QNX inter-guest address selected by the image team. The TC397
-side remains QNX-owned. Do not encode a laptop filesystem path or laptop IP as a contract constant.
+Network reachability does not grant command authority: Android applications must use the typed
+Gateway AIDL and HNVG at `192.168.0.51:6100`; they must never connect directly to TC397
+`192.168.0.30:6001`. The Gateway APK is built with `-PgatewayHost=192.168.0.51`. TC397 sends UDP
+telemetry to QNX `192.168.0.51:6000`. Android reaches NOVA directly at `192.168.0.20:8765/8766`.
+
+For laptop emulator development only, `10.0.2.2:6100` remains the emulator alias for a relay running
+on the laptop. It is not a final-image address.
 
 ## Android without AOSP modifications
 
@@ -81,7 +90,7 @@ CarService, VHAL, framework, or AOSP source modification.
 
 - Development: install the debug APK with ADB; the emulator build targets `10.0.2.2:6100`.
 - Final image: preinstall/sign the same APK and other HyperNova clients with the agreed certificate,
-  then set only the QNX endpoint in product build configuration.
+  then set the frozen QNX endpoint `192.168.0.51:6100` in product build configuration.
 - The exported Binder service is protected by the HyperNova signature permission and verifies caller
   signing identity.
 - Release transport remains disabled until the NXP/QNX team provisions authenticated inter-guest
@@ -137,5 +146,5 @@ On 2026-08-12:
 - Decide whether to strengthen the TC frame CRC to cover sequence and length. This requires a
   coordinated codec version change, not a unilateral QNX edit.
 - Enable and verify watchdogs before making any production/reliability claim.
-- Supply the Android/QNX virtio-net address, service startup policy, and authenticated-channel
-  configuration when the NXP image reaches that integration stage.
+- Bridge the NXP inter-guest network to the external switch, configure the frozen addresses, and add
+  the QNX service startup policy and authenticated-channel configuration in the NXP image.

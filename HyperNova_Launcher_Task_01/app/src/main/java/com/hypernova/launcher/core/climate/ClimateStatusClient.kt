@@ -24,11 +24,9 @@ import java.util.UUID
 /**
  * Reads Climate state only through the existing read-only AIDL request.
  *
- * Direct AAOS HVAC/VHAL observation is intentionally excluded: it requires
- * android.car.permission.CONTROL_CAR_CLIMATE, which the Launcher must not
- * request. If Climate does not expose its contract service, package
- * availability and launch behavior remain available while detailed HVAC
- * values remain unknown.
+ * Direct vehicle or gateway access is intentionally excluded. If Climate does
+ * not expose its contract service, package availability and launch behavior
+ * remain available while detailed HVAC values remain unknown.
  */
 class ClimateStatusClient(
     context: Context,

@@ -196,7 +196,7 @@ MVP TTS format is `pcm_s16le`, mono, at the native Piper voice sample rate given
 
 ## Development addressing
 
-The Pi is currently discoverable as `hnc-ai30.local` on the dedicated HyperNova LAN (reserved IPv4
-`192.168.10.20`). The app must keep the host configurable because emulator, laptop, and final AAOS
-guest networking differ. No image-specific or Trout-specific API is allowed in the core audio or
-protocol layers.
+The Pi is discoverable as `hnc-ai30.local` on the dedicated HyperNova LAN (frozen IPv4
+`192.168.0.20`). The app keeps the host configurable for emulator development, while the NXP
+standard Android 16 guest uses the frozen address. No image-specific, Automotive, or Trout-specific
+API is allowed in the core audio or protocol layers.

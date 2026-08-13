@@ -35,3 +35,8 @@ Full image:
 
 Full image path:
 /media/ayman/5d150459-9442-4a28-abb0-2da4c090069f/aosp_15_rpi/AOSP15/out/target/product/rpi5/RaspberryVanillaAOSP15-20260812-hypernova_rpi5_car-HyperNova-FINAL-20260812-210913.img
+
+Post-build source refresh (not baked into the image above):
+18916b161147fb1977b5b6c15f8c362781341ba38c14134c73a035f93d1af668  vendor/hypernova/rpi5/apps/HyperNovaLauncher/HyperNovaLauncher.apk
+This refreshed prebuilt combines Ayman's latest Launcher with NOVA widget/status v2 and the standard
+Android Settings fallback. The historical image hashes above remain unchanged and do not contain it.

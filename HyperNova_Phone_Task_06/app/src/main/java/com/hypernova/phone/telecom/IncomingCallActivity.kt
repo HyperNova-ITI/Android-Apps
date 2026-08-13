@@ -1,6 +1,5 @@
 package com.hypernova.phone.telecom
 
-import android.app.Activity
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
@@ -13,6 +12,8 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import com.hypernova.phone.MainActivity
 import com.hypernova.phone.domain.CallStatus
 import com.hypernova.phone.domain.TelecomCallState
@@ -29,7 +30,7 @@ import kotlinx.coroutines.launch
  * The current IVI app remains visible behind this small top window.
  * Android Telecom remains the call-state authority.
  */
-class IncomingCallActivity : Activity() {
+class IncomingCallActivity : ComponentActivity() {
 
     private val uiScope =
         CoroutineScope(
@@ -68,6 +69,13 @@ class IncomingCallActivity : Activity() {
         savedInstanceState: Bundle?
     ) {
         super.onCreate(savedInstanceState)
+
+        onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() = Unit
+            }
+        )
 
         actionBar?.hide()
         setShowWhenLocked(true)
@@ -606,12 +614,6 @@ class IncomingCallActivity : Activity() {
             value *
                 resources.displayMetrics.density
             ).toInt()
-    }
-
-    @Deprecated(
-        "Incoming call must be answered or declined explicitly."
-    )
-    override fun onBackPressed() {
     }
 
     override fun onDestroy() {

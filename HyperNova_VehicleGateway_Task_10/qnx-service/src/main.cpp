@@ -22,7 +22,7 @@ namespace {
 using Clock = std::chrono::steady_clock;
 using Milliseconds = std::chrono::milliseconds;
 
-constexpr const char* kDefaultTcAddress = "192.168.10.30";
+constexpr const char* kDefaultTcAddress = "192.168.0.30";
 constexpr std::uint16_t kDefaultTcPort = 6001;
 constexpr std::uint16_t kDefaultAndroidPort = 6100;
 constexpr std::uint16_t kDefaultTelemetryPort = 6000;

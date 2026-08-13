@@ -1,22 +1,10 @@
 package com.hypernova.climate.backend
 
-import android.util.Log
-import com.hypernova.climate.config.BackendMode
-
 /**
- * Single place that turns the compiled-in backend macro into a concrete
- * [ClimateBackend]. Nothing else in the app decides which backend is used.
+ * Standard Android 16 has no CarProperty/VHAL API. All climate requests use
+ * the typed Vehicle Gateway AIDL and reach TC397 through QNX.
  */
 object ClimateBackendFactory {
-
-    private const val TAG = "HN-Climate"
-
-    fun create(): ClimateBackend {
-        val mode = BackendMode.current
-        Log.i(TAG, "Creating climate backend for mode=$mode")
-        return when (mode) {
-            BackendMode.ETHERNET -> VehicleGatewayClimateBackend()
-            BackendMode.VHAL -> CarPropertyClimateBackend()
-        }
-    }
+    fun create(): ClimateBackend =
+        VehicleGatewayClimateBackend()
 }

@@ -12,23 +12,12 @@ then **Sync Project with Gradle Files**. The shared IPC contract is included fro
 ./gradlew :app:assembleDebug
 ```
 
-## Vehicle backend switch (deployment macro)
-One build flag selects the backend for the whole app — no source edits.
+## Vehicle backend
 
-| Value | Backend | Link |
-|---|---|---|
-| `ETHERNET` *(default, enabled now)* | `VehicleGatewayClimateBackend` | Direct TCP/UDP frames to the bare-metal TC397 (`192.168.10.30:6001` / telemetry `:6000`) |
-| `VHAL` | `CarPropertyClimateBackend` | Standard AAOS `CarPropertyManager`; real values bridged inside a custom VHAL |
-
-Set in `gradle.properties` (`climate.backend=ETHERNET`) or override per build:
-
-```bash
-./gradlew :app:assembleDebug -Pclimate.backend=VHAL
-```
-
-The value is compiled into `BuildConfig.CLIMATE_BACKEND` and read once by
-`ClimateBackendFactory`. Both backends are written; only their transport internals
-are filled in during later phases.
+The NXP guest is standard Android 16, so Climate has one frozen backend:
+`VehicleGatewayClimateBackend`. It uses the typed Gateway AIDL; the Gateway APK speaks HNVG to QNX
+`192.168.0.51:6100`, and only QNX connects to TC397 `192.168.0.30:6001`. Climate contains no
+CarProperty, VHAL, or `android.car` dependency.
 
 ## Structure
 ```
@@ -36,12 +25,10 @@ app/src/main/
 ├── java/com/hypernova/climate/
 │   ├── ClimateActivity.kt              full-screen portrait host
 │   ├── ui/ClimateFragment.kt           renders Climate Home, wires controls
-│   ├── config/BackendMode.kt           ETHERNET | VHAL (from BuildConfig)
 │   ├── backend/
 │   │   ├── ClimateBackend.kt           abstraction (UI never sees the transport)
-│   │   ├── VehicleGatewayClimateBackend.kt   direct Ethernet (enabled)
-│   │   ├── CarPropertyClimateBackend.kt      AAOS CarProperty/VHAL
-│   │   └── ClimateBackendFactory.kt    selects backend from the macro
+│   │   ├── VehicleGatewayClimateBackend.kt   typed Gateway AIDL
+│   │   └── ClimateBackendFactory.kt    creates the frozen gateway backend
 │   └── model/ClimateConnectionState.kt
 └── res/
     ├── layout/{activity_climate,fragment_climate}.xml
@@ -52,7 +39,7 @@ app/src/main/
 ## Status — UI + state rendering
 Built: project scaffold, design-system resources/theme, the full Climate Home
 layout matching the approved reference, Activity/Fragment with ViewBinding, the
-backend-selection skeleton (Ethernet enabled), the domain models
+typed Gateway backend, the domain models
 (`ClimateCapabilities` / `ClimateState` / enums), `ClimateUiState`, a
 `ClimateViewModel`, and capability-driven rendering of every field and control.
 

@@ -5,6 +5,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.provider.Settings
 
 /**
  * Checks and opens registered HyperNova applications.
@@ -168,9 +169,31 @@ class AppLauncher(context: Context) {
                 appSpec.packageName
             )
 
-        return launcherIntent?.let {
-            prepareActivityIntent(it)
+        if (launcherIntent != null) {
+            return prepareActivityIntent(launcherIntent)
         }
+
+        /*
+         * HyperNovaSettings is an AAOS CarSettings extension and is not
+         * installed on the standard Android 16 NXP guest. Keep the cockpit
+         * card useful by opening the platform's stock Settings application.
+         */
+        if (appSpec.destination == AppDestination.SETTINGS) {
+            val systemSettingsIntent =
+                Intent(Settings.ACTION_SETTINGS)
+
+            if (
+                systemSettingsIntent.resolveActivity(
+                    packageManager
+                ) != null
+            ) {
+                return prepareActivityIntent(
+                    systemSettingsIntent
+                )
+            }
+        }
+
+        return null
     }
 
     /**
