@@ -13,13 +13,18 @@ object NovaEndpointStore {
     private const val PREFERENCES = "nova_runtime"
     private const val HOST = "host"
     private val DEFAULT_HOST = BuildConfig.NOVA_DEFAULT_HOST
+    private val LEGACY_DEFAULT_HOSTS = setOf(
+        "192.168.1.32",
+        "192.168.10.20",
+    )
 
     fun load(context: Context): NovaEndpoint {
-        val host = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
-            .getString(HOST, DEFAULT_HOST)
-            ?.trim()
-            .orEmpty()
-            .ifBlank { DEFAULT_HOST }
+        val preferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+        val savedHost = preferences.getString(HOST, null)
+        val host = resolveHost(savedHost, DEFAULT_HOST)
+        if (savedHost?.trim() in LEGACY_DEFAULT_HOSTS) {
+            preferences.edit().putString(HOST, host).apply()
+        }
         return NovaEndpoint(host)
     }
 
@@ -29,5 +34,14 @@ object NovaEndpointStore {
             .edit()
             .putString(HOST, host.trim())
             .apply()
+    }
+
+    internal fun resolveHost(savedHost: String?, defaultHost: String): String {
+        val normalized = savedHost?.trim().orEmpty()
+        return when {
+            normalized.isBlank() -> defaultHost
+            normalized in LEGACY_DEFAULT_HOSTS -> defaultHost
+            else -> normalized
+        }
     }
 }
