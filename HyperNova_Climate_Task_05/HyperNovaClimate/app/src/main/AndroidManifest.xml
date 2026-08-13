@@ -1,16 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Designed for Android Automotive OS. -->
+    <!--
+        HyperNova Climate supports both:
+        - Android Automotive OS / VHAL deployments
+        - Standard Android 16 NXP guest through VehicleGateway
+
+        Automotive is optional on the NXP branch so PackageManager does not
+        treat AAOS hardware as a deployment requirement.
+    -->
     <uses-feature
         android:name="android.hardware.type.automotive"
-        android:required="true" />
+        android:required="false" />
 
     <!--
-        Vehicle climate access. Exact permissions depend on the target AOSP
-        image and the active backend (VHAL vs direct gateway). Declared here
-        for the CarProperty/VHAL path; harmless when the Ethernet backend is
-        selected. INTERNET is required by the direct-Ethernet backend.
+        INTERNET / ACCESS_NETWORK_STATE are used by the NXP VehicleGateway path.
+
+        android.car permissions remain declared for the optional AAOS/VHAL
+        backend. They are not required by the NXP Ethernet/VehicleGateway path.
     -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -20,6 +27,7 @@
 
     <queries>
         <package android:name="com.hypernova.vehiclegateway" />
+
         <intent>
             <action android:name="com.hypernova.vehiclegateway.action.BIND_GATEWAY" />
         </intent>
@@ -41,26 +49,27 @@
             android:resizeableActivity="false"
             android:screenOrientation="portrait">
 
-            <!-- Launcher entry for development / adb. -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Cockpit open action used by the HyperNova Launcher. -->
             <intent-filter>
                 <action android:name="com.hypernova.climate.action.OPEN" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
+
         </activity>
 
         <service
             android:name=".service.ClimateCommandService"
             android:exported="true"
             android:permission="com.hypernova.permission.CONTROL_COCKPIT_APPS">
+
             <intent-filter>
                 <action android:name="com.hypernova.climate.action.BIND_COMMAND" />
             </intent-filter>
+
         </service>
 
     </application>
