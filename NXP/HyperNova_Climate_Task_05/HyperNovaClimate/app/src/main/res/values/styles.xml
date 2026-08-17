@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ===== Text appearances (README §11) ===== -->
+    <style name="HnText" parent="">
+        <item name="android:textColor">@color/hn_text_primary</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="HnText.AppTitle">
+        <item name="android:textSize">@dimen/hn_text_app_title</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.08</item>
+    </style>
+
+    <style name="HnText.SectionTitle">
+        <item name="android:textSize">@dimen/hn_text_section_title</item>
+        <item name="android:textColor">@color/hn_text_secondary</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.10</item>
+    </style>
+
+    <style name="HnText.Label">
+        <item name="android:textSize">@dimen/hn_text_label</item>
+        <item name="android:textColor">@color/hn_text_secondary</item>
+        <item name="android:letterSpacing">0.06</item>
+    </style>
+
+    <style name="HnText.MainTemp">
+        <item name="android:textSize">@dimen/hn_text_main_temp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/hn_primary_cyan</item>
+    </style>
+
+    <style name="HnText.EnvValue">
+        <item name="android:textSize">@dimen/hn_text_env_value</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- ===== Containers ===== -->
+    <style name="HnCard">
+        <item name="android:background">@drawable/bg_card</item>
+        <item name="android:padding">@dimen/hn_card_padding</item>
+    </style>
+
+    <!-- ===== Controls ===== -->
+    <style name="HnControlButton">
+        <item name="android:layout_width">@dimen/hn_control_button</item>
+        <item name="android:layout_height">@dimen/hn_control_button</item>
+        <item name="android:background">@drawable/bg_control_toggle</item>
+        <item name="android:scaleType">centerInside</item>
+        <item name="android:padding">@dimen/hn_space_8</item>
+    </style>
+
+    <style name="HnTempButton">
+        <item name="android:layout_width">64dp</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:background">@drawable/bg_temp_button</item>
+        <item name="android:scaleType">centerInside</item>
+        <item name="android:padding">@dimen/hn_space_12</item>
+    </style>
+
+    <!-- One column in the POWER / AUTO / A/C / SYNC row. -->
+    <style name="HnPrimaryColumn">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:gravity">center</item>
+    </style>
+
+    <!-- One defrost pill (icon + label), equal weight in the defrost row. -->
+    <style name="HnDefrostPill">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:background">@drawable/bg_control_toggle</item>
+        <item name="android:padding">@dimen/hn_space_12</item>
+    </style>
+
+</resources>

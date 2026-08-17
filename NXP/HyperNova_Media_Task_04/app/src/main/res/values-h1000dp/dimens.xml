@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+        HyperNova RPi5 portrait display profile.
+
+        The previous 980dp hero forced the main Media screen to behave
+        like a vertically scrolling page.
+
+        The new layout keeps the hero prominent while leaving enough
+        room for source/status/playback panels inside the same window.
+
+        Radio and USB lists remain bounded internal lists because their
+        content can contain an arbitrary number of stations/tracks.
+    -->
+
+    <dimen name="hn_hero_height">420dp</dimen>
+
+    <dimen name="hn_radio_list_height">140dp</dimen>
+
+    <dimen name="hn_library_list_height">160dp</dimen>
+
+</resources>

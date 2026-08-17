@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<permissions>
+
+    <!--
+        Production package only.
+
+        Copy this file to the product permissions partition when
+        HyperNova Launcher is installed under product/priv-app.
+    -->
+    <privapp-permissions package="com.hypernova.launcher">
+        <permission name="android.permission.MODIFY_DAY_NIGHT_MODE" />
+    </privapp-permissions>
+
+</permissions>

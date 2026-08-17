@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="72dp"
+    android:layout_marginBottom="@dimen/hn_space_8"
+    android:background="@drawable/bg_list_row"
+    android:gravity="center_vertical"
+    android:minHeight="64dp"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/hn_space_16"
+    android:paddingEnd="@dimen/hn_space_16">
+
+    <ImageView
+        android:id="@+id/item_icon"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:contentDescription="@null"
+        android:src="@drawable/ic_audio_file"
+        android:tint="@color/hypernova_cyan" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/hn_space_16"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/item_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/hypernova_text_primary"
+            android:textSize="@dimen/hn_text_body" />
+
+        <TextView
+            android:id="@+id/item_subtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/hn_space_4"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/hypernova_text_secondary"
+            android:textSize="@dimen/hn_text_secondary" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/item_duration"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/hn_space_12"
+        android:textColor="@color/hypernova_text_secondary"
+        android:textSize="@dimen/hn_text_secondary" />
+</LinearLayout>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="hn_cockpit_bottom_nav_start">#071320</color>
+    <color name="hn_cockpit_bottom_nav_center">#081827</color>
+    <color name="hn_cockpit_bottom_nav_end">#071320</color>
+    <color name="hn_cockpit_border">#506174</color>
+    <color name="hn_cockpit_text_dark">#020A13</color>
+    <color name="hn_cockpit_text_secondary">#A7B0BE</color>
+    <color name="hn_cockpit_icon_primary">#F5F7FA</color>
+    <color name="hn_cockpit_selected_outer_fill">#3025D9E8</color>
+    <color name="hn_cockpit_selected_outer_stroke">#9025D9E8</color>
+    <color name="hn_cockpit_selected_inner_start">#35EBF3</color>
+    <color name="hn_cockpit_selected_inner_end">#1CCAD9</color>
+    <color name="hn_cockpit_selected_inner_stroke">#8AFAFF</color>
+</resources>

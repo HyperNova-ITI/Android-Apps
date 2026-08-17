@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Monochrome navigation arrow -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M54,18 L27,89 L54,77 L81,89 Z" />
+
+    <!-- Inner cut detail -->
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M54,35 L45,68 L54,64 L63,68 Z" />
+
+</vector>

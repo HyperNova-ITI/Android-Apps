@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- HyperNova spacing, radii and sizing scale (Climate README §10). -->
+<resources>
+    <!-- Spacing scale -->
+    <dimen name="hn_space_4">4dp</dimen>
+    <dimen name="hn_space_8">8dp</dimen>
+    <dimen name="hn_space_12">12dp</dimen>
+    <dimen name="hn_space_16">16dp</dimen>
+    <dimen name="hn_space_20">20dp</dimen>
+    <dimen name="hn_space_24">24dp</dimen>
+    <dimen name="hn_space_32">32dp</dimen>
+
+    <!-- Layout -->
+    <dimen name="hn_screen_margin">16dp</dimen>
+    <dimen name="hn_header_height">56dp</dimen>
+    <dimen name="hn_status_card_height">78dp</dimen>
+    <dimen name="hn_airflow_row_height">96dp</dimen>
+    <dimen name="hn_seat_row_height">58dp</dimen>
+    <dimen name="hn_section_gap">10dp</dimen>
+    <dimen name="hn_card_padding">16dp</dimen>
+
+    <!-- Radii -->
+    <dimen name="hn_radius_zone">22dp</dimen>
+    <dimen name="hn_radius_card">22dp</dimen>
+    <dimen name="hn_radius_small">16dp</dimen>
+    <dimen name="hn_radius_pill">28dp</dimen>
+
+    <!-- Central vehicle visualization -->
+    <dimen name="hn_vehicle_width">232dp</dimen>
+    <dimen name="hn_airflow_w">56dp</dimen>
+    <dimen name="hn_airflow_h">38dp</dimen>
+    <dimen name="hn_gauge_size">120dp</dimen>
+
+    <!-- Fixed height of the driver/car/passenger block (keeps it prominent). -->
+    <dimen name="hn_zone_height">330dp</dimen>
+
+    <!-- Zone gauge + airflow column -->
+    <dimen name="hn_gauge_stroke">5dp</dimen>
+    <dimen name="hn_airflow_icon">36dp</dimen>
+
+    <!-- Touch targets -->
+    <dimen name="hn_touch_min">48dp</dimen>
+    <dimen name="hn_temp_button">56dp</dimen>
+    <dimen name="hn_control_button">48dp</dimen>
+    <dimen name="hn_icon_small">18dp</dimen>
+    <dimen name="hn_icon_medium">24dp</dimen>
+    <dimen name="hn_icon_large">28dp</dimen>
+
+    <!-- Typography -->
+    <dimen name="hn_text_app_title">18sp</dimen>
+    <dimen name="hn_text_header_state">11sp</dimen>
+    <dimen name="hn_text_zone_title">14sp</dimen>
+    <dimen name="hn_text_main_temp">56sp</dimen>
+    <dimen name="hn_text_label">11sp</dimen>
+    <dimen name="hn_text_env_value">18sp</dimen>
+    <dimen name="hn_text_section_title">11sp</dimen>
+    <dimen name="hn_text_body">13sp</dimen>
+    <dimen name="hn_text_secondary">10sp</dimen>
+    <dimen name="hn_text_button">13sp</dimen>
+</resources>

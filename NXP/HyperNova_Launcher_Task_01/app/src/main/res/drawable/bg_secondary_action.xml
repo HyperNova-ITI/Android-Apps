@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Pressed state -->
+    <item android:state_pressed="true">
+
+        <shape android:shape="rectangle">
+
+            <corners android:radius="@dimen/secondary_button_radius" />
+
+            <solid android:color="@color/hypernova_cyan_pressed" />
+
+            <stroke
+                android:width="2dp"
+                android:color="@color/hypernova_text_primary" />
+
+        </shape>
+
+    </item>
+
+    <!-- Focused state for keyboard or rotary controller -->
+    <item android:state_focused="true">
+
+        <shape android:shape="rectangle">
+
+            <corners android:radius="@dimen/secondary_button_radius" />
+
+            <solid android:color="@color/hypernova_selected" />
+
+            <stroke
+                android:width="2dp"
+                android:color="@color/hypernova_cyan" />
+
+        </shape>
+
+    </item>
+
+    <!-- Normal state -->
+    <item>
+
+        <shape android:shape="rectangle">
+
+            <corners android:radius="@dimen/secondary_button_radius" />
+
+            <solid android:color="@android:color/transparent" />
+
+            <stroke
+                android:width="1dp"
+                android:color="@color/hypernova_cyan" />
+
+        </shape>
+
+    </item>
+
+</selector>

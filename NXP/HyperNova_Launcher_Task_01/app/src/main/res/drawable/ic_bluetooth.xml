@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <path
+        android:fillColor="@color/hypernova_text_primary"
+        android:pathData="M17.71,7.71L12,2v7.17L7.83,5 6.41,6.41 11,11l-4.59,4.59L7.83,17 12,12.83V20l5.71,-5.71L14.41,11l3.3,-3.29zM14,6.83l0.88,0.88L14,8.59V6.83zM14.88,14.29L14,15.17v-1.76l0.88,0.88z" />
+
+</vector>
