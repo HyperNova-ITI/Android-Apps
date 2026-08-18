@@ -45,9 +45,11 @@ import com.hypernova.launcher.core.state.PhoneUiState
 import com.hypernova.launcher.core.state.RuntimeConnectionState
 import com.hypernova.launcher.core.state.SettingsUiState
 import com.hypernova.launcher.core.theme.LauncherThemeController
+import com.hypernova.launcher.core.vehicle.VehicleStatusClient
 import com.hypernova.launcher.databinding.ActivityMainBinding
 import com.hypernova.launcher.ui.LauncherNavigationMapController
 import com.hypernova.launcher.ui.LauncherSoftwareRouteOverlay
+import com.hypernova.visuals.CockpitAppearance
 import org.maplibre.android.MapLibre
 import org.maplibre.android.maps.MapView
 import kotlin.math.roundToInt
@@ -69,6 +71,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var climateStatusClient: ClimateStatusClient
     private lateinit var phoneStatusClient: PhoneStatusClient
     private lateinit var systemSettingsClient: SystemSettingsClient
+    private lateinit var vehicleStatusClient: VehicleStatusClient
     private lateinit var availabilityMonitor: AppAvailabilityMonitor
     private lateinit var themeController: LauncherThemeController
     private lateinit var latestUiState: LauncherUiState
@@ -169,6 +172,15 @@ class MainActivity : AppCompatActivity() {
             SystemSettingsClient(this) { snapshot ->
                 runOnUiThread {
                     stateController.updateSettingsSnapshot(snapshot)
+                    refreshAndRenderState()
+                }
+            }
+
+        // Live TC397 telemetry for the status bar. Read-only: HOME never actuates the vehicle.
+        vehicleStatusClient =
+            VehicleStatusClient(this) { snapshot ->
+                runOnUiThread {
+                    stateController.updateVehicleSnapshot(snapshot)
                     refreshAndRenderState()
                 }
             }
@@ -283,6 +295,10 @@ class MainActivity : AppCompatActivity() {
         activityStarted = false
         if (::availabilityMonitor.isInitialized) {
             runOptionalIntegration("stop package monitor") { availabilityMonitor.stop() }
+        }
+
+        if (::vehicleStatusClient.isInitialized) {
+            runOptionalIntegration("disconnect Vehicle Gateway") { vehicleStatusClient.stop() }
         }
 
         if (::systemSettingsClient.isInitialized) {
@@ -524,6 +540,7 @@ class MainActivity : AppCompatActivity() {
         runOptionalIntegration("connect Climate") { climateStatusClient.connect() }
         runOptionalIntegration("connect Phone") { phoneStatusClient.connect() }
         runOptionalIntegration("connect Settings") { systemSettingsClient.connect() }
+        runOptionalIntegration("connect Vehicle Gateway") { vehicleStatusClient.start() }
         runOptionalIntegration("connect Media") {
             Log.d(TAG, "Connecting to HyperNova MediaSession")
             mediaSessionClient.connect()
@@ -592,7 +609,17 @@ class MainActivity : AppCompatActivity() {
         renderThemeToggle()
 
         binding.buttonThemeToggle.setOnClickListener {
+            // Read the target before toggling: afterwards this activity is being recreated and
+            // isNightModeActive() no longer describes what the driver asked for.
+            val target = if (themeController.isNightModeActive()) {
+                CockpitAppearance.MODE_LIGHT
+            } else {
+                CockpitAppearance.MODE_DARK
+            }
             themeController.toggleTheme()
+            // Remember it for this process too, so a launcher restart comes back the same way.
+            CockpitAppearance.apply(this, target)
+            CockpitAppearance.broadcast(this, target)
         }
     }
 
@@ -1064,9 +1091,8 @@ class MainActivity : AppCompatActivity() {
     private fun renderAssistantState(
         state: LauncherUiState
     ) {
-        binding.textNovaGreeting.text =
-            state.assistant.headline
-
+        // The status chip is the single state indicator for this card. The all-caps eyebrow that
+        // used to sit under the face said the same thing in different words.
         binding.textNovaStatusChip.text = when (state.assistant.runtimeState) {
             AssistantRuntimeState.IDLE -> "READY"
             AssistantRuntimeState.LISTENING -> "LISTENING"

@@ -13,9 +13,24 @@
         android:name="android.permission.MODIFY_DAY_NIGHT_MODE"
         tools:ignore="ProtectedPermissions" />
 
+    <!--
+        The launcher owns the cockpit's day/night choice and is the only sender of
+        SET_NIGHT_MODE. Signature level, so only the team's own APKs can repaint the screens.
+    -->
+    <permission
+        android:name="com.hypernova.permission.SYNC_APPEARANCE"
+        android:protectionLevel="signature" />
+
+    <uses-permission
+        android:name="com.hypernova.permission.SYNC_APPEARANCE" />
+
     <!-- Read-only NOVA state, granted only to an APK signed like NOVA AI. -->
     <uses-permission
         android:name="com.hypernova.ai.permission.READ_STATUS" />
+
+    <!-- Read-only TC397 telemetry (cabin temperature) from the signature-protected gateway. -->
+    <uses-permission
+        android:name="com.hypernova.permission.ACCESS_VEHICLE_GATEWAY" />
 
     <!-- Signature-protected frozen Navigation/Climate contract. -->
     <uses-permission
@@ -107,6 +122,13 @@
 
         <intent>
             <action android:name="com.hypernova.climate.action.BIND_COMMAND" />
+        </intent>
+
+        <!-- Vehicle Gateway: read-only TC397 telemetry for the status bar. -->
+        <package android:name="com.hypernova.vehiclegateway" />
+
+        <intent>
+            <action android:name="com.hypernova.vehiclegateway.action.BIND_GATEWAY" />
         </intent>
 
         <!-- Weather -->

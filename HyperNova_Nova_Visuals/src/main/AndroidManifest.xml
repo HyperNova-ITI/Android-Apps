@@ -1,2 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest />
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+        Merged into every cockpit app that depends on nova-visuals, so the whole IVI follows one
+        day/night choice without six separate manifest edits.
+    -->
+    <application>
+
+        <!--
+            Only the launcher holds SYNC_APPEARANCE, so nothing outside the cockpit can repaint
+            the vehicle's screens. Exported because the sender is a different package.
+        -->
+        <receiver
+            android:name="com.hypernova.visuals.CockpitAppearanceReceiver"
+            android:exported="true"
+            android:permission="com.hypernova.permission.SYNC_APPEARANCE">
+            <intent-filter>
+                <action android:name="com.hypernova.action.SET_NIGHT_MODE" />
+            </intent-filter>
+        </receiver>
+
+        <!--
+            Runs before the first activity is built and re-applies the remembered appearance.
+            The authority is per-application so two cockpit apps never collide at install time.
+        -->
+        <provider
+            android:name="com.hypernova.visuals.CockpitAppearanceInitializer"
+            android:authorities="${applicationId}.hypernova.appearance"
+            android:exported="false"
+            android:initOrder="100" />
+
+    </application>
+
+</manifest>
