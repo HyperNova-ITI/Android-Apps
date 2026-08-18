@@ -2,6 +2,7 @@
 **/.gradle/
 **/.kotlin/
 **/build/
+**/build-qnx/
 **/local.properties
 **/.cxx/
 **/.externalNativeBuild/
