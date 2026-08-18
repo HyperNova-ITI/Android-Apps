@@ -2,7 +2,15 @@ plugins {
     id("com.android.application")
 }
 
-val relayHost = providers.gradleProperty("gatewayHost").orElse("10.0.2.2")
+// The QNX guest holds both 192.168.1.51 (SOME/IP segment) and 192.168.0.51 (TC397/Android
+// segment) on vtnet0, and the Android guest has exactly one address and one route:
+// 192.168.0.100/24 via eth0, with no default gateway. So 192.168.0.51 is the only address on
+// the QNX guest that Android can actually reach, for both the gateway and the cluster link.
+//
+// This previously defaulted to 10.0.2.2 -- the Android *emulator's* alias for its host machine,
+// which routes nowhere on real hardware. Every build that did not pass -PgatewayHost silently
+// dialled an unreachable address and simply never connected, with no error at build time.
+val relayHost = providers.gradleProperty("gatewayHost").orElse("192.168.0.51")
 val relayPort = providers.gradleProperty("gatewayPort").orElse("6100")
 
 val clusterHost = providers.gradleProperty("clusterHost").orElse(relayHost)
