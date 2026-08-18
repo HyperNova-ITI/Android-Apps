@@ -38,6 +38,8 @@
     <!-- Status bar -->
     <string name="system_status_unavailable">SYSTEM</string>
     <string name="temperature_value_unavailable">--°C</string>
+    <!-- Live cabin temperature from the TC397 DHT11, via the QNX gateway. -->
+    <string name="cabin_temperature_format">%1$d°C</string>
     <string name="network_value_unavailable">--</string>
 
     <!-- Theme toggle -->
@@ -88,11 +90,6 @@
     <string name="play_music">Open Media</string>
     <string name="set_climate">Open Climate</string>
     <string name="call_contact">Open Phone</string>
-
-    <!-- AI capabilities -->
-    <string name="on_device_ai">ON-DEVICE AI</string>
-    <string name="private_ai">PRIVATE</string>
-    <string name="offline_ready">OFFLINE READY</string>
 
     <!-- Navigation -->
     <string name="navigation_title">NAVIGATION</string>
