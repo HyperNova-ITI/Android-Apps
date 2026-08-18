@@ -23,16 +23,20 @@ import kotlinx.coroutines.flow.asStateFlow
  *
  * Android Telecom remains the authoritative owner of call state.
  *
- * Supported real call controls:
+ * NXP HFP Client note:
  *
- * - Answer
- * - Decline
- * - Disconnect
- * - Hold / Resume
- * - DTMF
- * - Mute
- * - Speaker
- * - Explicit audio-route selection
+ * The remote mobile phone is represented in Android Telecom by
+ * com.android.bluetooth.hfpclient.HfpClientConnectionService.
+ *
+ * Answering the Telecom Call changes only the call signalling state.
+ * The Bluetooth HFP voice bearer (SCO) must also be explicitly requested
+ * through the HfpClientConnection Call event used by AOSP:
+ *
+ *     com.android.bluetooth.hfpclient.SCO_CONNECT
+ *
+ * Without that event Telecom can correctly report MODE_IN_CALL and route
+ * audio to the local speaker while no remote call audio actually enters
+ * Android.
  */
 class TelecomCallController(
     private val context: Context
@@ -43,35 +47,44 @@ class TelecomCallController(
             context.applicationContext
     }
 
-
     val state: StateFlow<TelecomCallState> =
         Companion.state.asStateFlow()
 
     private val dtmfHandler =
-        Handler(Looper.getMainLooper())
+        Handler(
+            Looper.getMainLooper()
+        )
 
     private var pendingDtmfStop:
         Runnable? = null
 
     fun canPlaceCalls(): Boolean {
+
         return telecomManager != null &&
             ContextCompat.checkSelfPermission(
                 context,
                 Manifest.permission.CALL_PHONE
-            ) == PackageManager.PERMISSION_GRANTED
+            ) ==
+            PackageManager.PERMISSION_GRANTED
     }
 
     fun placeCall(
         number: String
     ): CommandResult {
 
-        if (number.isBlank()) {
+        if (
+            number.isBlank()
+        ) {
+
             return CommandResult.Rejected(
                 "Enter a valid phone number"
             )
         }
 
-        if (!canPlaceCalls()) {
+        if (
+            !canPlaceCalls()
+        ) {
+
             return CommandResult.Rejected(
                 "Phone access is required before calling"
             )
@@ -101,7 +114,8 @@ class TelecomCallController(
 
             Log.w(
                 TAG,
-                "Android Telecom rejected the call request"
+                "Android Telecom rejected the call request",
+                security
             )
 
             CommandResult.Rejected(
@@ -124,49 +138,74 @@ class TelecomCallController(
         }
     }
 
-    fun answer(): CommandResult =
+    fun answer():
+        CommandResult =
         withCall(
             "answer"
-        ) {
-            it.answer(0)
+        ) { call ->
+
+            /*
+             * Answer signalling first.
+             *
+             * SCO is deliberately requested after Android reports ACTIVE.
+             * That avoids racing the Bluetooth HFP AG while the remote
+             * handset is still transitioning out of RINGING.
+             */
+            call.answer(
+                0
+            )
         }
 
-    fun decline(): CommandResult =
+    fun decline():
+        CommandResult =
         withCall(
             "decline"
-        ) {
-            it.reject(
+        ) { call ->
+
+            call.reject(
                 false,
                 null
             )
         }
 
-    fun disconnect(): CommandResult =
+    fun disconnect():
+        CommandResult =
         withCall(
             "disconnect"
-        ) {
-            it.disconnect()
+        ) { call ->
+
+            /*
+             * HfpClientConnection ignores call events after it has already
+             * closed, therefore request SCO teardown before disconnecting
+             * the Telecom call.
+             */
+            requestHfpScoDisconnect(
+                call
+            )
+
+            call.disconnect()
         }
 
-    fun hold(): CommandResult =
+    fun hold():
+        CommandResult =
         withCall(
             "hold"
-        ) {
-            it.hold()
+        ) { call ->
+
+            call.hold()
         }
 
-    fun unhold(): CommandResult =
+    fun unhold():
+        CommandResult =
         withCall(
             "resume"
-        ) {
-            it.unhold()
+        ) { call ->
+
+            call.unhold()
         }
 
     /**
      * Send one real DTMF digit through the current Telecom Call.
-     *
-     * Android requires every playDtmfTone() to be paired with
-     * stopDtmfTone().
      */
     fun sendDtmf(
         digit: String
@@ -179,6 +218,7 @@ class TelecomCallController(
             tone == null ||
             tone !in VALID_DTMF_DIGITS
         ) {
+
             return CommandResult.Rejected(
                 "Invalid DTMF digit"
             )
@@ -197,6 +237,7 @@ class TelecomCallController(
                 CallStatus.HELD
             )
         ) {
+
             return CommandResult.Rejected(
                 "DTMF is unavailable until the call is active"
             )
@@ -204,11 +245,11 @@ class TelecomCallController(
 
         return try {
 
-            /*
-             * Ensure a previous tone cannot overlap the new one.
-             */
-            pendingDtmfStop?.let {
-                dtmfHandler.removeCallbacks(it)
+            pendingDtmfStop?.let { pending ->
+
+                dtmfHandler.removeCallbacks(
+                    pending
+                )
 
                 runCatching {
                     call.stopDtmfTone()
@@ -266,12 +307,6 @@ class TelecomCallController(
         }
     }
 
-    /**
-     * Toggle microphone mute through the active InCallService.
-     *
-     * The state itself is updated only when Android reports the
-     * resulting CallAudioState callback.
-     */
     fun toggleMute():
         CommandResult {
 
@@ -301,9 +336,6 @@ class TelecomCallController(
         }
     }
 
-    /**
-     * Toggle speakerphone through Android Telecom audio routing.
-     */
     fun toggleSpeaker():
         CommandResult {
 
@@ -333,12 +365,6 @@ class TelecomCallController(
         }
     }
 
-    /**
-     * Request a specific route returned by Android Telecom.
-     *
-     * The UI must never invent a route that Android did not report
-     * as supported.
-     */
     fun selectAudioRoute(
         route: Int
     ): CommandResult {
@@ -384,7 +410,9 @@ class TelecomCallController(
 
         return try {
 
-            action(call)
+            action(
+                call
+            )
 
             Log.i(
                 TAG,
@@ -423,19 +451,38 @@ class TelecomCallController(
 
         data class Rejected(
             val reason: String
-        ) : CommandResult
+        ) :
+            CommandResult
     }
 
     companion object {
+
         private var appContext:
             Context? = null
-
 
         private const val TAG =
             "HN-Telecom"
 
         private const val DTMF_DURATION_MS =
             180L
+
+        /*
+         * AOSP Bluetooth HFP Client Connection events.
+         *
+         * HfpClientConnection.onCallEvent() consumes these and forwards
+         * them to HeadsetClientService.connectAudio()/disconnectAudio().
+         */
+        private const val HFP_SCO_CONNECT_EVENT =
+            "com.android.bluetooth.hfpclient.SCO_CONNECT"
+
+        private const val HFP_SCO_DISCONNECT_EVENT =
+            "com.android.bluetooth.hfpclient.SCO_DISCONNECT"
+
+        private const val HFP_CLIENT_PACKAGE =
+            "com.android.bluetooth"
+
+        private const val HFP_CLIENT_CONNECTION_SERVICE =
+            "com.android.bluetooth.hfpclient.HfpClientConnectionService"
 
         private val VALID_DTMF_DIGITS =
             setOf(
@@ -464,21 +511,32 @@ class TelecomCallController(
         private var callback:
             Call.Callback? = null
 
+        /*
+         * This flag avoids firing SCO_CONNECT repeatedly for every
+         * Telecom callback belonging to the same active call.
+         */
+        private var hfpScoConnectRequested =
+            false
+
         internal fun onCallAdded(
             call: Call
         ) {
 
             currentCall?.let { old ->
 
-                callback?.let {
+                callback?.let { oldCallback ->
+
                     old.unregisterCallback(
-                        it
+                        oldCallback
                     )
                 }
             }
 
             currentCall =
                 call
+
+            hfpScoConnectRequested =
+                false
 
             callback =
                 object :
@@ -493,6 +551,35 @@ class TelecomCallController(
                             call,
                             stateValue
                         )
+
+                        /*
+                         * This is the missing NXP HFP Client audio step.
+                         *
+                         * Telecom reporting ACTIVE means HFP call signalling
+                         * has completed. Now request the SCO voice bearer.
+                         */
+                        if (
+                            stateValue ==
+                            Call.STATE_ACTIVE
+                        ) {
+
+                            requestHfpScoConnect(
+                                call
+                            )
+                        }
+
+                        if (
+                            stateValue in
+                            setOf(
+                                Call.STATE_DISCONNECTING,
+                                Call.STATE_DISCONNECTED
+                            )
+                        ) {
+
+                            requestHfpScoDisconnect(
+                                call
+                            )
+                        }
                     }
 
                     override fun onDetailsChanged(
@@ -505,10 +592,10 @@ class TelecomCallController(
                             call.state
                         )
                     }
-                }.also {
+                }.also { callCallback ->
 
                     call.registerCallback(
-                        it
+                        callCallback
                     )
                 }
 
@@ -517,9 +604,24 @@ class TelecomCallController(
                 call.state
             )
 
+            /*
+             * Covers calls which are already ACTIVE when this InCallService
+             * becomes connected.
+             */
+            if (
+                call.state ==
+                Call.STATE_ACTIVE
+            ) {
+
+                requestHfpScoConnect(
+                    call
+                )
+            }
+
             Log.i(
                 TAG,
-                "Telecom call added"
+                "Telecom call added; " +
+                    "hfpClient=${isHfpClientCall(call)}"
             )
         }
 
@@ -527,22 +629,41 @@ class TelecomCallController(
             call: Call
         ) {
 
-            callback?.let {
-                call.unregisterCallback(
-                    it
-                )
+            /*
+             * Best-effort cleanup.
+             *
+             * A remotely terminated HfpClientConnection may already be
+             * closed here; in that case the Bluetooth service simply
+             * ignores the event.
+             */
+            requestHfpScoDisconnect(
+                call
+            )
+
+            callback?.let { registeredCallback ->
+
+                runCatching {
+
+                    call.unregisterCallback(
+                        registeredCallback
+                    )
+                }
             }
 
             if (
                 currentCall ==
                 call
             ) {
+
                 currentCall =
                     null
             }
 
             callback =
                 null
+
+            hfpScoConnectRequested =
+                false
 
             state.value =
                 state.value.copy(
@@ -568,10 +689,6 @@ class TelecomCallController(
             )
         }
 
-        /**
-         * Called by HyperNovaInCallService when Android confirms the
-         * real microphone mute state.
-         */
         internal fun onCallAudioStateChanged(
             audioState: CallAudioState
         ) {
@@ -584,8 +701,132 @@ class TelecomCallController(
 
             Log.i(
                 TAG,
-                "Telecom audio state: muted=${audioState.isMuted}, route=${audioState.route}, supported=${audioState.supportedRouteMask}"
+                "Telecom audio state: " +
+                    "muted=${audioState.isMuted}, " +
+                    "route=${audioState.route}, " +
+                    "supported=${audioState.supportedRouteMask}"
             )
+        }
+
+        /**
+         * Request the Bluetooth HFP Client SCO bearer for the current call.
+         *
+         * This does NOT select a Bluetooth output endpoint in Telecom.
+         *
+         * The HFP Client connection is the source of the remote telephone
+         * voice stream. Telecom may still correctly report SPEAKER as the
+         * local playback endpoint.
+         */
+        private fun requestHfpScoConnect(
+            call: Call
+        ) {
+
+            if (
+                !isHfpClientCall(
+                    call
+                )
+            ) {
+
+                return
+            }
+
+            if (
+                hfpScoConnectRequested
+            ) {
+
+                return
+            }
+
+            try {
+
+                call.sendCallEvent(
+                    HFP_SCO_CONNECT_EVENT,
+                    Bundle.EMPTY
+                )
+
+                hfpScoConnectRequested =
+                    true
+
+                Log.i(
+                    TAG,
+                    "HFP SCO connect event dispatched"
+                )
+
+            } catch (
+                exception: Exception
+            ) {
+
+                Log.e(
+                    TAG,
+                    "Failed to request HFP SCO audio",
+                    exception
+                )
+            }
+        }
+
+        private fun requestHfpScoDisconnect(
+            call: Call
+        ) {
+
+            if (
+                !isHfpClientCall(
+                    call
+                )
+            ) {
+
+                hfpScoConnectRequested =
+                    false
+                return
+            }
+
+            /*
+             * Send this even when our local flag is false. It is a harmless
+             * best-effort cleanup and protects against a process/state race.
+             */
+            try {
+
+                call.sendCallEvent(
+                    HFP_SCO_DISCONNECT_EVENT,
+                    Bundle.EMPTY
+                )
+
+                Log.i(
+                    TAG,
+                    "HFP SCO disconnect event dispatched"
+                )
+
+            } catch (
+                exception: Exception
+            ) {
+
+                Log.w(
+                    TAG,
+                    "Failed to request HFP SCO disconnect",
+                    exception
+                )
+            } finally {
+
+                hfpScoConnectRequested =
+                    false
+            }
+        }
+
+        private fun isHfpClientCall(
+            call: Call
+        ): Boolean {
+
+            val account =
+                call.details
+                    .accountHandle
+                    ?: return false
+
+            val component =
+                account.componentName
+
+            return component.packageName ==
+                HFP_CLIENT_PACKAGE &&
+                component.className ==
+                HFP_CLIENT_CONNECTION_SERVICE
         }
 
         private fun publish(
@@ -609,6 +850,7 @@ class TelecomCallController(
                     Call.STATE_CONNECTING,
                     Call.STATE_DIALING,
                     Call.STATE_SELECT_PHONE_ACCOUNT -> {
+
                         CallStatus.DIALING
                     }
 
@@ -619,26 +861,33 @@ class TelecomCallController(
                             details.callDirection ==
                             Call.Details.DIRECTION_INCOMING
                         ) {
+
                             CallStatus.INCOMING
+
                         } else {
+
                             CallStatus.RINGING
                         }
                     }
 
                     Call.STATE_ACTIVE -> {
+
                         CallStatus.ACTIVE
                     }
 
                     Call.STATE_HOLDING -> {
+
                         CallStatus.HELD
                     }
 
                     Call.STATE_DISCONNECTED,
                     Call.STATE_DISCONNECTING -> {
+
                         CallStatus.CALL_ENDED
                     }
 
                     else -> {
+
                         CallStatus.IDLE
                     }
                 }
@@ -667,20 +916,22 @@ class TelecomCallController(
                         mapped,
 
                     displayName =
-                    CallerIdentityResolver.resolve(
-                        context =
-                            appContext,
-                        telecomDisplayName =
-                            details.contactDisplayName
-                                ?.toString()
-                                ?.takeIf {
-                                    it.isNotBlank()
-                                }
-                                ?: details.callerDisplayName
-                                    ?.toString(),
-                        number =
-                            handle
-                    ),
+                        CallerIdentityResolver.resolve(
+                            context =
+                                appContext,
+
+                            telecomDisplayName =
+                                details.contactDisplayName
+                                    ?.toString()
+                                    ?.takeIf {
+                                        it.isNotBlank()
+                                    }
+                                    ?: details.callerDisplayName
+                                        ?.toString(),
+
+                            number =
+                                handle
+                        ),
 
                     number =
                         handle,
@@ -689,8 +940,8 @@ class TelecomCallController(
                         activeSince,
 
                     /*
-                     * Preserve the real audio state previously reported
-                     * by InCallService.
+                     * Preserve the real mute state last reported by
+                     * HyperNovaInCallService.
                      */
                     isMuted =
                         previous.isMuted,
