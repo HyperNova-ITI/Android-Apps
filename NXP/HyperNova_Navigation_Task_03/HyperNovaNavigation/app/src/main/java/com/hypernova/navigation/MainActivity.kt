@@ -60,6 +60,7 @@ import com.hypernova.navigation.domain.repository.NavigationRepository
 import com.hypernova.navigation.ui.NavigationFormatters
 import com.hypernova.navigation.ui.SystemThemeResolver
 import com.hypernova.navigation.ui.map.NavigationMapController
+import com.hypernova.navigation.ui.map.NavigationMapFrameStreamer
 import com.hypernova.navigation.ui.map.SoftwareRouteOverlay
 import com.hypernova.navigation.ui.state.NavigationStateMachine
 import com.hypernova.visuals.CockpitNavigationController
@@ -76,6 +77,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var preferences: NavigationPreferences
     private lateinit var repository: NavigationRepository
     private lateinit var mapController: NavigationMapController
+    private lateinit var mapFrameStreamer: NavigationMapFrameStreamer
     private lateinit var mapView: MapView
     private lateinit var connectivityManager: ConnectivityManager
 
@@ -178,6 +180,16 @@ class MainActivity : AppCompatActivity() {
                 )
             )
         }
+        /*
+         * Temporary debug transport for QNX map mirroring. It captures only
+         * mapContainer (MapLibre + route overlay), independently of HNCL.
+         */
+        mapFrameStreamer = NavigationMapFrameStreamer(
+            window = window,
+            captureView = binding.mapContainer,
+            host = BuildConfig.MAP_FRAME_HOST,
+            port = BuildConfig.MAP_FRAME_PORT,
+        )
         val routeOverlay = SoftwareRouteOverlay(this)
         binding.mapContainer.addView(
             routeOverlay,
@@ -442,11 +454,27 @@ class MainActivity : AppCompatActivity() {
         updateMapViewportForCurrentScreen()
         renderMapScene()
         updateMapStateCardVisibility()
+        updateMapFrameStreaming()
 
         preferences.saveSafeScreen(uiState.screen)
         Log.i(
             TAG_NAVIGATION,
             "Rendered state ${uiState.screen}"
+        )
+    }
+
+    private fun updateMapFrameStreaming() {
+        if (!::mapFrameStreamer.isInitialized) return
+
+        mapFrameStreamer.setStreamingEnabled(
+            mapReady &&
+                uiState.screen in setOf(
+                    NavigationScreen.ROUTE_PREVIEW,
+                    NavigationScreen.ROUTE_ACTIVE,
+                    NavigationScreen.ROUTE_OVERVIEW,
+                ) &&
+                !isFinishing &&
+                !isDestroyed
         )
     }
 
@@ -2303,6 +2331,7 @@ class MainActivity : AppCompatActivity() {
                 mainHandler.removeCallbacks(mapLoadTimeout)
                 updateMapStateCardVisibility()
                 renderMapScene()
+                updateMapFrameStreaming()
             },
             onError = { message ->
                 showMapLoadError(message)
@@ -2472,19 +2501,19 @@ class MainActivity : AppCompatActivity() {
                 null
             }
 
+        val activeVehiclePosition =
+            uiState.vehiclePosition.takeIf {
+                uiState.screen == NavigationScreen.ROUTE_ACTIVE
+            }
+
         mapController.setScene(
             origin = ITI_ORIGIN,
             results = results,
             selectedResultId = uiState.selectedResultId,
             destination = destination,
             routePlan = routePlan,
-            /*
-             * Static-route mode:
-             * keep the OSRM route active but never render fake/simulated
-             * vehicle progress or move the camera.
-             */
-            vehiclePosition = null,
-            followVehicle = false,
+            vehiclePosition = activeVehiclePosition,
+            followVehicle = uiState.screen == NavigationScreen.ROUTE_ACTIVE,
             calculating =
                 uiState.screen ==
                     NavigationScreen.CALCULATING_ROUTE ||
@@ -2503,8 +2532,13 @@ class MainActivity : AppCompatActivity() {
                 NavigationScreen.CALCULATING_ROUTE,
                 NavigationScreen.ROUTE_PREVIEW ->
                     mapController.fitRoute()
-                NavigationScreen.ROUTE_ACTIVE ->
-                    mapController.fitRoute(active = true)
+                NavigationScreen.ROUTE_ACTIVE -> {
+                    /*
+                     * The driving camera is focused by setScene as soon as
+                     * the repository supplies a position. Do not refit the
+                     * entire route for each ACTIVE update.
+                     */
+                }
                 NavigationScreen.ARRIVED -> Unit
                 NavigationScreen.ROUTE_OVERVIEW ->
                     mapController.fitRoute(overview = true)
@@ -2605,12 +2639,14 @@ class MainActivity : AppCompatActivity() {
                     vehiclePosition = uiState.vehiclePosition
                 ) == uiState
             if (positionOnlyUpdate) {
-                /*
-                 * Static-route mode: repository position updates may still
-                 * exist for future real GPS integration, but this demo UI
-                 * deliberately does not animate or consume them.
-                 */
-                uiState = updated.copy(vehiclePosition = null)
+                uiState = updated
+                if (::mapController.isInitialized) {
+                    mapController.updateVehiclePosition(
+                        position = updated.vehiclePosition,
+                        followCamera =
+                            updated.screen == NavigationScreen.ROUTE_ACTIVE,
+                    )
+                }
                 return
             }
 
@@ -2669,7 +2705,7 @@ class MainActivity : AppCompatActivity() {
                     destination =
                         state.destination?.place,
                     routePlan = state.routePlan,
-                    vehiclePosition = null,
+                    vehiclePosition = state.vehiclePosition,
                     savedDestinationTarget = null,
                     message = null
                 )
@@ -2678,7 +2714,7 @@ class MainActivity : AppCompatActivity() {
                     screen = NavigationScreen.ARRIVED,
                     destination = state.destination?.place,
                     routePlan = state.routePlan,
-                    vehiclePosition = null,
+                    vehiclePosition = state.vehiclePosition,
                     savedDestinationTarget = null,
                     message = null
                 )
@@ -2909,6 +2945,7 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         configureFullScreenMode()
         mapView.onResume()
+        updateMapFrameStreaming()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -2917,6 +2954,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onPause() {
+        mapFrameStreamer.setStreamingEnabled(false)
         mapView.onPause()
         super.onPause()
     }
@@ -2946,6 +2984,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         mapController.destroy()
+        mapFrameStreamer.close()
         mapView.onDestroy()
         super.onDestroy()
     }

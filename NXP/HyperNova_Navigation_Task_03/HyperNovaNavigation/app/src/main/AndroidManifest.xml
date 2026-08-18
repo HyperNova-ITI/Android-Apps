@@ -46,7 +46,7 @@
         <service
             android:name=".service.NavigationCommandService"
             android:exported="true"
-            android:permission="com.hypernova.permission.CONTROL_COCKPIT_APPS">
+            android:permission="com.hypernova.permission.ACCESS_VEHICLE_GATEWAY">
 
             <intent-filter>
                 <action android:name="com.hypernova.navigation.action.BIND_COMMAND" />

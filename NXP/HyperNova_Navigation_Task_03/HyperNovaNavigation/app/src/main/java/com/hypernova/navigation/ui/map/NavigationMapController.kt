@@ -62,6 +62,8 @@ class NavigationMapController(
     private var routePlan: RoutePlan? = null
     private var vehiclePosition: VehiclePosition? = null
     private var followVehicle = false
+    private var drivingCameraLocked = false
+    private var lastValidBearingDegrees: Double? = null
     private var activeRoutePoints: List<GeoPoint> = emptyList()
     private var lastPassedDistanceBucket = -1
     private var lastFollowCameraUpdateMs = 0L
@@ -119,14 +121,12 @@ class NavigationMapController(
                 attributionGravity = Gravity.BOTTOM or Gravity.START
             }
 
-            loadStyle(
-                readyMap,
-                if (isNightMode) {
-                    DARK_STYLE_URL
-                } else {
-                    LIGHT_STYLE_URL
-                }
-            )
+            /*
+             * The cluster mirrors this rendered MapLibre frame. Keep the
+             * navigation basemap light even when AAOS itself is in night
+             * mode, so both displays present the requested real light map.
+             */
+            loadStyle(readyMap, LIGHT_STYLE_URL)
         }
     }
 
@@ -145,9 +145,22 @@ class NavigationMapController(
         this.selectedResultId = selectedResultId
         this.destination = destination
         this.routePlan = routePlan
-        // Static-route mode: never retain a moving vehicle position.
-        this.vehiclePosition = null
-        this.followVehicle = false
+        val wasFollowing = this.followVehicle
+        if (followVehicle) {
+            if (!drivingCameraLocked && vehiclePosition != null) {
+                this.vehiclePosition = vehiclePosition
+                drivingCameraLocked = true
+                vehiclePosition
+                    .bearingDegrees
+                    .takeIf(::isValidBearing)
+                    ?.let { lastValidBearingDegrees = it }
+            }
+            this.followVehicle = drivingCameraLocked
+        } else {
+            this.vehiclePosition = null
+            this.followVehicle = false
+            drivingCameraLocked = false
+        }
         val newActiveRoutePoints = routePlan?.selected?.points.orEmpty()
         if (newActiveRoutePoints != activeRoutePoints) {
             logRouteGeometry(
@@ -158,33 +171,43 @@ class NavigationMapController(
         activeRoutePoints = newActiveRoutePoints
         routeOverlay.setRoutePoints(activeRoutePoints)
         lastPassedDistanceBucket = -1
-        if (!followVehicle) {
+        if (!this.followVehicle) {
             lastFollowCameraUpdateMs = 0L
         }
         this.calculating = calculating
         reapplyScene()
+        if (this.followVehicle && !wasFollowing) {
+            this.vehiclePosition?.let { followVehicle(it, force = true) }
+        }
     }
 
     fun updateVehiclePosition(
         position: VehiclePosition?,
         followCamera: Boolean
     ) {
-        /*
-         * Static-route mode.
-         *
-         * Keep this API for future real GPS integration, but intentionally
-         * ignore position/progress input in the current HyperNova demo.
-         */
-        vehiclePosition = null
-        followVehicle = false
-        lastFollowCameraUpdateMs = 0L
-        lastPassedDistanceBucket = -1
+        if (followCamera && drivingCameraLocked) {
+            // The existing source is a route simulation. Keep the initial
+            // start-point camera/marker static instead of visualizing motion.
+            return
+        }
+
+        vehiclePosition = position
+        followVehicle = followCamera && position != null
+        drivingCameraLocked = followVehicle
+        position
+            ?.bearingDegrees
+            ?.takeIf(::isValidBearing)
+            ?.let { lastValidBearingDegrees = it }
+        if (!followVehicle) lastFollowCameraUpdateMs = 0L
 
         val style = map?.style ?: return
         if (!styleReady) return
 
-        updateVehicleStyle(style, null)
-        updatePassedRoute(style, null, force = true)
+        updateVehicleStyle(style, position)
+        updatePassedRoute(style, position, force = true)
+        if (followVehicle && position != null) {
+            followVehicle(position, force = true)
+        }
     }
 
     fun centerOnOrigin() {
@@ -515,12 +538,8 @@ class NavigationMapController(
             alternativeRoutes.map { lineFeature(it.points) }
         )
 
-        /*
-         * Static-route mode: selected route remains visible, but vehicle,
-         * passed-route and follow-camera simulation are intentionally absent.
-         */
-        updateVehicleStyle(style, null)
-        updatePassedRoute(style, null, force = true)
+        updateVehicleStyle(style, vehiclePosition)
+        updatePassedRoute(style, vehiclePosition, force = true)
 
         val calculationLine =
             if (calculating) {
@@ -640,7 +659,7 @@ class NavigationMapController(
                     )
                 )
                 .zoom(FOLLOW_ZOOM)
-                .bearing(position.bearingDegrees)
+                .bearing(cameraBearing(position))
                 .tilt(FOLLOW_TILT_DEGREES)
                 .padding(
                     0.0,
@@ -655,6 +674,17 @@ class NavigationMapController(
             FOLLOW_CAMERA_EASE_MS
         )
     }
+
+    private fun cameraBearing(position: VehiclePosition): Double =
+        position.bearingDegrees
+            .takeIf(::isValidBearing)
+            ?.also { lastValidBearingDegrees = it }
+            ?: lastValidBearingDegrees
+            ?: map?.cameraPosition?.bearing
+            ?: 0.0
+
+    private fun isValidBearing(value: Double): Boolean =
+        value.isFinite() && value >= 0.0 && value < 360.0
 
     private fun updatePointSource(
         style: Style,

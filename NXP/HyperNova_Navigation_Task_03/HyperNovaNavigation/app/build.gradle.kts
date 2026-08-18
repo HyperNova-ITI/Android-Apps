@@ -2,6 +2,11 @@ plugins {
     alias(libs.plugins.android.application)
 }
 
+val mapFrameHost =
+    providers.gradleProperty("mapFrameHost").orElse("192.168.1.51")
+val mapFramePort =
+    providers.gradleProperty("mapFramePort").orElse("6201")
+
 android {
     namespace = "com.hypernova.navigation"
 
@@ -22,12 +27,21 @@ android {
         versionCode = 1
         versionName = "1.0"
 
+        // Independent Android navigation-map frame stream. This is not HNCL.
+        buildConfigField(
+            "String",
+            "MAP_FRAME_HOST",
+            "\"${mapFrameHost.get()}\"",
+        )
+        buildConfigField("int", "MAP_FRAME_PORT", mapFramePort.get())
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildFeatures {
         // Generates binding classes for XML layouts.
         viewBinding = true
+        buildConfig = true
     }
 
     buildTypes {
