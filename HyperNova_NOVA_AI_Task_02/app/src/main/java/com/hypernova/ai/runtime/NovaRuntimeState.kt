@@ -57,6 +57,14 @@ object NovaRuntimeState {
         mutableSession.value = latestSession
     }
 
+    fun publishEvidence(turnId: String?, cards: List<NovaEvidenceCard>) = dispatch {
+        latestSession = latestSession.copy(
+            turnId = turnId ?: latestSession.turnId,
+            evidenceCards = cards.take(4),
+        )
+        mutableSession.value = latestSession
+    }
+
     fun publishAction(
         turnId: String?,
         domain: String?,

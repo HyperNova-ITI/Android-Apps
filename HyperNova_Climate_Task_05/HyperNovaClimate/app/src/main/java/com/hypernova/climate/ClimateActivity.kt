@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.hypernova.visuals.CockpitNavigationController
 
 /**
  * Full-screen portrait host for the Climate Home screen (README §7).
@@ -20,6 +21,10 @@ class ClimateActivity : AppCompatActivity() {
         // Draw edge-to-edge behind the system bars.
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_climate)
+        CockpitNavigationController.bind(
+            findViewById(R.id.cockpitNavigation),
+            CockpitNavigationController.Destination.CLIMATE,
+        )
         hideSystemBars()
     }
 

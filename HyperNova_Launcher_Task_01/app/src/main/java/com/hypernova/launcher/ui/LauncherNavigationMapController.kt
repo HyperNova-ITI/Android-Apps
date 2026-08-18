@@ -2,6 +2,7 @@ package com.hypernova.launcher.ui
 
 import android.animation.ValueAnimator
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
@@ -11,6 +12,7 @@ import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
 import android.view.Gravity
+import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import com.hypernova.launcher.R
 import com.hypernova.launcher.core.navigation.NavigationPreviewPoint
@@ -22,7 +24,6 @@ import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
 import org.maplibre.android.style.layers.CircleLayer
-import org.maplibre.android.style.layers.LineLayer
 import org.maplibre.android.style.layers.Property
 import org.maplibre.android.style.layers.PropertyFactory.circleColor
 import org.maplibre.android.style.layers.PropertyFactory.circleRadius
@@ -35,22 +36,17 @@ import org.maplibre.android.style.layers.PropertyFactory.iconImage
 import org.maplibre.android.style.layers.PropertyFactory.iconRotate
 import org.maplibre.android.style.layers.PropertyFactory.iconRotationAlignment
 import org.maplibre.android.style.layers.PropertyFactory.iconSize
-import org.maplibre.android.style.layers.PropertyFactory.lineCap
-import org.maplibre.android.style.layers.PropertyFactory.lineColor
-import org.maplibre.android.style.layers.PropertyFactory.lineJoin
-import org.maplibre.android.style.layers.PropertyFactory.lineOpacity
-import org.maplibre.android.style.layers.PropertyFactory.lineWidth
 import org.maplibre.android.style.layers.SymbolLayer
 import org.maplibre.android.style.sources.GeoJsonSource
 import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
-import org.maplibre.geojson.LineString
 import org.maplibre.geojson.Point
 
 /** Read-only MapLibre renderer for Navigation-owned route and progress data. */
 class LauncherNavigationMapController(
     private val context: Context,
     private val mapView: MapView,
+    private val routeOverlay: LauncherSoftwareRouteOverlay,
 ) {
     private var map: MapLibreMap? = null
     private var styleReady = false
@@ -68,6 +64,12 @@ class LauncherNavigationMapController(
     private var markerAnimator: ValueAnimator? = null
     private var availabilityChanged: ((Boolean) -> Unit)? = null
     private var currentNightMode = false
+    private var cameraListenersAttached = false
+
+    private val cameraMoveListener =
+        MapLibreMap.OnCameraMoveListener { routeOverlay.invalidate() }
+    private val cameraIdleListener =
+        MapLibreMap.OnCameraIdleListener { routeOverlay.invalidate() }
 
     /*
      * HOME current-position source.
@@ -142,6 +144,8 @@ class LauncherNavigationMapController(
         mapView.getMapAsync { readyMap ->
             if (destroyed) return@getMapAsync
             map = readyMap
+            routeOverlay.setMap(readyMap)
+            attachCameraListeners(readyMap)
             readyMap.uiSettings.apply {
                 isCompassEnabled = false
                 isScrollGesturesEnabled = false
@@ -195,6 +199,10 @@ class LauncherNavigationMapController(
         routeId = newRouteId
         routeVersion = newRouteVersion
         routePoints = newRoutePoints.toList()
+        if (geometryChanged) {
+            logRouteGeometry(routeId, routeVersion, routePoints)
+        }
+        routeOverlay.setRoutePoints(routePoints)
         currentPosition = newCurrentPosition
         currentBearingDegrees = newBearingDegrees
 
@@ -203,19 +211,6 @@ class LauncherNavigationMapController(
             renderedPosition = null
             renderedBearingDegrees = null
             pendingRouteFit = routePoints.size >= 2
-        }
-
-        /*
-         * A Light/Dark switch is already proven to make a missing HOME route
-         * appear because it reconstructs the MapLibre Style and therefore
-         * recreates the custom route sources/layers.
-         *
-         * Do the same reconstruction automatically when new route geometry
-         * reaches HOME, but reload the SAME theme.
-         */
-        if (geometryChanged && routePoints.size >= 2) {
-            forceCurrentStyleReload()
-            return
         }
 
         reapplyScene()
@@ -239,6 +234,7 @@ class LauncherNavigationMapController(
         routeId = ""
         routeVersion = 0L
         routePoints = emptyList()
+        routeOverlay.clearRoute()
         currentPosition = null
         currentBearingDegrees = null
         renderedPosition = null
@@ -278,17 +274,17 @@ class LauncherNavigationMapController(
         markerAnimator?.cancel()
         markerAnimator = null
         availabilityChanged = null
+        map?.let { readyMap ->
+            if (cameraListenersAttached) {
+                readyMap.removeOnCameraMoveListener(cameraMoveListener)
+                readyMap.removeOnCameraIdleListener(cameraIdleListener)
+            }
+        }
+        cameraListenersAttached = false
         mapView.removeOnDidFailLoadingMapListener(failureListener)
-    }
-
-    private fun forceCurrentStyleReload() {
-        val readyMap = map ?: return
-
-        fallbackAttempted = false
-        loadStyle(
-            readyMap,
-            if (currentNightMode) DARK_STYLE_URL else LIGHT_STYLE_URL,
-        )
+        routeOverlay.setMap(null)
+        routeOverlay.clearRoute()
+        (routeOverlay.parent as? ViewGroup)?.removeView(routeOverlay)
     }
 
     /**
@@ -351,28 +347,9 @@ class LauncherNavigationMapController(
         style.addImage(VEHICLE_IMAGE, LauncherVehicleArrowBitmap.create(context))
 
         val cyan = ContextCompat.getColor(context, R.color.hypernova_cyan)
-        val cyanDark = ContextCompat.getColor(context, R.color.hypernova_cyan_dark)
         val card = ContextCompat.getColor(context, R.color.hypernova_card)
         val destination = ContextCompat.getColor(context, R.color.hypernova_text_primary)
 
-        style.addLayer(
-            LineLayer(ROUTE_CASING_LAYER, ROUTE_SOURCE).withProperties(
-                lineColor(cyanDark),
-                lineWidth(10f),
-                lineOpacity(0.9f),
-                lineCap(Property.LINE_CAP_ROUND),
-                lineJoin(Property.LINE_JOIN_ROUND),
-            ),
-        )
-        style.addLayer(
-            LineLayer(ROUTE_LAYER, ROUTE_SOURCE).withProperties(
-                lineColor(cyan),
-                lineWidth(6f),
-                lineOpacity(1f),
-                lineCap(Property.LINE_CAP_ROUND),
-                lineJoin(Property.LINE_JOIN_ROUND),
-            ),
-        )
         style.addLayer(
             CircleLayer(START_LAYER, START_SOURCE).withProperties(
                 circleColor(cyan),
@@ -417,11 +394,7 @@ class LauncherNavigationMapController(
         if (!styleReady) return
 
         source(style, ROUTE_SOURCE)?.setGeoJson(
-            FeatureCollection.fromFeatures(
-                routePoints.takeIf { it.size >= 2 }
-                    ?.let { points -> arrayOf(lineFeature(points)) }
-                    ?: emptyArray(),
-            ),
+            FeatureCollection.fromFeatures(emptyArray()),
         )
         /*
          * Prefer real Android location for the HOME marker.
@@ -538,12 +511,12 @@ class LauncherNavigationMapController(
     private fun source(style: Style, sourceId: String): GeoJsonSource? =
         style.getSourceAs(sourceId)
 
-    private fun lineFeature(points: List<NavigationPreviewPoint>): Feature =
-        Feature.fromGeometry(
-            LineString.fromLngLats(
-                points.map { point -> Point.fromLngLat(point.longitude, point.latitude) },
-            ),
-        )
+    private fun attachCameraListeners(readyMap: MapLibreMap) {
+        if (cameraListenersAttached) return
+        readyMap.addOnCameraMoveListener(cameraMoveListener)
+        readyMap.addOnCameraIdleListener(cameraIdleListener)
+        cameraListenersAttached = true
+    }
 
     private fun fitRoute() {
         val readyMap = map ?: return
@@ -750,6 +723,44 @@ class LauncherNavigationMapController(
     private fun dp(value: Int): Int =
         (value * context.resources.displayMetrics.density).toInt()
 
+    private fun logRouteGeometry(
+        routeId: String,
+        routeVersion: Long,
+        points: List<NavigationPreviewPoint>,
+    ) {
+        if (
+            context.applicationInfo.flags and
+                ApplicationInfo.FLAG_DEBUGGABLE == 0 ||
+            points.size < 2
+        ) {
+            return
+        }
+        val first = points.first()
+        val last = points.last()
+        val latitudes = points.map(NavigationPreviewPoint::latitude)
+        val longitudes = points.map(NavigationPreviewPoint::longitude)
+        val invalid = points.any { point ->
+            !point.latitude.isFinite() ||
+                !point.longitude.isFinite() ||
+                point.latitude !in -90.0..90.0 ||
+                point.longitude !in -180.0..180.0
+        }
+        val maximumJumpDegrees = points.zipWithNext()
+            .maxOfOrNull { (from, to) ->
+                maxOf(
+                    kotlin.math.abs(to.latitude - from.latitude),
+                    kotlin.math.abs(to.longitude - from.longitude),
+                )
+            } ?: 0.0
+        Log.d(
+            TAG,
+            "routeId=$routeId routeVersion=$routeVersion points=${points.size} " +
+                "first=$first last=$last lat=${latitudes.minOrNull()}..${latitudes.maxOrNull()} " +
+                "lon=${longitudes.minOrNull()}..${longitudes.maxOrNull()} " +
+                "invalid=$invalid maxJumpDegrees=$maximumJumpDegrees",
+        )
+    }
+
     companion object {
         /*
          * Local zero-network HOME styles.
@@ -801,8 +812,6 @@ class LauncherNavigationMapController(
         private const val START_SOURCE = "hn-launcher-start-source"
         private const val DESTINATION_SOURCE = "hn-launcher-destination-source"
         private const val VEHICLE_SOURCE = "hn-launcher-vehicle-source"
-        private const val ROUTE_CASING_LAYER = "hn-launcher-route-casing"
-        private const val ROUTE_LAYER = "hn-launcher-route"
         private const val START_LAYER = "hn-launcher-start"
         private const val DESTINATION_LAYER = "hn-launcher-destination"
         private const val VEHICLE_LAYER = "hn-launcher-vehicle"

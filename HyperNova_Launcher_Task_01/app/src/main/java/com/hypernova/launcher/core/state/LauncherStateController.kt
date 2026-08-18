@@ -208,6 +208,7 @@ class LauncherStateController(
             blocked = snapshot.blocked,
             speaking = snapshot.speaking,
             showActivityProgress = snapshot.showActivityProgress,
+            evidenceCards = snapshot.evidenceCards,
             artworkVisible = true,
         )
     }

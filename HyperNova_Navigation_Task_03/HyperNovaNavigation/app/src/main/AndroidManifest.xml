@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <permission
-        android:name="com.hypernova.permission.CONTROL_COCKPIT_APPS"
-        android:protectionLevel="signature" />
-
     <!-- Load online map styles, tiles, fonts, icons, and place search results. -->
     <uses-permission android:name="android.permission.INTERNET" />
 
     <!-- Check whether the device has an active network connection. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- NOVA is a cockpit controller; this permission is defined and signed by the NOVA APK. -->
+    <uses-permission android:name="com.hypernova.permission.CONTROL_COCKPIT_APPS" />
 
     <application
         android:name=".HyperNovaNavigationApplication"

@@ -23,4 +23,15 @@ class NovaStatusSnapshotCodecTest {
     fun `rejects an unsupported schema`() {
         NovaStatusSnapshotCodec.decode("""{"schema_version":2,"visible_state":"IDLE"}""")
     }
+
+    @Test
+    fun `decodes optional maps evidence without changing schema one`() {
+        val result = NovaStatusSnapshotCodec.decode(
+            """{"schema_version":1,"visible_state":"SPEAKING","evidence_cards":[{"index":1,"title":"Cairo Service Center","detail":"Nasr City","source":"Google Maps","source_uri":"https://maps.google.com/?cid=1"}]}""",
+        )
+
+        assertEquals(1, result.evidenceCards.size)
+        assertEquals("Cairo Service Center", result.evidenceCards[0].title)
+        assertEquals("Google Maps", result.evidenceCards[0].source)
+    }
 }

@@ -11,7 +11,7 @@
         android:id="@+id/header"
         android:layout_width="0dp"
         android:layout_height="@dimen/hn_header_height"
-        android:paddingStart="8dp"
+        android:paddingStart="16dp"
         android:paddingEnd="12dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -23,8 +23,9 @@
             android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/back"
-            android:padding="11dp"
+            android:scaleType="centerInside"
             android:src="@drawable/ic_back"
+            app:tint="@color/hn_text_primary"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -284,7 +285,7 @@
         android:fillViewport="true"
         android:overScrollMode="never"
         android:paddingBottom="16dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/cockpitNavigation"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/source_selector">
@@ -1047,6 +1048,18 @@
             </LinearLayout>
         </LinearLayout>
     </com.hypernova.media.ui.NonScrollingNestedScrollView>
+
+    <include
+        android:id="@+id/cockpitNavigation"
+        layout="@layout/view_hypernova_cockpit_navigation"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/hn_cockpit_nav_height"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginBottom="@dimen/hn_cockpit_nav_bottom_margin"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <FrameLayout
         android:id="@+id/fullscreen_panel"

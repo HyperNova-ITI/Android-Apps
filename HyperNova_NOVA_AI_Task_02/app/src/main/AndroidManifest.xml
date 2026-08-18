@@ -15,6 +15,8 @@
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="com.hypernova.permission.CONTROL_COCKPIT_APPS" />
+    <!-- Read-only telemetry/fault callbacks from the signature-protected Vehicle Gateway. -->
+    <uses-permission android:name="com.hypernova.permission.ACCESS_VEHICLE_GATEWAY" />
 
     <queries>
         <package android:name="com.hypernova.navigation" />

@@ -30,3 +30,7 @@ include(":app")
 include(":hypernova-contracts")
 project(":hypernova-contracts").projectDir =
     file("../../HyperNova_Contracts/contracts")
+
+include(":nova-visuals")
+project(":nova-visuals").projectDir =
+    file("../../HyperNova_Nova_Visuals")

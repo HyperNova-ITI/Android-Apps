@@ -6,7 +6,7 @@
     <dimen name="hn_small_radius">12dp</dimen>
     <dimen name="hn_touch">48dp</dimen>
     <dimen name="hn_source_height">76dp</dimen>
-    <dimen name="hn_header_height">62dp</dimen>
+    <dimen name="hn_header_height">56dp</dimen>
     <dimen name="hn_card_padding">16dp</dimen>
     <dimen name="hn_hero_height">270dp</dimen>
     <dimen name="hn_radio_list_height">320dp</dimen>

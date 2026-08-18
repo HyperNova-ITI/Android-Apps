@@ -1,6 +1,7 @@
 package com.hypernova.launcher.core.state
 
 import android.net.Uri
+import com.hypernova.launcher.core.assistant.NovaEvidenceCard
 import com.hypernova.launcher.core.climate.ClimateAvailability
 import com.hypernova.launcher.core.integration.AppAvailability
 import com.hypernova.launcher.core.integration.AppDestination
@@ -84,6 +85,7 @@ data class AssistantUiState(
     val blocked: Boolean = false,
     val speaking: Boolean = false,
     val showActivityProgress: Boolean = false,
+    val evidenceCards: List<NovaEvidenceCard> = emptyList(),
     val artworkVisible: Boolean,
 )
 

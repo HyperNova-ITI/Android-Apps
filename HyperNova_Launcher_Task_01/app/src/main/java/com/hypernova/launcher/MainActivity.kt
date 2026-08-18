@@ -9,6 +9,7 @@ import android.util.Log
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -17,6 +18,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.hypernova.launcher.core.assistant.NovaAssistantStateParser
 import com.hypernova.launcher.core.assistant.NovaContextCardFactory
+import com.hypernova.launcher.core.assistant.NovaEvidenceCard
 import com.hypernova.launcher.core.assistant.NovaStatusClient
 import com.hypernova.launcher.core.climate.ClimateStatusClient
 import com.hypernova.launcher.core.dashboard.DashboardCard
@@ -45,6 +47,7 @@ import com.hypernova.launcher.core.state.SettingsUiState
 import com.hypernova.launcher.core.theme.LauncherThemeController
 import com.hypernova.launcher.databinding.ActivityMainBinding
 import com.hypernova.launcher.ui.LauncherNavigationMapController
+import com.hypernova.launcher.ui.LauncherSoftwareRouteOverlay
 import org.maplibre.android.MapLibre
 import org.maplibre.android.maps.MapView
 import kotlin.math.roundToInt
@@ -435,6 +438,14 @@ class MainActivity : AppCompatActivity() {
                 view.onCreate(savedInstanceState)
             }
             navigationMapView = mapView
+            val routeOverlay = LauncherSoftwareRouteOverlay(this)
+            binding.navigationMapContainer.addView(
+                routeOverlay,
+                FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                ),
+            )
 
             /*
              * Real MapLibre is available.
@@ -458,7 +469,7 @@ class MainActivity : AppCompatActivity() {
                 openNavigationFromHomeWidget()
             }
             navigationMapController =
-                LauncherNavigationMapController(this, mapView).also { controller ->
+                LauncherNavigationMapController(this, mapView, routeOverlay).also { controller ->
                     controller.initialize(
                         isNightMode = themeController.isNightModeActive(),
                     ) { available ->
@@ -1085,6 +1096,7 @@ class MainActivity : AppCompatActivity() {
 
         binding.novaActivityProgress.visibility =
             if (state.assistant.showActivityProgress) View.VISIBLE else View.GONE
+        renderNovaEvidence(state.assistant.evidenceCards)
 
         binding.textNovaQuestion.setTextColor(
             ContextCompat.getColor(
@@ -1114,6 +1126,35 @@ class MainActivity : AppCompatActivity() {
         )
         binding.novaFace.setStateName(state.assistant.runtimeState.name)
         renderNovaContext(state)
+    }
+
+    private fun renderNovaEvidence(cards: List<NovaEvidenceCard>) = with(binding) {
+        novaEvidenceContainer.removeAllViews()
+        novaEvidenceScroller.visibility = if (cards.isEmpty()) View.GONE else View.VISIBLE
+        cards.take(4).forEach { card ->
+            val view = layoutInflater.inflate(
+                R.layout.item_nova_evidence,
+                novaEvidenceContainer,
+                false,
+            )
+            view.findViewById<TextView>(R.id.textEvidenceTitle).text =
+                "${card.index}. ${card.title}"
+            view.findViewById<TextView>(R.id.textEvidenceDetail).apply {
+                text = card.detail.orEmpty()
+                visibility = if (card.detail.isNullOrBlank()) View.GONE else View.VISIBLE
+            }
+            view.findViewById<TextView>(R.id.textEvidenceSource).text = card.source
+            card.sourceUri?.let { uri ->
+                view.isClickable = true
+                view.isFocusable = true
+                view.setOnClickListener {
+                    runCatching {
+                        startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(uri)))
+                    }
+                }
+            }
+            novaEvidenceContainer.addView(view)
+        }
     }
 
     private fun renderNovaPrimaryMessage(text: String, animate: Boolean) {

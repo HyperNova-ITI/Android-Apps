@@ -24,7 +24,7 @@
             android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/back_content_description"
-            android:padding="12dp"
+            android:scaleType="centerInside"
             android:src="@drawable/ic_back"
             app:tint="@color/hypernova_text_primary" />
 

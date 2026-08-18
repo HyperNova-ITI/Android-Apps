@@ -24,6 +24,7 @@ object NovaStatusSnapshotCodec {
             blocked = value.optBoolean("blocked", false),
             speaking = value.optBoolean("speaking", false),
             showActivityProgress = value.optBoolean("activity_progress", false),
+            evidenceCards = value.parseEvidenceCards(),
         )
     }
 
@@ -36,4 +37,29 @@ object NovaStatusSnapshotCodec {
         optString(name).trim().takeIf { it.isNotEmpty() }?.also {
             require(it.length <= maximum) { "Invalid $name" }
         }
+
+    private fun JSONObject.parseEvidenceCards(): List<NovaEvidenceCard> {
+        val cards = optJSONArray("evidence_cards") ?: return emptyList()
+        require(cards.length() <= 4) { "Too many NOVA evidence cards" }
+        return buildList {
+            for (position in 0 until cards.length()) {
+                val card = cards.getJSONObject(position)
+                val sourceUri = card.optionalText("source_uri", 1_000)
+                require(sourceUri == null || sourceUri.startsWith("https://")) {
+                    "Invalid NOVA evidence source URI"
+                }
+                add(
+                    NovaEvidenceCard(
+                        index = card.optInt("index", position + 1).also {
+                            require(it in 1..4) { "Invalid NOVA evidence index" }
+                        },
+                        title = card.requiredText("title", 120),
+                        detail = card.optionalText("detail", 180),
+                        source = card.requiredText("source", 40),
+                        sourceUri = sourceUri,
+                    ),
+                )
+            }
+        }
+    }
 }

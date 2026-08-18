@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <gradient
-        android:angle="270"
-        android:startColor="@color/hypernova_background_glow"
-        android:centerColor="@color/hypernova_background"
-        android:endColor="@color/hypernova_background_secondary" />
-</shape>

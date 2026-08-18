@@ -40,6 +40,13 @@ class CabinAirflowView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
+    init {
+        // The particle glow uses additive Canvas blending. Keep this one small
+        // overlay on a software layer so it renders consistently on the NXP
+        // Vivante stack without affecting the rest of the Climate screen.
+        setLayerType(LAYER_TYPE_SOFTWARE, null)
+    }
+
     data class ZoneAirflow(
         val mode: AirflowMode?,
         val fanLevel: Int,
@@ -120,6 +127,13 @@ class CabinAirflowView @JvmOverloads constructor(
     override fun onDetachedFromWindow() {
         running = false
         super.onDetachedFromWindow()
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        // The initial state can arrive before this overlay becomes shown.
+        // Re-evaluate after attachment so a valid active stream starts.
+        post(::maybeStart)
     }
 
     override fun onVisibilityChanged(changedView: View, visibility: Int) {

@@ -7,6 +7,14 @@ enum class NovaServiceConnection {
     ERROR,
 }
 
+data class NovaEvidenceCard(
+    val index: Int,
+    val title: String,
+    val detail: String? = null,
+    val source: String,
+    val sourceUri: String? = null,
+)
+
 data class NovaStatusSnapshot(
     val connection: NovaServiceConnection,
     val state: String? = null,
@@ -20,4 +28,5 @@ data class NovaStatusSnapshot(
     val blocked: Boolean = false,
     val speaking: Boolean = false,
     val showActivityProgress: Boolean = false,
+    val evidenceCards: List<NovaEvidenceCard> = emptyList(),
 )

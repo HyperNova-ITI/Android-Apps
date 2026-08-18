@@ -1,6 +1,5 @@
 package com.hypernova.navigation
 
-import com.hypernova.contracts.HyperNovaContract
 import com.hypernova.contracts.navigation.NavigationContract
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -9,7 +8,7 @@ import java.io.File
 
 class NavigationServiceManifestTest {
     @Test
-    fun commandService_isExportedOnlyBehindSignaturePermission() {
+    fun commandService_usesCockpitControlSignaturePermissionWithoutRedeclaringIt() {
         val manifest =
             projectFile("src/main/AndroidManifest.xml")
                 .readText()
@@ -23,7 +22,7 @@ class NavigationServiceManifestTest {
         assertTrue(
             manifest.contains(
                 "android:permission=\"" +
-                    HyperNovaContract.CONTROL_PERMISSION +
+                    "com.hypernova.permission.CONTROL_COCKPIT_APPS" +
                     "\""
             )
         )
@@ -34,11 +33,7 @@ class NavigationServiceManifestTest {
                     "\""
             )
         )
-        assertTrue(
-            manifest.contains(
-                "android:protectionLevel=\"signature\""
-            )
-        )
+        assertFalse(manifest.contains("<permission"))
         assertFalse(
             manifest.contains(
                 "android.intent.category.HOME"

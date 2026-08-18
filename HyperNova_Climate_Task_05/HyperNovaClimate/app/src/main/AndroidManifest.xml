@@ -4,6 +4,8 @@
     <!-- Standard Android 16 NXP guest; vehicle access is typed Gateway AIDL. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Defined and signature-protected by Vehicle Gateway; Climate only requests it. -->
+    <uses-permission android:name="com.hypernova.permission.ACCESS_VEHICLE_GATEWAY" />
     <uses-permission android:name="com.hypernova.permission.CONTROL_COCKPIT_APPS" />
 
     <queries>

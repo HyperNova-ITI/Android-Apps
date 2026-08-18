@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <dimen name="navigation_top_bar_height">60dp</dimen>
-    <dimen name="navigation_page_margin">12dp</dimen>
-    <dimen name="navigation_map_control_size">56dp</dimen>
-    <dimen name="navigation_map_control_margin_end">14dp</dimen>
-    <dimen name="navigation_map_state_width">320dp</dimen>
-</resources>

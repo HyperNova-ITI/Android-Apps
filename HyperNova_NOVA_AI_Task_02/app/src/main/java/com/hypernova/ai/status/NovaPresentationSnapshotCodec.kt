@@ -2,6 +2,7 @@ package com.hypernova.ai.status
 
 import com.hypernova.ai.runtime.NovaRuntimeSnapshot
 import com.hypernova.ai.ui.NovaUiStateFactory
+import org.json.JSONArray
 import org.json.JSONObject
 
 /**
@@ -28,6 +29,19 @@ object NovaPresentationSnapshotCodec {
             put("blocked", snapshot.blocked)
             put("speaking", ui.isSpeaking)
             put("activity_progress", ui.showActivityProgress)
+            if (snapshot.evidenceCards.isNotEmpty()) {
+                put("evidence_cards", JSONArray().apply {
+                    snapshot.evidenceCards.take(4).forEach { card ->
+                        put(JSONObject().apply {
+                            put("index", card.index.coerceIn(1, 4))
+                            putOptionalText("title", card.title, 120)
+                            putOptionalText("detail", card.detail, 180)
+                            putOptionalText("source", card.source, 40)
+                            putOptionalText("source_uri", card.sourceUri, 1_000)
+                        })
+                    }
+                })
+            }
         }.toString()
     }
 

@@ -8,6 +8,31 @@ import org.junit.Test
 
 class NovaUiStateFactoryTest {
     @Test
+    fun `idle retains the last verified response beside its evidence`() {
+        val ui = NovaUiStateFactory.create(
+            NovaRuntimeSnapshot(
+                visibleState = NovaVisibleState.IDLE,
+                transcript = "When is the match?",
+                spokenText = "The match starts at 9 PM Cairo time.",
+            ),
+        )
+
+        assertEquals("LAST RESPONSE", ui.eyebrow)
+        assertEquals("The match starts at 9 PM Cairo time.", ui.primaryMessage)
+        assertEquals("When is the match?", ui.transcript)
+    }
+
+    @Test
+    fun `fresh idle without a response keeps the ready prompt`() {
+        val ui = NovaUiStateFactory.create(
+            NovaRuntimeSnapshot(visibleState = NovaVisibleState.IDLE),
+        )
+
+        assertEquals("VOICE READY", ui.eyebrow)
+        assertEquals("Ready when you are", ui.primaryMessage)
+    }
+
+    @Test
     fun `processing card shows the real transcript`() {
         val ui = NovaUiStateFactory.create(
             NovaRuntimeSnapshot(

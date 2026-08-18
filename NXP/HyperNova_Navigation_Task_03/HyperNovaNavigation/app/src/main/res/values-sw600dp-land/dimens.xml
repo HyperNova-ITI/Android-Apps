@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- 1024x600-class cockpit: keep a broad map and 48dp touch targets. -->
-    <dimen name="navigation_top_bar_height">56dp</dimen>
-    <dimen name="navigation_page_margin">12dp</dimen>
-    <dimen name="navigation_map_control_size">52dp</dimen>
-    <dimen name="navigation_map_control_margin_end">12dp</dimen>
-    <dimen name="navigation_map_state_width">336dp</dimen>
-</resources>

@@ -9,13 +9,14 @@ import android.os.Bundle
 import android.telecom.CallAudioState
 import android.util.Log
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.hypernova.phone.data.PhoneRepository
@@ -26,6 +27,7 @@ import com.hypernova.phone.telecom.HyperNovaInCallService
 import com.hypernova.phone.telecom.TelecomCallController
 import com.hypernova.phone.ui.PhoneScreenRenderer
 import com.hypernova.phone.ui.PhoneViewModel
+import com.hypernova.visuals.CockpitNavigationController
 import kotlinx.coroutines.launch
 
 class MainActivity :
@@ -35,6 +37,8 @@ class MainActivity :
     private lateinit var binding: ActivityMainBinding
 
     private lateinit var renderer: PhoneScreenRenderer
+
+    private var currentScreen = PhoneScreen.HOME
 
     private val isAutomotive: Boolean by lazy {
         packageManager.hasSystemFeature(
@@ -108,7 +112,7 @@ class MainActivity :
             savedInstanceState
         )
 
-        enableEdgeToEdge()
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         binding =
             ActivityMainBinding.inflate(
@@ -119,36 +123,10 @@ class MainActivity :
             binding.root
         )
 
-        /*
-         * Automotive HOME button.
-         *
-         * Do not hard-code com.hypernova.launcher here.
-         *
-         * Android resolves CATEGORY_HOME to the product HOME activity.
-         * On the HyperNova image that activity is HyperNova Launcher.
-         */
-        binding.iviHomeButton.setOnClickListener {
-            openSystemHome()
-        }
-
-        ViewCompat.setOnApplyWindowInsetsListener(
-            binding.main
-        ) { view, insets ->
-
-            val bars =
-                insets.getInsets(
-                    WindowInsetsCompat.Type.systemBars()
-                )
-
-            view.setPadding(
-                bars.left,
-                bars.top,
-                bars.right,
-                bars.bottom
-            )
-
-            insets
-        }
+        CockpitNavigationController.bind(
+            binding.cockpitNavigation,
+            CockpitNavigationController.Destination.PHONE,
+        )
 
         renderer =
             PhoneScreenRenderer(
@@ -163,6 +141,7 @@ class MainActivity :
             ) {
 
                 viewModel.uiState.collect {
+                    currentScreen = it.screen
                     renderer.render(
                         it
                     )
@@ -173,6 +152,17 @@ class MainActivity :
         handleTelecomIntent(
             intent
         )
+
+        onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    navigateBack()
+                }
+            }
+        )
+
+        hideSystemBars()
     }
 
     override fun onNewIntent(
@@ -199,6 +189,16 @@ class MainActivity :
         viewModel.start()
     }
 
+    override fun onResume() {
+        super.onResume()
+        hideSystemBars()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) hideSystemBars()
+    }
+
     override fun onStop() {
 
         viewModel.stop()
@@ -212,6 +212,14 @@ class MainActivity :
         viewModel.navigate(
             screen
         )
+
+    override fun navigateBack() {
+        if (currentScreen == PhoneScreen.HOME) {
+            openSystemHome()
+        } else {
+            viewModel.navigate(PhoneScreen.HOME)
+        }
+    }
 
     override fun requestBluetooth() =
         requestManagedPermission(
@@ -459,6 +467,14 @@ class MainActivity :
             toast(
                 "Home is unavailable"
             )
+        }
+    }
+
+    private fun hideSystemBars() {
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            hide(WindowInsetsCompat.Type.systemBars())
+            systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
     }
 

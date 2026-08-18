@@ -46,6 +46,7 @@ import com.hypernova.media.radio.InternetRadioBackend;
 import com.hypernova.media.ui.MainUiRenderer;
 import com.hypernova.media.ui.RadioBrowserController;
 import com.hypernova.media.video.YoutubeWebSession;
+import com.hypernova.visuals.CockpitNavigationController;
 
 import java.text.DateFormat;
 import java.util.Collections;
@@ -116,6 +117,9 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
         super.onCreate(savedInstanceState);
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         setContentView(R.layout.activity_main);
+        CockpitNavigationController.bind(
+                findViewById(R.id.cockpitNavigation),
+                CockpitNavigationController.Destination.MEDIA);
         application = (HyperNovaMediaApplication) getApplication();
         renderer = new MainUiRenderer(findViewById(R.id.main));
         demoController = new DemoModeController(this, findViewById(R.id.main), renderer, active -> {
@@ -289,6 +293,11 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
         super.onResume();
         configureSystemBarAppearance();
         if (selectedSource == MediaSourceType.VIDEO) attachYoutube();
+    }
+
+    @Override public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) configureSystemBarAppearance();
     }
 
     @Override protected void onStop() {

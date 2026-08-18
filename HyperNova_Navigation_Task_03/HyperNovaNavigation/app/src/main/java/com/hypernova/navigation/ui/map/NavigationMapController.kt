@@ -1,9 +1,11 @@
 package com.hypernova.navigation.ui.map
 
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.graphics.Color
 import android.os.SystemClock
 import android.view.Gravity
+import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import com.hypernova.navigation.R
 import com.hypernova.navigation.domain.model.GeoPoint
@@ -47,7 +49,8 @@ import org.maplibre.geojson.Point
 
 class NavigationMapController(
     private val context: Context,
-    private val mapView: MapView
+    private val mapView: MapView,
+    private val routeOverlay: SoftwareRouteOverlay,
 ) {
     private var map: MapLibreMap? = null
     private var styleReady = false
@@ -59,12 +62,20 @@ class NavigationMapController(
     private var routePlan: RoutePlan? = null
     private var vehiclePosition: VehiclePosition? = null
     private var followVehicle = false
+    private var drivingCameraLocked = false
+    private var lastValidBearingDegrees: Double? = null
     private var activeRoutePoints: List<GeoPoint> = emptyList()
     private var lastPassedDistanceBucket = -1
     private var lastFollowCameraUpdateMs = 0L
     private var calculating = false
     private var onStyleReady: (() -> Unit)? = null
     private var onStyleError: ((String) -> Unit)? = null
+    private var cameraListenersAttached = false
+
+    private val cameraMoveListener =
+        MapLibreMap.OnCameraMoveListener { routeOverlay.invalidate() }
+    private val cameraIdleListener =
+        MapLibreMap.OnCameraIdleListener { routeOverlay.invalidate() }
 
     private val failureListener =
         MapView.OnDidFailLoadingMapListener { message ->
@@ -98,6 +109,8 @@ class NavigationMapController(
 
         mapView.getMapAsync { readyMap ->
             map = readyMap
+            routeOverlay.setMap(readyMap)
+            attachCameraListeners(readyMap)
             readyMap.uiSettings.apply {
                 isCompassEnabled = false
                 isRotateGesturesEnabled = false
@@ -108,14 +121,12 @@ class NavigationMapController(
                 attributionGravity = Gravity.BOTTOM or Gravity.START
             }
 
-            loadStyle(
-                readyMap,
-                if (isNightMode) {
-                    DARK_STYLE_URL
-                } else {
-                    LIGHT_STYLE_URL
-                }
-            )
+            /*
+             * The cluster mirrors this rendered MapLibre frame. Keep the
+             * navigation basemap light even when AAOS itself is in night
+             * mode, so both displays present the requested real light map.
+             */
+            loadStyle(readyMap, LIGHT_STYLE_URL)
         }
     }
 
@@ -134,38 +145,69 @@ class NavigationMapController(
         this.selectedResultId = selectedResultId
         this.destination = destination
         this.routePlan = routePlan
-        // Static-route mode: never retain a moving vehicle position.
-        this.vehiclePosition = null
-        this.followVehicle = false
-        activeRoutePoints = routePlan?.selected?.points.orEmpty()
+        val wasFollowing = this.followVehicle
+        if (followVehicle) {
+            if (!drivingCameraLocked && vehiclePosition != null) {
+                this.vehiclePosition = vehiclePosition
+                drivingCameraLocked = true
+                vehiclePosition
+                    .bearingDegrees
+                    .takeIf(::isValidBearing)
+                    ?.let { lastValidBearingDegrees = it }
+            }
+            this.followVehicle = drivingCameraLocked
+        } else {
+            this.vehiclePosition = null
+            this.followVehicle = false
+            drivingCameraLocked = false
+        }
+        val newActiveRoutePoints = routePlan?.selected?.points.orEmpty()
+        if (newActiveRoutePoints != activeRoutePoints) {
+            logRouteGeometry(
+                routeId = "selected:${routePlan?.selectedIndex ?: -1}",
+                points = newActiveRoutePoints,
+            )
+        }
+        activeRoutePoints = newActiveRoutePoints
+        routeOverlay.setRoutePoints(activeRoutePoints)
         lastPassedDistanceBucket = -1
-        if (!followVehicle) {
+        if (!this.followVehicle) {
             lastFollowCameraUpdateMs = 0L
         }
         this.calculating = calculating
         reapplyScene()
+        if (this.followVehicle && !wasFollowing) {
+            this.vehiclePosition?.let { followVehicle(it, force = true) }
+        }
     }
 
     fun updateVehiclePosition(
         position: VehiclePosition?,
         followCamera: Boolean
     ) {
-        /*
-         * Static-route mode.
-         *
-         * Keep this API for future real GPS integration, but intentionally
-         * ignore position/progress input in the current HyperNova demo.
-         */
-        vehiclePosition = null
-        followVehicle = false
-        lastFollowCameraUpdateMs = 0L
-        lastPassedDistanceBucket = -1
+        if (followCamera && drivingCameraLocked) {
+            // The existing source is a route simulation. Keep the initial
+            // start-point camera/marker static instead of visualizing motion.
+            return
+        }
+
+        vehiclePosition = position
+        followVehicle = followCamera && position != null
+        drivingCameraLocked = followVehicle
+        position
+            ?.bearingDegrees
+            ?.takeIf(::isValidBearing)
+            ?.let { lastValidBearingDegrees = it }
+        if (!followVehicle) lastFollowCameraUpdateMs = 0L
 
         val style = map?.style ?: return
         if (!styleReady) return
 
-        updateVehicleStyle(style, null)
-        updatePassedRoute(style, null, force = true)
+        updateVehicleStyle(style, position)
+        updatePassedRoute(style, position, force = true)
+        if (followVehicle && position != null) {
+            followVehicle(position, force = true)
+        }
     }
 
     fun centerOnOrigin() {
@@ -230,7 +272,17 @@ class NavigationMapController(
     }
 
     fun destroy() {
+        map?.let { readyMap ->
+            if (cameraListenersAttached) {
+                readyMap.removeOnCameraMoveListener(cameraMoveListener)
+                readyMap.removeOnCameraIdleListener(cameraIdleListener)
+            }
+        }
+        cameraListenersAttached = false
         mapView.removeOnDidFailLoadingMapListener(failureListener)
+        routeOverlay.setMap(null)
+        routeOverlay.clearRoute()
+        (routeOverlay.parent as? ViewGroup)?.removeView(routeOverlay)
         onStyleReady = null
         onStyleError = null
     }
@@ -291,36 +343,6 @@ class NavigationMapController(
                     lineColor(alternativeColor),
                     lineWidth(5.0f),
                     lineOpacity(0.58f),
-                    lineCap(Property.LINE_CAP_ROUND),
-                    lineJoin(Property.LINE_JOIN_ROUND)
-                )
-            )
-        }
-
-        if (style.getLayer(SELECTED_ROUTE_CASING_LAYER) == null) {
-            style.addLayer(
-                LineLayer(
-                    SELECTED_ROUTE_CASING_LAYER,
-                    SELECTED_ROUTE_SOURCE
-                ).withProperties(
-                    lineColor(routeCasing),
-                    lineWidth(12.0f),
-                    lineOpacity(0.86f),
-                    lineCap(Property.LINE_CAP_ROUND),
-                    lineJoin(Property.LINE_JOIN_ROUND)
-                )
-            )
-        }
-
-        if (style.getLayer(SELECTED_ROUTE_LAYER) == null) {
-            style.addLayer(
-                LineLayer(
-                    SELECTED_ROUTE_LAYER,
-                    SELECTED_ROUTE_SOURCE
-                ).withProperties(
-                    lineColor(routeColor),
-                    lineWidth(7.0f),
-                    lineOpacity(1.0f),
                     lineCap(Property.LINE_CAP_ROUND),
                     lineJoin(Property.LINE_JOIN_ROUND)
                 )
@@ -497,7 +519,6 @@ class NavigationMapController(
             listOfNotNull(selected)
         )
 
-        val selectedRoute = routePlan?.selected
         val alternativeRoutes =
             routePlan?.alternatives
                 ?.filterIndexed { index, _ ->
@@ -508,7 +529,7 @@ class NavigationMapController(
         updateLineSource(
             style,
             SELECTED_ROUTE_SOURCE,
-            selectedRoute?.points?.let(::lineFeature)
+            null
         )
 
         updateLineFeaturesSource(
@@ -517,12 +538,8 @@ class NavigationMapController(
             alternativeRoutes.map { lineFeature(it.points) }
         )
 
-        /*
-         * Static-route mode: selected route remains visible, but vehicle,
-         * passed-route and follow-camera simulation are intentionally absent.
-         */
-        updateVehicleStyle(style, null)
-        updatePassedRoute(style, null, force = true)
+        updateVehicleStyle(style, vehiclePosition)
+        updatePassedRoute(style, vehiclePosition, force = true)
 
         val calculationLine =
             if (calculating) {
@@ -642,7 +659,7 @@ class NavigationMapController(
                     )
                 )
                 .zoom(FOLLOW_ZOOM)
-                .bearing(position.bearingDegrees)
+                .bearing(cameraBearing(position))
                 .tilt(FOLLOW_TILT_DEGREES)
                 .padding(
                     0.0,
@@ -657,6 +674,17 @@ class NavigationMapController(
             FOLLOW_CAMERA_EASE_MS
         )
     }
+
+    private fun cameraBearing(position: VehiclePosition): Double =
+        position.bearingDegrees
+            .takeIf(::isValidBearing)
+            ?.also { lastValidBearingDegrees = it }
+            ?: lastValidBearingDegrees
+            ?: map?.cameraPosition?.bearing
+            ?: 0.0
+
+    private fun isValidBearing(value: Double): Boolean =
+        value.isFinite() && value >= 0.0 && value < 360.0
 
     private fun updatePointSource(
         style: Style,
@@ -728,6 +756,13 @@ class NavigationMapController(
     ): GeoJsonSource? =
         style.getSourceAs(sourceId)
 
+    private fun attachCameraListeners(readyMap: MapLibreMap) {
+        if (cameraListenersAttached) return
+        readyMap.addOnCameraMoveListener(cameraMoveListener)
+        readyMap.addOnCameraIdleListener(cameraIdleListener)
+        cameraListenersAttached = true
+    }
+
     private fun lineFeature(points: List<GeoPoint>): Feature =
         Feature.fromGeometry(
             LineString.fromLngLats(
@@ -797,6 +832,40 @@ class NavigationMapController(
     private fun dp(value: Int): Int =
         (value * context.resources.displayMetrics.density).toInt()
 
+    private fun logRouteGeometry(routeId: String, points: List<GeoPoint>) {
+        if (
+            context.applicationInfo.flags and
+                ApplicationInfo.FLAG_DEBUGGABLE == 0 ||
+            points.size < 2
+        ) {
+            return
+        }
+        val first = points.first()
+        val last = points.last()
+        val latitudes = points.map(GeoPoint::latitude)
+        val longitudes = points.map(GeoPoint::longitude)
+        val invalid = points.any { point ->
+            !point.latitude.isFinite() ||
+                !point.longitude.isFinite() ||
+                point.latitude !in -90.0..90.0 ||
+                point.longitude !in -180.0..180.0
+        }
+        val maximumJumpDegrees = points.zipWithNext()
+            .maxOfOrNull { (from, to) ->
+                maxOf(
+                    kotlin.math.abs(to.latitude - from.latitude),
+                    kotlin.math.abs(to.longitude - from.longitude),
+                )
+            } ?: 0.0
+        android.util.Log.d(
+            "HN-RouteGeometry",
+            "routeId=$routeId routeVersion=local points=${points.size} " +
+                "first=$first last=$last lat=${latitudes.minOrNull()}..${latitudes.maxOrNull()} " +
+                "lon=${longitudes.minOrNull()}..${longitudes.maxOrNull()} " +
+                "invalid=$invalid maxJumpDegrees=$maximumJumpDegrees",
+        )
+    }
+
     companion object {
         const val DARK_STYLE_URL =
             "https://tiles.openfreemap.org/styles/dark"
@@ -824,10 +893,6 @@ class NavigationMapController(
 
         private const val ALTERNATIVE_ROUTE_LAYER =
             "hn-alternative-route-layer"
-        private const val SELECTED_ROUTE_CASING_LAYER =
-            "hn-selected-route-casing-layer"
-        private const val SELECTED_ROUTE_LAYER =
-            "hn-selected-route-layer"
         private const val PASSED_ROUTE_LAYER =
             "hn-passed-route-layer"
         private const val CALCULATION_LAYER =

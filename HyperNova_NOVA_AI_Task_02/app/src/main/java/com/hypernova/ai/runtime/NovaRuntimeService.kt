@@ -126,6 +126,31 @@ class NovaRuntimeService : Service(),
                 )
                 publishControlState(NovaVisibleState.PROCESSING)
             }
+            "evidence" -> NovaRuntimeState.publishEvidence(
+                turnId,
+                parseEvidenceCards(message),
+            )
+            "alert" -> {
+                val active = message.optBoolean("active", false)
+                val code = message.optionalText("code")
+                val text = message.optionalText("text")
+                    ?: if (active) "A vehicle fault is active" else "Vehicle fault cleared"
+                lastActionBlocked = active
+                if (active) {
+                    NovaRuntimeState.publishAction(
+                        turnId = turnId,
+                        domain = "vehicle",
+                        name = code ?: "fault",
+                        result = text,
+                        blocked = true,
+                        errorMessage = text,
+                    )
+                    publishControlState(NovaVisibleState.ERROR)
+                } else {
+                    NovaRuntimeState.publishResult(turnId, text, success = true)
+                    publishControlState(NovaVisibleState.IDLE)
+                }
+            }
             "action" -> {
                 lastActionBlocked = message.optBoolean("blocked", false)
                 NovaRuntimeState.publishAction(
@@ -273,6 +298,29 @@ class NovaRuntimeService : Service(),
         takeIf { has(name) && !isNull(name) }
             ?.optDouble(name)
             ?.takeIf { it.isFinite() }
+
+    private fun parseEvidenceCards(message: JSONObject): List<NovaEvidenceCard> {
+        val values = message.optJSONArray("cards") ?: return emptyList()
+        return buildList {
+            for (position in 0 until minOf(values.length(), 4)) {
+                val value = values.optJSONObject(position) ?: continue
+                val title = value.optionalText("title")?.take(120) ?: continue
+                val source = value.optionalText("source")?.take(40) ?: continue
+                val sourceUri = value.optionalText("source_uri")
+                    ?.take(1_000)
+                    ?.takeIf { it.startsWith("https://") }
+                add(
+                    NovaEvidenceCard(
+                        index = value.optInt("index", position + 1).coerceIn(1, 4),
+                        title = title,
+                        detail = value.optionalText("detail")?.take(180),
+                        source = source,
+                        sourceUri = sourceUri,
+                    ),
+                )
+            }
+        }
+    }
 
     private fun actionDomain(tool: String?): String? = when (tool) {
         "navigate", "trip_check" -> "navigation"

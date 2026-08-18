@@ -1,5 +1,7 @@
 package com.hypernova.ai.ui
 
+import com.hypernova.ai.runtime.NovaEvidenceCard
+
 data class NovaUiState(
     val visibleState: NovaVisibleState = NovaVisibleState.UNAVAILABLE,
     val eyebrow: String = "VOICE SESSION",
@@ -12,4 +14,5 @@ data class NovaUiState(
     val canCancel: Boolean = false,
     val isSpeaking: Boolean = false,
     val showActivityProgress: Boolean = false,
+    val evidenceCards: List<NovaEvidenceCard> = emptyList(),
 )

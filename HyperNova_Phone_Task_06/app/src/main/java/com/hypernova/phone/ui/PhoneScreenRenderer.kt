@@ -3,6 +3,8 @@ package com.hypernova.phone.ui
 import android.content.Context
 import android.graphics.Color
 import android.graphics.Typeface
+import android.content.res.ColorStateList
+import android.view.MotionEvent
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -13,6 +15,7 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import com.google.android.material.button.MaterialButton
 import com.hypernova.phone.R
 import com.hypernova.phone.databinding.ActivityMainBinding
 import com.hypernova.phone.domain.BluetoothConnectionState
@@ -43,6 +46,8 @@ class PhoneScreenRenderer(
         fun navigate(
             screen: PhoneScreen
         )
+
+        fun navigateBack()
 
         fun requestBluetooth()
 
@@ -127,31 +132,17 @@ class PhoneScreenRenderer(
                 ).apply {
 
                 bottomToTop =
-                    if (
-                        fullCall
-                    ) {
-                        androidx.constraintlayout.widget
-                            .ConstraintLayout
-                            .LayoutParams
-                            .UNSET
+                    if (fullCall) {
+                        binding.cockpitNavigation.id
                     } else {
                         binding.bottomNavigation.id
                     }
 
                 bottomToBottom =
-                    if (
-                        fullCall
-                    ) {
-                        androidx.constraintlayout.widget
-                            .ConstraintLayout
-                            .LayoutParams
-                            .PARENT_ID
-                    } else {
-                        androidx.constraintlayout.widget
-                            .ConstraintLayout
-                            .LayoutParams
-                            .UNSET
-                    }
+                    androidx.constraintlayout.widget
+                        .ConstraintLayout
+                        .LayoutParams
+                        .UNSET
             }
 
         binding.headerTitle.text =
@@ -184,22 +175,12 @@ class PhoneScreenRenderer(
             )
 
         binding.backButton.visibility =
-            if (
-                state.screen ==
-                    PhoneScreen.HOME ||
-                fullCall
-            ) {
-                View.INVISIBLE
-            } else {
-                View.VISIBLE
-            }
+            if (fullCall) View.INVISIBLE else View.VISIBLE
 
         binding.backButton
             .setOnClickListener {
 
-                actions.navigate(
-                    PhoneScreen.HOME
-                )
+                actions.navigateBack()
             }
 
         updateNav(
@@ -329,31 +310,24 @@ class PhoneScreenRenderer(
                 target ==
                     screen
 
+            button.isSelected = selected
             button.setTextColor(
                 color(
-                    if (
-                        selected
-                    ) {
-                        R.color
-                            .hn_primary_cyan
-                    } else {
-                        R.color
-                            .hn_text_secondary
-                    }
+                    if (selected) R.color.hn_primary_cyan
+                    else R.color.hn_text_secondary
                 )
             )
-
-            button.background =
-                if (
-                    selected
-                ) {
-                    drawable(
-                        R.drawable
-                            .bg_surface_selected
-                    )
-                } else {
-                    null
-                }
+            button.iconTint = ColorStateList.valueOf(
+                color(
+                    if (selected) R.color.hn_primary_cyan
+                    else R.color.hn_text_secondary
+                )
+            )
+            button.background = drawable(
+                if (selected) R.drawable.bg_phone_nav_selected
+                else R.drawable.bg_phone_nav
+            )
+            configureNavPressAnimation(button)
 
             button
                 .setOnClickListener {
@@ -362,6 +336,26 @@ class PhoneScreenRenderer(
                         target
                     )
                 }
+        }
+    }
+
+    private fun configureNavPressAnimation(button: MaterialButton) {
+        button.setOnTouchListener { view, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> view.animate()
+                    .scaleX(0.94f)
+                    .scaleY(0.94f)
+                    .setDuration(100L)
+                    .start()
+
+                MotionEvent.ACTION_UP,
+                MotionEvent.ACTION_CANCEL -> view.animate()
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(180L)
+                    .start()
+            }
+            false
         }
     }
 

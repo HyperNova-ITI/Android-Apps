@@ -2,11 +2,13 @@ package com.hypernova.ai
 
 import android.content.Intent
 import android.content.res.ColorStateList
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.view.View
+import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -15,10 +17,12 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.hypernova.ai.databinding.ActivityNovaBinding
+import com.hypernova.ai.runtime.NovaEvidenceCard
 import com.hypernova.ai.runtime.NovaRuntimeService
 import com.hypernova.ai.ui.NovaUiState
 import com.hypernova.ai.ui.NovaViewModel
 import com.hypernova.ai.ui.NovaVisibleState
+import com.hypernova.visuals.CockpitNavigationController
 
 class NovaActivity : AppCompatActivity() {
     private lateinit var binding: ActivityNovaBinding
@@ -47,6 +51,10 @@ class NovaActivity : AppCompatActivity() {
 
         binding = ActivityNovaBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        CockpitNavigationController.bind(
+            binding.cockpitNavigation,
+            CockpitNavigationController.Destination.NOVA,
+        )
         configureFullScreenMode()
         applySystemBarInsets()
 
@@ -70,6 +78,16 @@ class NovaActivity : AppCompatActivity() {
             systemBarsBehavior =
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        configureFullScreenMode()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) configureFullScreenMode()
     }
 
     private fun startRuntime(reconnect: Boolean = false) {
@@ -97,6 +115,7 @@ class NovaActivity : AppCompatActivity() {
         textStateEyebrow.setTextColor(statusColor)
         stateProgress.setIndicatorColor(statusColor)
         stateProgress.visibility = if (state.showActivityProgress) View.VISIBLE else View.GONE
+        renderEvidence(state.evidenceCards)
 
         val unavailable = state.visibleState == NovaVisibleState.UNAVAILABLE
         novaFace.alpha = if (unavailable) 0.44f else 1f
@@ -111,6 +130,35 @@ class NovaActivity : AppCompatActivity() {
 
         buttonSecondary.visibility = if (unavailable) View.VISIBLE else View.GONE
         buttonSecondary.isEnabled = unavailable
+    }
+
+    private fun renderEvidence(cards: List<NovaEvidenceCard>) = with(binding) {
+        evidenceContainer.removeAllViews()
+        evidenceScroller.visibility = if (cards.isEmpty()) View.GONE else View.VISIBLE
+        cards.take(4).forEach { card ->
+            val view = layoutInflater.inflate(
+                R.layout.item_nova_evidence,
+                evidenceContainer,
+                false,
+            )
+            view.findViewById<TextView>(R.id.textEvidenceTitle).text =
+                "${card.index}. ${card.title}"
+            view.findViewById<TextView>(R.id.textEvidenceDetail).apply {
+                text = card.detail.orEmpty()
+                visibility = if (card.detail.isNullOrBlank()) View.GONE else View.VISIBLE
+            }
+            view.findViewById<TextView>(R.id.textEvidenceSource).text = card.source
+            card.sourceUri?.let { uri ->
+                view.isClickable = true
+                view.isFocusable = true
+                view.setOnClickListener {
+                    runCatching {
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(uri)))
+                    }
+                }
+            }
+            evidenceContainer.addView(view)
+        }
     }
 
     private fun renderFollowUpCountdown(deadlineElapsedRealtimeMs: Long?) {

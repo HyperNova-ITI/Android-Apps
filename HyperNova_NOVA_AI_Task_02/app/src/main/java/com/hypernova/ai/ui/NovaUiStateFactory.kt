@@ -5,13 +5,23 @@ import java.util.Locale
 
 /** Converts real runtime data into concise, driver-facing state cards. */
 object NovaUiStateFactory {
-    fun create(snapshot: NovaRuntimeSnapshot): NovaUiState = when (snapshot.visibleState) {
-        NovaVisibleState.IDLE -> NovaUiState(
-            visibleState = snapshot.visibleState,
-            eyebrow = "VOICE READY",
-            primaryMessage = "Ready when you are",
-            secondaryMessage = "Say “Hey NOVA” to begin",
-        )
+    fun create(snapshot: NovaRuntimeSnapshot): NovaUiState = (when (snapshot.visibleState) {
+        NovaVisibleState.IDLE -> if (!snapshot.spokenText.isNullOrBlank()) {
+            NovaUiState(
+                visibleState = snapshot.visibleState,
+                eyebrow = "LAST RESPONSE",
+                transcript = snapshot.transcript,
+                primaryMessage = snapshot.spokenText,
+                secondaryMessage = "Say “Hey NOVA” to ask something else",
+            )
+        } else {
+            NovaUiState(
+                visibleState = snapshot.visibleState,
+                eyebrow = "VOICE READY",
+                primaryMessage = "Ready when you are",
+                secondaryMessage = "Say “Hey NOVA” to begin",
+            )
+        }
         NovaVisibleState.LISTENING -> if (snapshot.followUpDeadlineElapsedRealtimeMs != null) {
             NovaUiState(
                 visibleState = snapshot.visibleState,
@@ -92,7 +102,7 @@ object NovaUiStateFactory {
             canCancel = true,
         )
         NovaVisibleState.UNAVAILABLE -> NovaUiState()
-    }
+    }).copy(evidenceCards = snapshot.evidenceCards)
 
     private fun actionLabel(actionName: String?): String {
         if (actionName.isNullOrBlank()) return "EXECUTING"

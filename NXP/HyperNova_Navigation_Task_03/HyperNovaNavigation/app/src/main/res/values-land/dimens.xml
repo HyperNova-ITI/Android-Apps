@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Landscape prioritizes map width with compact, reachable controls. -->
-    <dimen name="navigation_top_bar_height">54dp</dimen>
-    <dimen name="navigation_page_margin">10dp</dimen>
-    <dimen name="navigation_map_control_size">48dp</dimen>
-    <dimen name="navigation_map_control_margin_end">10dp</dimen>
-    <dimen name="navigation_map_state_width">300dp</dimen>
-</resources>

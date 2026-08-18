@@ -46,6 +46,7 @@ android {
 
 dependencies {
     implementation(project(":hypernova-contracts"))
+    implementation(project(":nova-visuals"))
 
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.appcompat)

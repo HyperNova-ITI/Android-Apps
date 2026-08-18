@@ -72,6 +72,7 @@ android {
 dependencies {
     // Frozen shared IPC contract (AIDL + Java types). Never fork the AIDL.
     implementation(project(":hypernova-contracts"))
+    implementation(project(":nova-visuals"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

@@ -1,8 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.fragment.app.FragmentContainerView
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/climateFragmentContainer"
-    android:name="com.hypernova.climate.ui.ClimateFragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_screen" />
+    android:background="@drawable/bg_screen">
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/climateFragmentContainer"
+        android:name="com.hypernova.climate.ui.ClimateFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="@dimen/hn_cockpit_nav_reserved_height" />
+
+    <include
+        android:id="@+id/cockpitNavigation"
+        layout="@layout/view_hypernova_cockpit_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/hn_cockpit_nav_height"
+        android:layout_gravity="bottom"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginBottom="@dimen/hn_cockpit_nav_bottom_margin" />
+
+</FrameLayout>
