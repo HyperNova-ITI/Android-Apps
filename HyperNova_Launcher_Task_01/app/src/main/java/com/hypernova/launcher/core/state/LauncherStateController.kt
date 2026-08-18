@@ -18,6 +18,7 @@ import com.hypernova.launcher.core.navigation.NavigationRuntimeState
 import com.hypernova.launcher.core.navigation.NavigationStatusSnapshot
 import com.hypernova.launcher.core.phone.PhoneSnapshot
 import com.hypernova.launcher.core.settings.SystemSettingsSnapshot
+import com.hypernova.launcher.core.vehicle.VehicleSnapshot
 import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
@@ -58,6 +59,7 @@ class LauncherStateController(
     private var latestClimateSnapshot: ClimateSnapshot? = null
     private var latestPhoneSnapshot: PhoneSnapshot? = null
     private var latestSettingsSnapshot: SystemSettingsSnapshot? = null
+    private var latestVehicleSnapshot: VehicleSnapshot? = null
     private var navigationMapAvailable = false
 
     /**
@@ -92,6 +94,11 @@ class LauncherStateController(
         latestSettingsSnapshot = snapshot
     }
 
+    /** Store the latest read-only TC397 telemetry published by the Vehicle Gateway. */
+    fun updateVehicleSnapshot(snapshot: VehicleSnapshot) {
+        latestVehicleSnapshot = snapshot
+    }
+
     /**
      * Create a fresh complete snapshot for the launcher UI.
      */
@@ -110,16 +117,25 @@ class LauncherStateController(
     /**
      * Create the current system summary.
      *
-     * Real vehicle and connectivity clients will replace
-     * these unavailable values later.
+     * The cabin temperature is the live TC397 reading carried by the Vehicle Gateway. It is shown
+     * only while the gateway reports the telemetry as fresh, so a TriCore or QNX outage falls back
+     * to the placeholder instead of leaving the last known number on screen indefinitely.
      */
     private fun createSystemState(): SystemUiState {
+        val vehicle = latestVehicleSnapshot
+        val cabinTemperature = vehicle
+            ?.takeIf { it.connected && it.fresh }
+            ?.cabinTemperatureC
+
         return SystemUiState(
             statusText = applicationContext.getString(
                 R.string.system_status_unavailable
             ),
-            outsideTemperature =
-                applicationContext.getString(
+            outsideTemperature = cabinTemperature
+                ?.let {
+                    applicationContext.getString(R.string.cabin_temperature_format, it)
+                }
+                ?: applicationContext.getString(
                     R.string.temperature_value_unavailable
                 ),
             networkText = applicationContext.getString(
