@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Item while it is being pressed -->
+    <item android:state_pressed="true">
+
+        <shape android:shape="rectangle">
+
+            <corners android:radius="@dimen/bottom_nav_item_radius" />
+
+            <solid android:color="@color/hypernova_selected" />
+
+            <stroke
+                android:width="1dp"
+                android:color="@color/hypernova_cyan" />
+
+        </shape>
+
+    </item>
+
+    <!-- Currently selected section -->
+    <item android:state_selected="true">
+
+        <shape android:shape="rectangle">
+
+            <corners android:radius="@dimen/bottom_nav_item_radius" />
+
+            <solid android:color="@color/hypernova_cyan_dark" />
+
+            <stroke
+                android:width="2dp"
+                android:color="@color/hypernova_cyan" />
+
+        </shape>
+
+    </item>
+
+    <!-- Keyboard or rotary focus -->
+    <item android:state_focused="true">
+
+        <shape android:shape="rectangle">
+
+            <corners android:radius="@dimen/bottom_nav_item_radius" />
+
+            <solid android:color="@color/hypernova_selected" />
+
+            <stroke
+                android:width="2dp"
+                android:color="@color/hypernova_cyan" />
+
+        </shape>
+
+    </item>
+
+    <!-- Normal state -->
+    <item>
+
+        <shape android:shape="rectangle">
+
+            <corners android:radius="@dimen/bottom_nav_item_radius" />
+
+            <solid android:color="@android:color/transparent" />
+
+        </shape>
+
+    </item>
+
+</selector>

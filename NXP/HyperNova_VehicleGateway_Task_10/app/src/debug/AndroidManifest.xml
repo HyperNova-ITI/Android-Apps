@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!--
+          Temporary debug-only ADB bring-up entry point. It starts the already
+          signature-protected gateway service from a foreground Activity and
+          immediately finishes; it is deliberately absent from release APKs.
+        -->
+        <activity
+            android:name=".GatewayDebugActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:theme="@android:style/Theme.NoDisplay" />
+    </application>
+</manifest>

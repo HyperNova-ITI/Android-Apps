@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">HyperNova Phone</string>
+    <string name="open_action">com.hypernova.phone.action.OPEN</string>
+    <string name="cd_back">Back</string>
+    <string name="cd_phone">Phone</string>
+    <string name="cd_bluetooth">Bluetooth status</string>
+    <string name="cd_home">Home</string>
+    <string name="cd_keypad">Keypad</string>
+    <string name="cd_contacts">Contacts</string>
+    <string name="cd_recents">Recents</string>
+</resources>

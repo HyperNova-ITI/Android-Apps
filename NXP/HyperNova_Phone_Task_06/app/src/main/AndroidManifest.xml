@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Public Bluetooth observation -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_CONNECT" />
+
+    <!--
+         HyperNova AAOS platform bridge.
+
+         This is a signature permission. It becomes usable only when
+         HyperNova Phone is platform-signed inside the HyperNova image.
+         Standalone handset builds safely fall back to public APIs.
+    -->
+    <uses-permission
+        android:name="com.hypernova.permission.BIND_CONNECTIVITY_SERVICE" />
+
+    <!-- Telecom -->
+    <uses-permission
+        android:name="android.permission.CALL_PHONE" />
+
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
+
+    <!-- Real contacts -->
+    <uses-permission
+        android:name="android.permission.READ_CONTACTS" />
+
+    <!-- Real call history -->
+    <uses-permission
+        android:name="android.permission.READ_CALL_LOG" />
+
+    <!-- Android 13+ notifications -->
+    <uses-permission
+        android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <queries>
+        <package android:name="com.hypernova.connectivity" />
+    </queries>
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.HyperNovaPhone">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="com.hypernova.phone.action.OPEN" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.DIAL" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.DIAL" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="tel" />
+            </intent-filter>
+
+        </activity>
+
+        <activity
+            android:name=".telecom.IncomingCallActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.HyperNovaPhone.IncomingBar"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true" />
+
+        <!--
+             Android Telecom / AAOS InCallService.
+        -->
+        <service
+            android:name=".telecom.HyperNovaInCallService"
+            android:exported="true"
+            android:permission="android.permission.BIND_INCALL_SERVICE">
+
+            <meta-data
+                android:name="android.telecom.IN_CALL_SERVICE_UI"
+                android:value="true" />
+
+            <meta-data
+                android:name="android.telecom.IN_CALL_SERVICE_CAR_MODE_UI"
+                android:value="true" />
+
+            <intent-filter>
+                <action android:name="android.telecom.InCallService" />
+            </intent-filter>
+
+        </service>
+
+        <!--
+             NOVA -> HyperNova Phone Binder command service.
+
+             Only applications holding the HyperNova signature permission
+             can bind to this service.
+
+             NOVA binds using:
+             com.hypernova.phone.action.BIND_COMMAND
+        -->
+        <service
+            android:name=".service.PhoneCommandService"
+            android:exported="true"
+            android:permission="com.hypernova.permission.CONTROL_COCKPIT_APPS">
+
+            <intent-filter>
+                <action android:name="com.hypernova.phone.action.BIND_COMMAND" />
+            </intent-filter>
+
+        </service>
+
+        <receiver
+            android:name=".telecom.CallActionReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+    </application>
+
+</manifest>

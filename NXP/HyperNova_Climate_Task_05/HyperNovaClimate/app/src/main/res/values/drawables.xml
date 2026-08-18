@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="vehicle_top_theme" type="drawable">@drawable/vehicle_top_light_stage</item>
+</resources>

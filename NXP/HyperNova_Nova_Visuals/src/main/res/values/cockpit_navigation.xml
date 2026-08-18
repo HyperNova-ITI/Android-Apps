@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="hn_cockpit_nav_height">98dp</dimen>
+    <dimen name="hn_cockpit_nav_bottom_margin">6dp</dimen>
+    <dimen name="hn_cockpit_nav_reserved_height">104dp</dimen>
+    <dimen name="hn_cockpit_nav_selected_size">55dp</dimen>
+
+    <color name="hn_cockpit_bottom_nav_start">#FCFFFFFF</color>
+    <color name="hn_cockpit_bottom_nav_center">#FFF7FBFD</color>
+    <color name="hn_cockpit_bottom_nav_end">#FCFFFFFF</color>
+    <color name="hn_cockpit_border">#9BAFBD</color>
+    <color name="hn_cockpit_text_dark">#021118</color>
+    <color name="hn_cockpit_text_secondary">#4E616E</color>
+    <color name="hn_cockpit_icon_primary">#071722</color>
+    <color name="hn_cockpit_selected_outer_fill">#26087F91</color>
+    <color name="hn_cockpit_selected_outer_stroke">#78087F91</color>
+    <color name="hn_cockpit_selected_inner_start">#31DCE7</color>
+    <color name="hn_cockpit_selected_inner_end">#11AABD</color>
+    <color name="hn_cockpit_selected_inner_stroke">#6EEAF0</color>
+
+    <string name="hn_cockpit_nav_home">Home</string>
+    <string name="hn_cockpit_nav_navigation">Navigation</string>
+    <string name="hn_cockpit_nav_media">Media</string>
+    <string name="hn_cockpit_nav_climate">Climate</string>
+    <string name="hn_cockpit_nav_nova">NOVA AI</string>
+    <string name="hn_cockpit_nav_phone">Phone</string>
+    <string name="hn_cockpit_nav_settings">Settings</string>
+</resources>

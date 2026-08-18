@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <path
+        android:fillColor="@color/hypernova_cyan_bright"
+        android:pathData="M7.5,6H11V18H7.5Z" />
+
+    <path
+        android:fillColor="@color/hypernova_cyan_bright"
+        android:pathData="M13,6H16.5V18H13Z" />
+
+</vector>

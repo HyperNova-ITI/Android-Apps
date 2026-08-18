@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+        Granted only when the production launcher is installed as a
+        privileged AOSP application and allowlisted in privapp permissions.
+        Normal adb-installed builds automatically use application-only mode.
+    -->
+    <uses-permission
+        android:name="android.permission.MODIFY_DAY_NIGHT_MODE"
+        tools:ignore="ProtectedPermissions" />
+
+    <!-- Read-only NOVA state, granted only to an APK signed like NOVA AI. -->
+    <uses-permission
+        android:name="com.hypernova.ai.permission.READ_STATUS" />
+
+    <!-- Signature-protected frozen Navigation/Climate contract. -->
+    <uses-permission
+        android:name="com.hypernova.permission.CONTROL_COCKPIT_APPS" />
+
+    <!-- Read-only Android framework state used by dashboard cards. -->
+    <uses-permission
+        android:name="android.permission.ACCESS_WIFI_STATE" />
+
+    <!--
+        Required to inspect the real connected Bluetooth device.
+        Bluetooth being ON is not treated as a connected phone.
+    -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_CONNECT" />
+
+    <!-- Required only for the read-only OpenFreeMap style/tile renderer. -->
+    <uses-permission
+        android:name="android.permission.INTERNET" />
+
+    <!-- MapLibre can optionally consume device location, but Launcher must not. -->
+    <uses-permission
+        android:name="android.permission.ACCESS_COARSE_LOCATION"
+        tools:node="remove" />
+
+    <uses-permission
+        android:name="android.permission.ACCESS_FINE_LOCATION"
+        tools:node="remove" />
+
+    <!-- MapLibre must not make the boot-critical HOME depend on Vulkan. -->
+    <uses-feature
+        android:name="android.hardware.vulkan.version"
+        android:required="false"
+        tools:replace="android:required" />
+
+    <queries>
+
+        <!-- NOVA AI -->
+        <package android:name="com.hypernova.ai" />
+
+        <intent>
+            <action android:name="com.hypernova.ai.action.OPEN" />
+            <category android:name="android.intent.category.DEFAULT" />
+        </intent>
+
+        <intent>
+            <action android:name="com.hypernova.ai.action.BIND_STATUS" />
+        </intent>
+
+        <!-- Navigation -->
+        <package android:name="com.hypernova.navigation" />
+
+        <intent>
+            <action android:name="com.hypernova.navigation.action.OPEN" />
+            <category android:name="android.intent.category.DEFAULT" />
+        </intent>
+
+        <intent>
+            <action android:name="com.hypernova.navigation.action.BIND_COMMAND" />
+        </intent>
+
+        <!-- Media -->
+        <package android:name="com.hypernova.media" />
+
+        <intent>
+            <action android:name="com.hypernova.media.action.OPEN" />
+            <category android:name="android.intent.category.DEFAULT" />
+        </intent>
+
+        <intent>
+            <action android:name="android.media.browse.MediaBrowserService" />
+        </intent>
+
+        <!-- Phone -->
+        <package android:name="com.hypernova.phone" />
+
+        <intent>
+            <action android:name="com.hypernova.phone.action.OPEN" />
+            <category android:name="android.intent.category.DEFAULT" />
+        </intent>
+
+        <!-- Climate -->
+        <package android:name="com.hypernova.climate" />
+
+        <intent>
+            <action android:name="com.hypernova.climate.action.OPEN" />
+            <category android:name="android.intent.category.DEFAULT" />
+        </intent>
+
+        <intent>
+            <action android:name="com.hypernova.climate.action.BIND_COMMAND" />
+        </intent>
+
+        <!-- Weather -->
+        <package android:name="com.hypernova.weather" />
+
+        <intent>
+            <action android:name="com.hypernova.weather.action.OPEN" />
+            <category android:name="android.intent.category.DEFAULT" />
+        </intent>
+
+        <!-- Driver Profile -->
+        <package android:name="com.hypernova.driverprofile" />
+
+        <intent>
+            <action android:name="com.hypernova.driverprofile.action.OPEN" />
+            <category android:name="android.intent.category.DEFAULT" />
+        </intent>
+
+        <!-- HyperNova Settings -->
+        <package android:name="com.hypernova.settings" />
+
+        <intent>
+            <action android:name="com.hypernova.settings.action.OPEN" />
+            <category android:name="android.intent.category.DEFAULT" />
+        </intent>
+
+        <!-- Stock Settings fallback on the standard Android 16 NXP guest. -->
+        <intent>
+            <action android:name="android.settings.SETTINGS" />
+        </intent>
+
+    </queries>
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.HyperNovaLauncher">
+
+        <activity
+            android:name=".MainActivity"
+            android:clearTaskOnLaunch="true"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:resizeableActivity="true"
+            android:screenOrientation="portrait"
+            android:stateNotNeeded="true">
+
+            <intent-filter android:priority="10">
+
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+
+            </intent-filter>
+
+            <intent-filter>
+
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+
+            </intent-filter>
+
+        </activity>
+
+    </application>
+
+</manifest>
