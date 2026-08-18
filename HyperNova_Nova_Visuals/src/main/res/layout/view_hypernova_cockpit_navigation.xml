@@ -14,25 +14,25 @@
     android:paddingEnd="6dp"
     android:paddingBottom="4dp">
 
-    <FrameLayout android:id="@+id/hnCockpitNavHome" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clickable="true" android:focusable="true" android:foreground="?attr/selectableItemBackgroundBorderless">
+    <FrameLayout android:id="@+id/hnCockpitNavHome" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clickable="true" android:focusable="true" android:foreground="?android:attr/selectableItemBackgroundBorderless">
         <ImageView android:id="@+id/hnCockpitNavHomeIcon" android:layout_width="32dp" android:layout_height="32dp" android:layout_gravity="center" android:alpha="0.88" android:contentDescription="@string/hn_cockpit_nav_home" android:scaleType="centerInside" android:src="@drawable/hn_ic_nav_home" />
     </FrameLayout>
-    <FrameLayout android:id="@+id/hnCockpitNavNavigation" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clickable="true" android:focusable="true" android:foreground="?attr/selectableItemBackgroundBorderless">
+    <FrameLayout android:id="@+id/hnCockpitNavNavigation" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clickable="true" android:focusable="true" android:foreground="?android:attr/selectableItemBackgroundBorderless">
         <ImageView android:id="@+id/hnCockpitNavNavigationIcon" android:layout_width="39dp" android:layout_height="39dp" android:layout_gravity="center" android:alpha="0.88" android:contentDescription="@string/hn_cockpit_nav_navigation" android:scaleType="centerInside" android:src="@drawable/hn_ic_nav_navigation" />
     </FrameLayout>
-    <FrameLayout android:id="@+id/hnCockpitNavMedia" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clickable="true" android:focusable="true" android:foreground="?attr/selectableItemBackgroundBorderless">
+    <FrameLayout android:id="@+id/hnCockpitNavMedia" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clickable="true" android:focusable="true" android:foreground="?android:attr/selectableItemBackgroundBorderless">
         <ImageView android:id="@+id/hnCockpitNavMediaIcon" android:layout_width="39dp" android:layout_height="39dp" android:layout_gravity="center" android:alpha="0.88" android:contentDescription="@string/hn_cockpit_nav_media" android:scaleType="centerInside" android:src="@drawable/hn_ic_nav_media" />
     </FrameLayout>
-    <FrameLayout android:id="@+id/hnCockpitNavClimate" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clickable="true" android:focusable="true" android:foreground="?attr/selectableItemBackgroundBorderless">
+    <FrameLayout android:id="@+id/hnCockpitNavClimate" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clickable="true" android:focusable="true" android:foreground="?android:attr/selectableItemBackgroundBorderless">
         <ImageView android:id="@+id/hnCockpitNavClimateIcon" android:layout_width="33dp" android:layout_height="33dp" android:layout_gravity="center" android:alpha="0.88" android:contentDescription="@string/hn_cockpit_nav_climate" android:scaleType="centerInside" android:src="@drawable/hn_ic_nav_climate" />
     </FrameLayout>
-    <FrameLayout android:id="@+id/hnCockpitNavNova" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clickable="true" android:focusable="true" android:foreground="?attr/selectableItemBackgroundBorderless">
+    <FrameLayout android:id="@+id/hnCockpitNavNova" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clickable="true" android:focusable="true" android:foreground="?android:attr/selectableItemBackgroundBorderless">
         <ImageView android:id="@+id/hnCockpitNavNovaIcon" android:layout_width="28dp" android:layout_height="28dp" android:layout_gravity="center" android:contentDescription="@string/hn_cockpit_nav_nova" android:scaleType="fitCenter" android:src="@drawable/nova_face_mark" />
     </FrameLayout>
-    <FrameLayout android:id="@+id/hnCockpitNavPhone" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clickable="true" android:focusable="true" android:foreground="?attr/selectableItemBackgroundBorderless">
+    <FrameLayout android:id="@+id/hnCockpitNavPhone" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clickable="true" android:focusable="true" android:foreground="?android:attr/selectableItemBackgroundBorderless">
         <ImageView android:id="@+id/hnCockpitNavPhoneIcon" android:layout_width="38dp" android:layout_height="38dp" android:layout_gravity="center" android:alpha="0.88" android:contentDescription="@string/hn_cockpit_nav_phone" android:scaleType="centerInside" android:src="@drawable/hn_ic_nav_phone" />
     </FrameLayout>
-    <FrameLayout android:id="@+id/hnCockpitNavSettings" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clickable="true" android:focusable="true" android:foreground="?attr/selectableItemBackgroundBorderless">
+    <FrameLayout android:id="@+id/hnCockpitNavSettings" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clickable="true" android:focusable="true" android:foreground="?android:attr/selectableItemBackgroundBorderless">
         <ImageView android:id="@+id/hnCockpitNavSettingsIcon" android:layout_width="40dp" android:layout_height="40dp" android:layout_gravity="center" android:alpha="0.88" android:contentDescription="@string/hn_cockpit_nav_settings" android:scaleType="centerInside" android:src="@drawable/hn_ic_nav_settings" />
     </FrameLayout>
 </LinearLayout>
