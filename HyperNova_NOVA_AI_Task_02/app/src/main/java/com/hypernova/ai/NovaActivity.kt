@@ -8,6 +8,8 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.view.View
+import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -16,32 +18,41 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.hypernova.ai.databinding.ActivityNovaBinding
 import com.hypernova.ai.runtime.NovaEvidenceCard
+import com.hypernova.ai.runtime.NovaMessage
+import com.hypernova.ai.runtime.NovaMessageRole
+import com.hypernova.ai.runtime.NovaMessageTone
 import com.hypernova.ai.runtime.NovaRuntimeService
+import com.hypernova.ai.runtime.NovaRuntimeState
 import com.hypernova.ai.ui.NovaUiState
 import com.hypernova.ai.ui.NovaViewModel
 import com.hypernova.ai.ui.NovaVisibleState
 import com.hypernova.visuals.CockpitNavigationController
+import com.hypernova.visuals.NovaFaceView
 
 class NovaActivity : AppCompatActivity() {
     private lateinit var binding: ActivityNovaBinding
     private val viewModel: NovaViewModel by viewModels()
     private val countdownHandler = Handler(Looper.getMainLooper())
     private var followUpDeadlineElapsedRealtimeMs: Long? = null
+    private var muted = false
+    private var renderedMessageCount = 0
+
     private val followUpCountdownTick = object : Runnable {
         override fun run() {
             val deadline = followUpDeadlineElapsedRealtimeMs ?: return
             val remainingMs = (deadline - SystemClock.elapsedRealtime()).coerceAtLeast(0L)
-            val remainingSeconds = (remainingMs + 999L) / 1_000L
-            binding.textSecondaryMessage.text = if (remainingMs > 0L) {
-                "Continue speaking · ${remainingSeconds}s"
-            } else {
-                "Listening window closed"
+            if (remainingMs <= 0L) {
+                followUpDeadlineElapsedRealtimeMs = null
+                renderSessionHint()
+                return
             }
-            if (remainingMs > 0L) {
-                countdownHandler.postDelayed(this, minOf(remainingMs, 250L))
-            }
+            val remainingSeconds = ((remainingMs + 999L) / 1_000L).toInt()
+            binding.textSessionHint.text =
+                getString(R.string.follow_up_countdown, remainingSeconds)
+            countdownHandler.postDelayed(this, minOf(remainingMs, 250L))
         }
     }
 
@@ -59,8 +70,18 @@ class NovaActivity : AppCompatActivity() {
         applySystemBarInsets()
 
         viewModel.uiState.observe(this, ::render)
+        NovaRuntimeState.conversation.observe(this, ::renderConversation)
+        NovaRuntimeState.muted.observe(this, ::renderMuted)
+
         binding.buttonBack.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
         binding.buttonSecondary.setOnClickListener { startRuntime(reconnect = true) }
+        binding.buttonCancel.setOnClickListener { sendRuntimeAction(NovaRuntimeService.ACTION_CANCEL) }
+        binding.buttonMute.setOnClickListener {
+            sendRuntimeAction(NovaRuntimeService.ACTION_SET_MUTED) {
+                putExtra(NovaRuntimeService.EXTRA_MUTED, !muted)
+            }
+        }
+
         startRuntime(reconnect = false)
     }
 
@@ -91,58 +112,172 @@ class NovaActivity : AppCompatActivity() {
     }
 
     private fun startRuntime(reconnect: Boolean = false) {
+        if (reconnect) {
+            sendRuntimeAction(NovaRuntimeService.ACTION_RECONNECT)
+        } else {
+            ContextCompat.startForegroundService(
+                this,
+                Intent(this, NovaRuntimeService::class.java),
+            )
+        }
+    }
+
+    private fun sendRuntimeAction(action: String, configure: Intent.() -> Unit = {}) {
         ContextCompat.startForegroundService(
             this,
             Intent(this, NovaRuntimeService::class.java).apply {
-                if (reconnect) action = NovaRuntimeService.ACTION_RECONNECT
+                this.action = action
+                configure()
             },
         )
     }
 
     private fun render(state: NovaUiState) = with(binding) {
-        textStatus.text = state.visibleState.statusLabel()
-        textGreetingSubtitle.setText(state.visibleState.subtitleResource())
-        textVoiceHint.setText(state.visibleState.voiceHintResource())
-        textStateEyebrow.text = state.eyebrow
-        textPrimaryMessage.text = state.primaryMessage
-        textSecondaryMessage.text = state.secondaryMessage.orEmpty()
-        textSecondaryMessage.visibility = if (state.secondaryMessage == null) View.GONE else View.VISIBLE
-        renderFollowUpCountdown(state.followUpDeadlineElapsedRealtimeMs)
+        val unavailable = state.visibleState == NovaVisibleState.UNAVAILABLE
 
+        textStatus.text = state.visibleState.statusLabel()
         val statusColor = ContextCompat.getColor(this@NovaActivity, state.visibleState.colorResource())
         textStatus.setTextColor(statusColor)
         statusDot.backgroundTintList = ColorStateList.valueOf(statusColor)
-        textStateEyebrow.setTextColor(statusColor)
-        stateProgress.setIndicatorColor(statusColor)
-        stateProgress.visibility = if (state.showActivityProgress) View.VISIBLE else View.GONE
-        renderEvidence(state.evidenceCards)
 
-        val unavailable = state.visibleState == NovaVisibleState.UNAVAILABLE
+        applyFacePalette(novaFace)
+        applyFacePalette(novaFaceHero)
         novaFace.alpha = if (unavailable) 0.44f else 1f
-        novaFace.setPalette(
-            accent = ContextCompat.getColor(this@NovaActivity, R.color.hypernova_cyan),
-            secondaryAccent = ContextCompat.getColor(this@NovaActivity, R.color.hypernova_purple),
-            success = ContextCompat.getColor(this@NovaActivity, R.color.hypernova_success),
-            warning = ContextCompat.getColor(this@NovaActivity, R.color.hypernova_warning),
-            error = ContextCompat.getColor(this@NovaActivity, R.color.hypernova_error),
-        )
+        novaFaceHero.alpha = novaFace.alpha
         novaFace.setStateName(state.visibleState.name)
+        novaFaceHero.setStateName(state.visibleState.name)
 
+        textConversationEmpty.setText(
+            if (unavailable) {
+                R.string.conversation_empty_unavailable
+            } else {
+                R.string.conversation_empty_ready
+            },
+        )
+
+        // Offline, the only useful control is reconnecting; the rest would do nothing.
         buttonSecondary.visibility = if (unavailable) View.VISIBLE else View.GONE
-        buttonSecondary.isEnabled = unavailable
+        buttonMute.visibility = if (unavailable) View.GONE else View.VISIBLE
+        buttonCancel.visibility = if (unavailable) View.GONE else View.VISIBLE
+        buttonCancel.isEnabled = state.canCancel
+
+        renderFollowUpCountdown(state.followUpDeadlineElapsedRealtimeMs)
     }
 
-    private fun renderEvidence(cards: List<NovaEvidenceCard>) = with(binding) {
-        evidenceContainer.removeAllViews()
-        evidenceScroller.visibility = if (cards.isEmpty()) View.GONE else View.VISIBLE
+    private fun applyFacePalette(view: NovaFaceView) {
+        view.setPalette(
+            accent = ContextCompat.getColor(this, R.color.hypernova_cyan),
+            secondaryAccent = ContextCompat.getColor(this, R.color.hypernova_purple),
+            success = ContextCompat.getColor(this, R.color.hypernova_success),
+            warning = ContextCompat.getColor(this, R.color.hypernova_warning),
+            error = ContextCompat.getColor(this, R.color.hypernova_error),
+        )
+    }
+
+    private fun renderMuted(value: Boolean) {
+        muted = value
+        binding.buttonMute.setText(if (value) R.string.unmute else R.string.mute)
+        binding.buttonMute.contentDescription = getString(
+            if (value) R.string.unmute_description else R.string.mute_description,
+        )
+        renderSessionHint()
+    }
+
+    /**
+     * The hint slot carries one thing at a time, in priority order: an open follow-up window is
+     * time-critical and is written by the countdown itself, a mute is a state the driver needs
+     * reminding of, and otherwise the bar stays empty rather than restating the status chip.
+     */
+    private fun renderSessionHint() {
+        if (followUpDeadlineElapsedRealtimeMs != null) return
+        binding.textSessionHint.text = if (muted) getString(R.string.muted_hint) else ""
+    }
+
+    private fun renderConversation(messages: List<NovaMessage>) {
+        val container = binding.conversationContainer
+        val empty = messages.isEmpty()
+        binding.emptyState.visibility = if (empty) View.VISIBLE else View.GONE
+        binding.conversationScroller.visibility = if (empty) View.INVISIBLE else View.VISIBLE
+
+        // Rows are rebound in place rather than rebuilt: a single turn is reported many times over
+        // as the transcript, progress, action and reply arrive, and re-inflating the whole history
+        // on each of those would drop frames while NOVA is speaking.
+        messages.forEachIndexed { index, message ->
+            val row = container.getChildAt(index) ?: layoutInflater
+                .inflate(R.layout.item_nova_message, container, false)
+                .also(container::addView)
+            bindMessage(row as ViewGroup, message)
+        }
+        while (container.childCount > messages.size) {
+            container.removeViewAt(container.childCount - 1)
+        }
+
+        if (messages.size != renderedMessageCount) {
+            renderedMessageCount = messages.size
+            binding.conversationScroller.post {
+                binding.conversationScroller.fullScroll(View.FOCUS_DOWN)
+            }
+        }
+    }
+
+    private fun bindMessage(row: ViewGroup, message: NovaMessage) {
+        val driver = message.role == NovaMessageRole.DRIVER
+
+        // The bubble fills the row and the row is inset on one side. LinearLayout ignores
+        // maxWidth, so an asymmetric inset is what gives the two speakers their stagger and caps
+        // how wide a long reply can run.
+        val inset = resources.getDimensionPixelSize(R.dimen.nova_bubble_inset)
+        row.setPaddingRelative(if (driver) inset else 0, 0, if (driver) 0 else inset, 0)
+
+        val bubble = row.findViewById<LinearLayout>(R.id.messageBubble)
+        bubble.setBackgroundResource(
+            when {
+                driver -> R.drawable.bg_nova_bubble_driver
+                message.tone == NovaMessageTone.ERROR -> R.drawable.bg_nova_bubble_alert
+                else -> R.drawable.bg_nova_bubble_nova
+            },
+        )
+
+        val roleView = row.findViewById<TextView>(R.id.textMessageRole)
+        roleView.setText(if (driver) R.string.role_driver else R.string.role_nova)
+        roleView.setTextColor(
+            ContextCompat.getColor(
+                this,
+                when {
+                    driver -> R.color.hypernova_text_secondary
+                    message.tone == NovaMessageTone.ERROR -> R.color.hypernova_error
+                    message.tone == NovaMessageTone.SUCCESS -> R.color.hypernova_success
+                    else -> R.color.hypernova_cyan
+                },
+            ),
+        )
+
+        row.findViewById<TextView>(R.id.textMessageBody).text = message.text
+
+        val actionCard = row.findViewById<LinearLayout>(R.id.messageActionCard)
+        val action = message.action
+        if (action == null) {
+            actionCard.visibility = View.GONE
+        } else {
+            actionCard.visibility = View.VISIBLE
+            row.findViewById<TextView>(R.id.textActionLabel).text = action.label
+            row.findViewById<TextView>(R.id.textActionTitle).text = action.title
+        }
+
+        val progress = row.findViewById<LinearProgressIndicator>(R.id.messageProgress)
+        progress.visibility = if (message.pending) View.VISIBLE else View.GONE
+
+        bindEvidence(row, message.evidence)
+    }
+
+    private fun bindEvidence(row: ViewGroup, cards: List<NovaEvidenceCard>) {
+        val scroller = row.findViewById<View>(R.id.messageEvidenceScroller)
+        val container = row.findViewById<LinearLayout>(R.id.messageEvidenceContainer)
+        scroller.visibility = if (cards.isEmpty()) View.GONE else View.VISIBLE
+        container.removeAllViews()
         cards.take(4).forEach { card ->
-            val view = layoutInflater.inflate(
-                R.layout.item_nova_evidence,
-                evidenceContainer,
-                false,
-            )
-            view.findViewById<TextView>(R.id.textEvidenceTitle).text =
-                "${card.index}. ${card.title}"
+            val view = layoutInflater.inflate(R.layout.item_nova_evidence, container, false)
+            view.findViewById<TextView>(R.id.textEvidenceTitle).text = "${card.index}. ${card.title}"
             view.findViewById<TextView>(R.id.textEvidenceDetail).apply {
                 text = card.detail.orEmpty()
                 visibility = if (card.detail.isNullOrBlank()) View.GONE else View.VISIBLE
@@ -157,7 +292,7 @@ class NovaActivity : AppCompatActivity() {
                     }
                 }
             }
-            evidenceContainer.addView(view)
+            container.addView(view)
         }
     }
 
@@ -165,8 +300,9 @@ class NovaActivity : AppCompatActivity() {
         countdownHandler.removeCallbacks(followUpCountdownTick)
         followUpDeadlineElapsedRealtimeMs = deadlineElapsedRealtimeMs
         if (deadlineElapsedRealtimeMs != null) {
-            binding.textSecondaryMessage.visibility = View.VISIBLE
             followUpCountdownTick.run()
+        } else {
+            renderSessionHint()
         }
     }
 
@@ -185,32 +321,10 @@ class NovaActivity : AppCompatActivity() {
         else -> name
     }
 
-    private fun NovaVisibleState.subtitleResource(): Int = when (this) {
-        NovaVisibleState.IDLE -> R.string.ready_subtitle
-        NovaVisibleState.LISTENING -> R.string.listening_subtitle
-        NovaVisibleState.PROCESSING -> R.string.processing_subtitle
-        NovaVisibleState.EXECUTING -> R.string.executing_subtitle
-        NovaVisibleState.SUCCESS -> R.string.success_subtitle
-        NovaVisibleState.ERROR -> R.string.error_subtitle
-        NovaVisibleState.SPEAKING -> R.string.speaking_subtitle
-        NovaVisibleState.UNAVAILABLE -> R.string.unavailable_subtitle
-    }
-
     private fun NovaVisibleState.colorResource(): Int = when (this) {
         NovaVisibleState.SUCCESS -> R.color.hypernova_success
         NovaVisibleState.ERROR -> R.color.hypernova_error
         NovaVisibleState.UNAVAILABLE -> R.color.hypernova_warning
         else -> R.color.hypernova_cyan
-    }
-
-    private fun NovaVisibleState.voiceHintResource(): Int = when (this) {
-        NovaVisibleState.IDLE -> R.string.idle_voice_hint
-        NovaVisibleState.LISTENING -> R.string.listening_voice_hint
-        NovaVisibleState.PROCESSING -> R.string.processing_voice_hint
-        NovaVisibleState.EXECUTING -> R.string.executing_voice_hint
-        NovaVisibleState.SUCCESS -> R.string.success_voice_hint
-        NovaVisibleState.ERROR -> R.string.error_voice_hint
-        NovaVisibleState.SPEAKING -> R.string.speaking_voice_hint
-        NovaVisibleState.UNAVAILABLE -> R.string.unavailable_voice_hint
     }
 }

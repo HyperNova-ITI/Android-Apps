@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- NOVA's side of the conversation: the same card language as the rest of the cockpit, with the
+     bottom-start corner squared off so the two sides of a turn read apart at a glance. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:angle="270"
+        android:startColor="@color/hypernova_dashboard_start"
+        android:endColor="@color/hypernova_dashboard_end" />
+    <stroke
+        android:width="1dp"
+        android:color="@color/hypernova_border" />
+    <corners
+        android:bottomLeftRadius="6dp"
+        android:bottomRightRadius="18dp"
+        android:topLeftRadius="18dp"
+        android:topRightRadius="18dp" />
+</shape>

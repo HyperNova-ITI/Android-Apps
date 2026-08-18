@@ -4,6 +4,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
@@ -48,6 +49,7 @@ class NovaRuntimeService : Service(),
         controlClient = NovaControlClient(endpoint, this)
         audioClient = NovaAudioClient(endpoint, this)
         player = NovaPcmPlayer(this, this)
+        applyStoredMute()
         commandCoordinator = CommandCoordinator(
             executor = AndroidCommandExecutor(this),
             scheduler = HandlerCommandScheduler(),
@@ -65,14 +67,48 @@ class NovaRuntimeService : Service(),
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_RECONNECT && ::controlClient.isInitialized) {
-            controlClient.stop()
-            audioClient.stop()
-            controlClient.start()
-            audioClient.start()
+        when (intent?.action) {
+            ACTION_RECONNECT -> if (::controlClient.isInitialized) {
+                controlClient.stop()
+                audioClient.stop()
+                controlClient.start()
+                audioClient.start()
+            }
+            ACTION_CANCEL -> cancelCurrentTurn()
+            ACTION_SET_MUTED -> setMuted(intent.getBooleanExtra(EXTRA_MUTED, false))
         }
         return START_STICKY
     }
+
+    /**
+     * Stop the turn in progress from both ends.
+     *
+     * Android silences whatever is already buffered so the cabin goes quiet immediately, and the
+     * Pi is told to drop the rest of the utterance instead of streaming audio nobody will hear.
+     */
+    private fun cancelCurrentTurn() {
+        if (!::player.isInitialized) return
+        val turnId = NovaRuntimeState.session.value?.turnId
+        player.stop()
+        controlClient.sendCancel(turnId)
+        lastActionBlocked = false
+        publishControlState(NovaVisibleState.IDLE)
+    }
+
+    private fun setMuted(muted: Boolean) {
+        if (!::player.isInitialized) return
+        player.setMuted(muted)
+        preferences().edit().putBoolean(KEY_MUTED, muted).apply()
+        NovaRuntimeState.publishMuted(muted)
+    }
+
+    private fun applyStoredMute() {
+        val muted = preferences().getBoolean(KEY_MUTED, false)
+        player.setMuted(muted)
+        NovaRuntimeState.publishMuted(muted)
+    }
+
+    private fun preferences() = getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
 
     override fun onDestroy() {
         if (::commandCoordinator.isInitialized) commandCoordinator.shutdown()
@@ -183,7 +219,7 @@ class NovaRuntimeService : Service(),
                 lastActionBlocked = true
                 NovaRuntimeState.publishError(
                     turnId,
-                    message.optionalText("message") ?: getString(R.string.error_subtitle),
+                    message.optionalText("message") ?: getString(R.string.error_fallback),
                 )
                 publishControlState(NovaVisibleState.ERROR)
             }
@@ -357,6 +393,11 @@ class NovaRuntimeService : Service(),
 
     companion object {
         const val ACTION_RECONNECT = "com.hypernova.ai.action.RECONNECT"
+        const val ACTION_CANCEL = "com.hypernova.ai.action.CANCEL"
+        const val ACTION_SET_MUTED = "com.hypernova.ai.action.SET_MUTED"
+        const val EXTRA_MUTED = "muted"
+        private const val PREFERENCES = "nova_runtime"
+        private const val KEY_MUTED = "muted"
         private const val TAG = "NovaRuntimeService"
         private const val NOTIFICATION_CHANNEL = "nova_runtime"
         private const val NOTIFICATION_ID = 1001

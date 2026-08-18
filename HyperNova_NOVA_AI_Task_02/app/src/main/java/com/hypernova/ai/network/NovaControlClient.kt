@@ -75,6 +75,17 @@ class NovaControlClient(
         put("value", value)
     })
 
+    /**
+     * Ask the Pi to abandon the current turn: stop synthesising, drop anything still queued, and
+     * return to idle. Playback already in Android's buffer is stopped locally by the runtime.
+     */
+    fun sendCancel(turnId: String?): Boolean = enqueue(JSONObject().apply {
+        put("type", "cancel")
+        put("v", 1)
+        put("seq", sequence.incrementAndGet())
+        if (turnId != null) put("turn_id", turnId)
+    })
+
     fun sendCommandResult(result: CommandResult): Boolean =
         enqueue(CommandWireCodec.toJson(result).apply {
             put("seq", sequence.incrementAndGet())

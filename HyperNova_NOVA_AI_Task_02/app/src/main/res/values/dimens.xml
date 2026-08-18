@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        How far a conversation bubble is inset from the side it does not belong to. This is what
+        gives driver and NOVA lines their stagger and caps how wide a long reply runs.
+    -->
+    <dimen name="nova_bubble_inset">64dp</dimen>
+</resources>

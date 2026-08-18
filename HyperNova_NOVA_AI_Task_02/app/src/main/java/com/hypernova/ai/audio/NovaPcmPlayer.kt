@@ -33,6 +33,9 @@ class NovaPcmPlayer(
         }
         .build()
 
+    @Volatile
+    private var muted = false
+
     private var track: AudioTrack? = null
     private var streamId = 0L
     private var turnId: String? = null
@@ -128,7 +131,7 @@ class NovaPcmPlayer(
                 }
                 val done = CountDownLatch(1)
                 playbackDone = done
-                activeTrack.setVolume(1f)
+                activeTrack.setVolume(playbackVolume())
                 activeTrack.play()
                 playbackStarted = true
                 // This callback is the Pi's time-to-first-word marker. TTS_START means only that
@@ -162,6 +165,26 @@ class NovaPcmPlayer(
             if (track === session.track) stopLocked()
         }
     }
+
+    /**
+     * Silence NOVA's replies without changing the shape of a turn.
+     *
+     * The track keeps running at zero gain instead of the audio being dropped, because the Pi
+     * measures time-to-first-word and closes its follow-up window from the playback started/ended
+     * callbacks. Discarding the PCM would silently change that timing; muting the output does not.
+     */
+    @Synchronized
+    fun setMuted(value: Boolean) {
+        muted = value
+        try {
+            track?.setVolume(playbackVolume())
+        } catch (error: IllegalStateException) {
+            // The track may already have been released by a racing stop().
+            Log.w(TAG, "Could not change the assistant playback volume", error)
+        }
+    }
+
+    private fun playbackVolume(): Float = if (muted) 0f else 1f
 
     @Synchronized
     fun stop() {
