@@ -25,6 +25,16 @@ class VehicleGatewayStateClient(
     private val lock = Any()
     private var service: IVehicleGatewayService? = null
     private var latestState: VehicleState? = null
+
+    /**
+     * The last event forwarded for each DTC, so the same fault is only announced once.
+     *
+     * The gateway re-reports an active fault on every TC397 event batch, and each of those used to
+     * become a separate proactive alert on the Pi: NOVA said the same warning over and over and
+     * the cockpit printed a new line each time. Only a real change - a fault appearing, clearing,
+     * or arriving with a newer TC sequence - is worth telling the Pi about.
+     */
+    private val forwardedFaults = mutableMapOf<Int, VehicleFaultEvent>()
     private var bound = false
     private var binding = false
     private var stopped = false
@@ -36,7 +46,7 @@ class VehicleGatewayStateClient(
         }
 
         override fun onFault(event: VehicleFaultEvent) {
-            faultSink(event)
+            if (shouldForward(event)) faultSink(event)
         }
     }
 
@@ -110,14 +120,44 @@ class VehicleGatewayStateClient(
         }
     }
 
-    /** Re-publish the latest authoritative snapshot after the Pi socket reconnects. */
+    /**
+     * Re-publish the latest authoritative snapshot after the Pi socket reconnects.
+     *
+     * Active faults go with it. A restarted Pi has no memory of them, so the de-duplication cache
+     * is cleared first: this is the one case where repeating a fault is the correct behaviour.
+     */
     fun publishLatest() {
-        synchronized(lock) { latestState }?.let(stateSink)
+        val (state, faults) = synchronized(lock) {
+            val active = forwardedFaults.values.filter { it.isActive }
+            forwardedFaults.clear()
+            latestState to active
+        }
+        state?.let(stateSink)
+        faults.forEach { event ->
+            synchronized(lock) { forwardedFaults[event.dtc] = event }
+            faultSink(event)
+        }
+    }
+
+    /**
+     * True when this event says something new about its DTC.
+     *
+     * A repeat of an already-reported fault is dropped; a fault that becomes active or inactive,
+     * or that arrives carrying a newer TC397 event sequence, is always forwarded.
+     */
+    private fun shouldForward(event: VehicleFaultEvent): Boolean = synchronized(lock) {
+        val previous = forwardedFaults[event.dtc]
+        val known = previous != null &&
+            previous.isActive == event.isActive &&
+            previous.tcEventSequence == event.tcEventSequence
+        forwardedFaults[event.dtc] = event
+        !known
     }
 
     fun shutdown() {
         val connected = synchronized(lock) {
             stopped = true
+            forwardedFaults.clear()
             service.also { service = null }
         }
         try {
