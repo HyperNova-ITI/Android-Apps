@@ -12,8 +12,12 @@ import android.content.IntentFilter
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.os.RemoteException
+import android.telecom.PhoneAccountHandle
+import android.telecom.TelecomManager
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.hypernova.connectivity.IHyperNovaConnectivityCallback
@@ -26,19 +30,26 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * HyperNova phone Bluetooth state provider.
+ * HyperNova Phone Bluetooth/HFP state provider.
  *
  * Runtime strategy:
  *
- * Standalone Android handset:
- *     Uses only public Android Bluetooth APIs.
+ * HyperNova AAOS / RPi:
+ *     HyperNovaConnectivityService remains the authoritative source for
+ *     Bluetooth HEADSET_CLIENT / HFP state.
  *
- * HyperNova AAOS:
- *     Binds to the platform-signed HyperNovaConnectivityService and
- *     consumes the real Bluetooth HEADSET_CLIENT / HFP state.
+ * NXP Standard Android:
+ *     The privileged HyperNova connectivity bridge is not installed.
+ *     Android Bluetooth registers the connected mobile phone in Telecom
+ *     through:
  *
- * A generic Bluetooth connection must never be presented as an HFP
- * phone connection.
+ *       com.android.bluetooth.hfpclient.HfpClientConnectionService
+ *
+ *     A call-capable PhoneAccount owned by that ConnectionService is
+ *     therefore used as authoritative evidence that an HFP phone is
+ *     connected.
+ *
+ * Generic Bluetooth bonding alone is never treated as HFP connection.
  */
 class BluetoothPhoneClient(
     context: Context
@@ -50,6 +61,16 @@ class BluetoothPhoneClient(
     private val adapter:
         BluetoothAdapter? =
         BluetoothAdapter.getDefaultAdapter()
+
+    private val refreshHandler =
+        Handler(
+            Looper.getMainLooper()
+        )
+
+    private val delayedTelecomRefresh =
+        Runnable {
+            publishSnapshot()
+        }
 
     private val _state =
         MutableStateFlow(
@@ -106,6 +127,14 @@ class BluetoothPhoneClient(
                 )
 
                 publishSnapshot()
+
+                /*
+                 * The Bluetooth framework may register/unregister the
+                 * HFP PhoneAccount slightly after the generic Bluetooth
+                 * connection broadcast. Retry after the profile stack
+                 * has had time to settle.
+                 */
+                scheduleTelecomRefresh()
             }
         }
 
@@ -161,12 +190,10 @@ class BluetoothPhoneClient(
                             connected,
 
                         deviceName =
-                            deviceName
-                                .orEmpty(),
+                            deviceName.orEmpty(),
 
                         deviceAddress =
-                            deviceAddress
-                                .orEmpty()
+                            deviceAddress.orEmpty()
                     )
 
                 Log.i(
@@ -228,7 +255,6 @@ class BluetoothPhoneClient(
                             null
 
                         publishSnapshot()
-
                         return
                     }
 
@@ -273,6 +299,7 @@ class BluetoothPhoneClient(
                     null
 
                 publishSnapshot()
+                scheduleTelecomRefresh()
             }
 
             override fun onBindingDied(
@@ -294,6 +321,7 @@ class BluetoothPhoneClient(
                     false
 
                 publishSnapshot()
+                scheduleTelecomRefresh()
             }
 
             override fun onNullBinding(
@@ -315,6 +343,7 @@ class BluetoothPhoneClient(
                     false
 
                 publishSnapshot()
+                scheduleTelecomRefresh()
             }
         }
 
@@ -370,9 +399,19 @@ class BluetoothPhoneClient(
         bindPlatformService()
 
         publishSnapshot()
+
+        /*
+         * Useful on NXP when the HFP PhoneAccount is created shortly
+         * after Bluetooth profile initialization.
+         */
+        scheduleTelecomRefresh()
     }
 
     fun stop() {
+
+        refreshHandler.removeCallbacks(
+            delayedTelecomRefresh
+        )
 
         if (
             receiverRegistered
@@ -470,6 +509,7 @@ class BluetoothPhoneClient(
         )
 
         publishSnapshot()
+        scheduleTelecomRefresh()
     }
 
     fun hasConnectPermission():
@@ -480,6 +520,32 @@ class BluetoothPhoneClient(
             Manifest.permission.BLUETOOTH_CONNECT
         ) ==
             PackageManager.PERMISSION_GRANTED
+
+    private fun hasReadPhoneStatePermission():
+        Boolean =
+
+        ContextCompat.checkSelfPermission(
+            appContext,
+            Manifest.permission.READ_PHONE_STATE
+        ) ==
+            PackageManager.PERMISSION_GRANTED
+
+    private fun scheduleTelecomRefresh() {
+
+        refreshHandler.removeCallbacks(
+            delayedTelecomRefresh
+        )
+
+        refreshHandler.postDelayed(
+            delayedTelecomRefresh,
+            TELECOM_REFRESH_DELAY_SHORT_MS
+        )
+
+        refreshHandler.postDelayed(
+            delayedTelecomRefresh,
+            TELECOM_REFRESH_DELAY_LONG_MS
+        )
+    }
 
     private fun bindPlatformService() {
 
@@ -521,8 +587,8 @@ class BluetoothPhoneClient(
         ) {
 
             /*
-             * Expected for a standalone development APK that is not
-             * platform-signed. Do not fake HFP state.
+             * Expected for the NXP standalone APK and other builds
+             * without access to the platform AAOS bridge.
              */
             Log.i(
                 TAG,
@@ -668,10 +734,13 @@ class BluetoothPhoneClient(
             )
         }
 
-        val paired =
+        val bondedDevices =
             localAdapter
                 .bondedDevices
                 .orEmpty()
+
+        val paired =
+            bondedDevices
                 .map {
                     device ->
                     device.toInfo()
@@ -681,8 +750,7 @@ class BluetoothPhoneClient(
                 }
 
         /*
-         * This is the only state allowed to represent an actual
-         * connected phone for hands-free calling.
+         * AAOS / RPi authoritative HFP path.
          */
         val hfp =
             platformHfpState
@@ -698,25 +766,21 @@ class BluetoothPhoneClient(
                     }
                     ?: "Connected phone"
 
-            return BluetoothUiState(
-                state =
-                    BluetoothConnectionState
-                        .CONNECTED,
-
-                pairedDevices =
+            return connectedSnapshot(
+                paired =
                     paired,
 
-                connectedDeviceName =
+                name =
                     name,
 
-                detail =
-                    "Hands-free calling connected"
+                source =
+                    "AAOS"
             )
         }
 
         /*
-         * Platform bridge is available and explicitly says HFP is not
-         * connected. That result is authoritative.
+         * If the AAOS bridge is present and explicitly reports HFP
+         * disconnected, trust it.
          */
         if (
             platformService != null
@@ -739,10 +803,37 @@ class BluetoothPhoneClient(
         }
 
         /*
-         * Standalone APK fallback.
+         * NXP Standard Android fallback.
          *
-         * Generic Bluetooth STATE_CONNECTED is deliberately NOT mapped
-         * to phone CONNECTED because public APIs cannot prove HFP.
+         * A call-capable PhoneAccount owned by the framework Bluetooth
+         * HFP Client ConnectionService is authoritative proof that the
+         * Android guest currently has an HFP telephone endpoint.
+         */
+        val telecomHfp =
+            readNxpTelecomHfpState(
+                bondedDevices
+            )
+
+        if (
+            telecomHfp != null
+        ) {
+
+            return connectedSnapshot(
+                paired =
+                    paired,
+
+                name =
+                    telecomHfp.deviceName,
+
+                source =
+                    "NXP-Telecom"
+            )
+        }
+
+        /*
+         * Generic Bluetooth connection is intentionally NOT treated as
+         * HFP. A paired speaker/headset must not make Phone appear
+         * connected.
          */
         val publicState =
             when (
@@ -786,6 +877,176 @@ class BluetoothPhoneClient(
         )
     }
 
+    private fun connectedSnapshot(
+        paired: List<BluetoothDeviceInfo>,
+        name: String,
+        source: String
+    ): BluetoothUiState {
+
+        Log.i(
+            TAG,
+            "HFP phone connected via $source: $name"
+        )
+
+        return BluetoothUiState(
+            state =
+                BluetoothConnectionState
+                    .CONNECTED,
+
+            pairedDevices =
+                paired,
+
+            connectedDeviceName =
+                name,
+
+            detail =
+                "Hands-free calling connected"
+        )
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun readNxpTelecomHfpState(
+        bondedDevices: Set<BluetoothDevice>
+    ): TelecomHfpState? {
+
+        if (
+            !hasReadPhoneStatePermission()
+        ) {
+
+            Log.d(
+                TAG,
+                "NXP Telecom HFP detection waiting for READ_PHONE_STATE"
+            )
+
+            return null
+        }
+
+        val telecomManager =
+            appContext.getSystemService(
+                TelecomManager::class.java
+            )
+                ?: return null
+
+        val account =
+            try {
+
+                val defaultAccount =
+                    telecomManager
+                        .getDefaultOutgoingPhoneAccount(
+                            TEL_SCHEME
+                        )
+
+                if (
+                    defaultAccount != null &&
+                    defaultAccount.isBluetoothHfpClientAccount()
+                ) {
+
+                    defaultAccount
+
+                } else {
+
+                    telecomManager
+                        .callCapablePhoneAccounts
+                        .firstOrNull {
+                            candidate ->
+                            candidate
+                                .isBluetoothHfpClientAccount()
+                        }
+                }
+
+            } catch (
+                exception: SecurityException
+            ) {
+
+                Log.w(
+                    TAG,
+                    "READ_PHONE_STATE rejected while reading Telecom HFP accounts",
+                    exception
+                )
+
+                return null
+
+            } catch (
+                exception: RuntimeException
+            ) {
+
+                Log.w(
+                    TAG,
+                    "Unable to inspect Telecom HFP accounts",
+                    exception
+                )
+
+                return null
+            }
+                ?: return null
+
+        val accountId =
+            account.id.orEmpty()
+
+        val matchingDevice =
+            bondedDevices
+                .firstOrNull {
+                    device ->
+
+                    accountId.equals(
+                        device.address,
+                        ignoreCase = true
+                    ) ||
+                        accountId.contains(
+                            device.address,
+                            ignoreCase = true
+                        )
+                }
+
+        /*
+         * On the NXP target the HFP PhoneAccount identifies the actual
+         * telephone endpoint. If the account ID cannot be matched but
+         * there is only one paired device, use that Bluetooth name only
+         * for display; the CONNECTED decision still comes from Telecom.
+         */
+        val displayDevice =
+            matchingDevice
+                ?: bondedDevices
+                    .singleOrNull()
+
+        val displayName =
+            displayDevice
+                ?.name
+                ?.takeIf {
+                    it.isNotBlank()
+                }
+                ?: "Connected phone"
+
+        Log.i(
+            TAG,
+            "NXP Telecom HFP snapshot: " +
+                "component=${account.componentName.flattenToShortString()} " +
+                "accountId=$accountId " +
+                "device=$displayName"
+        )
+
+        return TelecomHfpState(
+            deviceName =
+                displayName,
+
+            accountId =
+                accountId
+        )
+    }
+
+    private fun PhoneAccountHandle
+        .isBluetoothHfpClientAccount():
+        Boolean {
+
+        val component =
+            componentName
+
+        return component.packageName ==
+            HFP_CLIENT_PACKAGE &&
+            component.className ==
+            HFP_CLIENT_CONNECTION_SERVICE
+    }
+
     private fun publishSnapshot() {
 
         val snapshot =
@@ -799,8 +1060,7 @@ class BluetoothPhoneClient(
             "Bluetooth state=" +
                 snapshot.state +
                 " phone=" +
-                snapshot.connectedDeviceName
-                    .orEmpty()
+                snapshot.connectedDeviceName.orEmpty()
         )
     }
 
@@ -832,6 +1092,11 @@ class BluetoothPhoneClient(
         val deviceAddress: String
     )
 
+    private data class TelecomHfpState(
+        val deviceName: String,
+        val accountId: String
+    )
+
     private companion object {
 
         const val TAG =
@@ -845,5 +1110,20 @@ class BluetoothPhoneClient(
 
         const val REQUIRED_PLATFORM_CONTRACT_VERSION =
             2
+
+        const val HFP_CLIENT_PACKAGE =
+            "com.android.bluetooth"
+
+        const val HFP_CLIENT_CONNECTION_SERVICE =
+            "com.android.bluetooth.hfpclient.HfpClientConnectionService"
+
+        const val TEL_SCHEME =
+            "tel"
+
+        const val TELECOM_REFRESH_DELAY_SHORT_MS =
+            750L
+
+        const val TELECOM_REFRESH_DELAY_LONG_MS =
+            2500L
     }
 }
