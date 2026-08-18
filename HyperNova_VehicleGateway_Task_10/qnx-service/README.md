@@ -13,7 +13,35 @@ Contract: `../../HyperNova_Contracts/docs/VEHICLE_GATEWAY_PROTOCOL_V1.md`
 - validate and translate only the implemented HVAC command;
 - serialize one command in flight and correlate ACK/rejection by TC sequence;
 - publish temperature, humidity, fuel, confirmed HVAC state, DTC events, and link freshness;
+- publish TC397 sensor values to the digital cluster's bottom-bar files (see below);
 - preserve fail-closed timeout/disconnect behavior.
+
+## Digital cluster bottom bar
+
+The QNX cluster app reads its bottom-bar values as one bare number per file under
+`/tmp/ivi` (`Qnx-Cluster/src/Backend/BottomBar/BottomBarDataProvider.cpp`). This service holds the
+only decoded copy of TC397's sensor frame, so it publishes them:
+
+| File | Source | Written? |
+|---|---|---|
+| `/tmp/ivi/fuel.txt` | TC397 fuel byte | yes |
+| `/tmp/ivi/env_temp.txt` | TC397 temperature byte | yes |
+| `/tmp/ivi/engine_temp.txt` | *no TC397 signal* | **no** |
+| `/tmp/ivi/total_kms.txt` | *no TC397 signal* | **no** |
+
+TC397's sensor frame carries exactly three signals — temperature, humidity, fuel. Engine
+temperature and odometer have no source behind them, so this service deliberately does not write
+them: a fabricated number on a gauge that claims to be a sensor reading is indistinguishable from a
+working sensor on the bench. Those two keep their provider defaults until a real source exists.
+
+Files are written only when the value changes, throttled to 10 Hz, via temp-file + `rename` so the
+cluster polling at 20 Hz never reads a partial file. Publishing does **not** require an Android
+client to be connected — the cluster is an independent consumer.
+
+```text
+--cluster-dir PATH        directory for the bottom-bar files (default /tmp/ivi)
+--cluster-files on|off    disable publishing entirely (default on)
+```
 
 The contract catalogue is complete. RPi5 ambient lighting is outside this service.
 
@@ -58,6 +86,8 @@ Optional endpoint overrides:
 --tc-port PORT
 --android-port PORT
 --telemetry-port PORT
+--cluster-dir PATH
+--cluster-files on|off
 ```
 
 ## Android emulator

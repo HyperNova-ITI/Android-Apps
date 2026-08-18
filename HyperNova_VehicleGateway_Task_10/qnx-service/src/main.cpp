@@ -12,8 +12,10 @@
 #include <limits>
 #include <optional>
 #include <poll.h>
+#include <cstdio>
 #include <string>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <vector>
 
@@ -32,6 +34,28 @@ constexpr Milliseconds kCommandTimeout{5000};
 constexpr Milliseconds kTelemetryFresh{3000};
 constexpr Milliseconds kStateThrottle{200};
 constexpr Milliseconds kStateHeartbeat{1000};
+
+// ---------------------------------------------------------------------------
+// Digital cluster bottom bar
+//
+// The QNX cluster app reads its bottom-bar values as one bare number per file
+// under /tmp/ivi (Qnx-Cluster/src/Backend/BottomBar/BottomBarDataProvider.cpp).
+// Nothing wrote those files, so the bottom bar always showed each provider's
+// hardcoded default. This service already holds the only decoded copy of
+// TC397's sensor frame, so it is the right place to publish them.
+//
+// SCOPE, DELIBERATELY: TC397's sensor frame carries exactly THREE signals —
+// temperature, humidity, fuel. So only two cluster files have a real source:
+//     /tmp/ivi/fuel.txt      <- TC397 fuel
+//     /tmp/ivi/env_temp.txt  <- TC397 temperature (ambient)
+// engine_temp.txt and total_kms.txt have NO TC397 signal behind them and are
+// deliberately NOT written here — inventing a plausible number for a gauge
+// that claims to be a real sensor reading is worse than showing a static
+// default, and it would be indistinguishable from a working sensor on the
+// bench. They keep their provider defaults until a real source exists.
+// ---------------------------------------------------------------------------
+constexpr const char* kDefaultClusterDir = "/tmp/ivi";
+constexpr Milliseconds kClusterThrottle{100};   // <= cluster polls at 20 Hz
 
 constexpr std::uint8_t kStatusAccepted = 1;
 constexpr std::uint8_t kStatusConfirmed = 2;
@@ -73,7 +97,29 @@ struct Config {
     std::uint16_t tc_port{kDefaultTcPort};
     std::uint16_t android_port{kDefaultAndroidPort};
     std::uint16_t telemetry_port{kDefaultTelemetryPort};
+    std::string cluster_dir{kDefaultClusterDir};
+    bool cluster_files{true};
 };
+
+// Write one bare number, the format the cluster's providers parse with
+// `ifstream >> value`. Temp file + rename so a reader polling at 20 Hz can
+// never catch a partially written file. Both are local-filesystem calls, so
+// this is unaffected by the board's SFTP server lacking rename support.
+bool write_scalar_file(const std::string& path, double value) {
+    const std::string tmp = path + ".tmp";
+    std::FILE* handle = std::fopen(tmp.c_str(), "w");
+    if (handle == nullptr) return false;
+    const int written = std::fprintf(handle, "%.1f\n", value);
+    if (std::fclose(handle) != 0 || written < 0) {
+        (void)std::remove(tmp.c_str());
+        return false;
+    }
+    if (std::rename(tmp.c_str(), path.c_str()) != 0) {
+        (void)std::remove(tmp.c_str());
+        return false;
+    }
+    return true;
+}
 
 Config parse_args(int argc, char** argv) {
     Config config;
@@ -85,6 +131,14 @@ Config parse_args(int argc, char** argv) {
         else if (option == "--tc-port") config.tc_port = parse_port(value);
         else if (option == "--android-port") config.android_port = parse_port(value);
         else if (option == "--telemetry-port") config.telemetry_port = parse_port(value);
+        else if (option == "--cluster-dir") config.cluster_dir = value;
+        else if (option == "--cluster-files") {
+            // Takes an explicit on/off value rather than being a bare flag,
+            // because this parser requires a value for every option.
+            if (value == "on") config.cluster_files = true;
+            else if (value == "off") config.cluster_files = false;
+            else throw std::invalid_argument("--cluster-files expects on|off");
+        }
         else throw std::invalid_argument("unknown option " + option);
     }
     return config;
@@ -265,6 +319,7 @@ public:
             maybe_start_tc_connect(now);
             expire_command(now);
             publish_periodic_state(now);
+            publish_cluster_files(now);
 
             pollfd descriptors[4]{};
             descriptors[0] = {listener_fd_, POLLIN, 0};
@@ -640,6 +695,46 @@ private:
         }
     }
 
+    // Publish TC397 sensor values to the digital cluster's bottom-bar files.
+    //
+    // Deliberately NOT gated on `android_ready_` (unlike publish_periodic_state
+    // above): the cluster is a separate consumer and must keep updating whether
+    // or not an Android app happens to be connected. Tying the two together
+    // would have made the bottom bar go stale the moment Android disconnected,
+    // which is precisely when a driver still needs to see fuel.
+    void publish_cluster_files(Clock::time_point now) {
+        if (!config_.cluster_files) return;
+        if (!state_.has_telemetry) return;   // nothing real to publish yet
+        if (now - last_cluster_write_ < kClusterThrottle) return;
+        last_cluster_write_ = now;
+
+        if (!cluster_dir_ready_) {
+            // 0755; EEXIST is success. If the directory cannot be created there
+            // is no point retrying every 100 ms forever, so report once and
+            // disable — a broken bottom bar must not become a log flood.
+            if (::mkdir(config_.cluster_dir.c_str(), 0755) != 0 && errno != EEXIST) {
+                std::cerr << "cluster files disabled: cannot create "
+                          << config_.cluster_dir << ": " << std::strerror(errno) << "\n";
+                config_.cluster_files = false;
+                return;
+            }
+            cluster_dir_ready_ = true;
+        }
+
+        // Write only on change: the cluster re-reads these at 20 Hz and TC397
+        // emits at ~12 Hz, so rewriting unchanged values is pure churn.
+        if (state_.fuel != last_published_fuel_) {
+            if (write_scalar_file(config_.cluster_dir + "/fuel.txt", state_.fuel)) {
+                last_published_fuel_ = state_.fuel;
+            }
+        }
+        if (state_.temperature != last_published_temperature_) {
+            if (write_scalar_file(config_.cluster_dir + "/env_temp.txt", state_.temperature)) {
+                last_published_temperature_ = state_.temperature;
+            }
+        }
+    }
+
     void queue_state(bool immediate) {
         if (!android_ready_) return;
         const auto now = Clock::now();
@@ -694,6 +789,13 @@ private:
     VehicleState state_;
     std::uint8_t next_tc_sequence_{1};
     bool state_dirty_{true};
+    // Cluster bottom-bar publishing. The "last published" values start at
+    // sentinels no real reading can equal, so the first genuine sample always
+    // writes.
+    Clock::time_point last_cluster_write_{};
+    bool cluster_dir_ready_{false};
+    int last_published_fuel_{-1};
+    int last_published_temperature_{-1000};
     Clock::time_point tc_connected_at_{};
     Clock::time_point next_tc_connect_{};
     Clock::time_point last_state_sent_{};
