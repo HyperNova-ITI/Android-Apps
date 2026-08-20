@@ -1,0 +1,16 @@
+*.iml
+.gradle/
+.idea/
+build/
+**/build/
+local.properties
+secrets.properties
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+captures/
+.externalNativeBuild/
+.cxx/
+

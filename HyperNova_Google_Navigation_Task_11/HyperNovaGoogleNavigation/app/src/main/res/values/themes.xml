@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.HyperNovaGoogleNavigation" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:navigationBarColor">@color/hn_navigation_surface</item>
+        <item name="android:statusBarColor">@color/hn_navigation_surface</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="colorPrimary">#087F91</item>
+        <item name="colorSecondary">#25D9E8</item>
+    </style>
+</resources>
+
