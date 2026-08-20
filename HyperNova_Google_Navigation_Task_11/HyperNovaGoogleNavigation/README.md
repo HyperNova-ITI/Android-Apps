@@ -159,7 +159,7 @@ no local secrets file exists.
 Local API key file (do not commit):
 
 ```text
-/home/ayman/ITI/Android-Apps/HyperNova_Google_Navigation_Task_11/HyperNovaGoogleNavigation/secrets.properties
+<this-project>/secrets.properties
 ```
 
 Create it by copying the committed template next to it and replacing only the

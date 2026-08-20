@@ -1,7 +1,22 @@
 #!/usr/bin/env bash
 
-PROJECT="/home/ayman/ITI/Android-Apps/HyperNova_Google_Navigation_Task_11/HyperNovaGoogleNavigation"
-JAVA_HOME="/usr/lib/jvm/java-21-openjdk-amd64"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+if [ -z "${JAVA_HOME:-}" ]; then
+    for CANDIDATE in \
+        /usr/lib/jvm/java-21-openjdk-amd64 \
+        /usr/lib/jvm/java-17-openjdk-amd64
+    do
+        if [ -x "$CANDIDATE/bin/java" ]; then
+            JAVA_HOME="$CANDIDATE"
+            break
+        fi
+    done
+fi
+
+[ -n "${JAVA_HOME:-}" ] && [ -x "$JAVA_HOME/bin/java" ] \
+    || { echo "FAILED: set JAVA_HOME to JDK 17 or 21"; exit 1; }
 
 export JAVA_HOME
 export PATH="$JAVA_HOME/bin:$PATH"
@@ -11,7 +26,11 @@ OUT="$PROJECT/deliverables/google-navigation"
 SRC="$PROJECT/app/build/outputs/apk/debug/app-debug.apk"
 DST="$OUT/HyperNovaGoogleNavigation-debug.apk"
 
-BT="$(find "$HOME/Android/Sdk/build-tools" \
+ANDROID_SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-$HOME/Android/Sdk}}"
+export ANDROID_HOME="$ANDROID_SDK"
+export ANDROID_SDK_ROOT="$ANDROID_SDK"
+
+BT="$(find "$ANDROID_SDK/build-tools" \
     -mindepth 1 -maxdepth 1 -type d 2>/dev/null \
     | sort -V | tail -1)"
 
@@ -79,11 +98,13 @@ chmod +x "$PROJECT/gradlew"
 [ -f "$PROJECT/secrets.properties" ] \
     || fail "secrets.properties not found"
 
-if grep -q '^MAPS_API_KEY=.' "$PROJECT/secrets.properties"; then
-    log "MAPS_API_KEY: CONFIGURED"
+MAPS_API_KEY="$(sed -n 's/^MAPS_API_KEY=//p' "$PROJECT/secrets.properties" | head -1)"
+if [[ "$MAPS_API_KEY" =~ ^AIza[0-9A-Za-z_-]{30,}$ ]]; then
+    log "MAPS_API_KEY: CONFIGURED (value hidden)"
 else
     fail "MAPS_API_KEY missing"
 fi
+unset MAPS_API_KEY
 
 if git -C "$PROJECT" check-ignore secrets.properties >/dev/null 2>&1; then
     log "secrets.properties: GIT-IGNORED"

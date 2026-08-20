@@ -1,6 +1,7 @@
 package com.hypernova.navigation.core
 
 object GoogleApiKeyPolicy {
+    private val hexToken = Regex("^[0-9a-fA-F]{64}$")
     private val placeholders =
         setOf(
             "DEFAULT_API_KEY",
@@ -11,6 +12,7 @@ object GoogleApiKeyPolicy {
     fun isConfigured(value: String?): Boolean {
         val candidate = value?.trim().orEmpty()
         return candidate.isNotEmpty() &&
+            !hexToken.matches(candidate) &&
             candidate !in placeholders &&
             !candidate.startsWith("YOUR", ignoreCase = true) &&
             !candidate.contains("PLACEHOLDER", ignoreCase = true) &&

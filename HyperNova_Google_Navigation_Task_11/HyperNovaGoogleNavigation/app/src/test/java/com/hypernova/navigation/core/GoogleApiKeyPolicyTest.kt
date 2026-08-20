@@ -43,6 +43,15 @@ class GoogleApiKeyPolicyTest {
     }
 
     @Test
+    fun unrelatedHexTokensAreNotMistakenForGoogleApiKeys() {
+        assertFalse(
+            GoogleApiKeyPolicy.isConfigured(
+                "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+            ),
+        )
+    }
+
+    @Test
     fun realKeysAreConfigured() {
         assertTrue(GoogleApiKeyPolicy.isConfigured("configured-key-value"))
         assertTrue(GoogleApiKeyPolicy.isConfigured("a-real-key-value"))
