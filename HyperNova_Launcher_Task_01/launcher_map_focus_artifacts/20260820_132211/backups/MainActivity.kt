@@ -45,11 +45,9 @@ import com.hypernova.launcher.core.state.PhoneUiState
 import com.hypernova.launcher.core.state.RuntimeConnectionState
 import com.hypernova.launcher.core.state.SettingsUiState
 import com.hypernova.launcher.core.theme.LauncherThemeController
-import com.hypernova.launcher.core.vehicle.VehicleStatusClient
 import com.hypernova.launcher.databinding.ActivityMainBinding
 import com.hypernova.launcher.ui.LauncherNavigationMapController
 import com.hypernova.launcher.ui.LauncherSoftwareRouteOverlay
-import com.hypernova.visuals.CockpitAppearance
 import org.maplibre.android.MapLibre
 import org.maplibre.android.maps.MapView
 import kotlin.math.roundToInt
@@ -71,7 +69,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var climateStatusClient: ClimateStatusClient
     private lateinit var phoneStatusClient: PhoneStatusClient
     private lateinit var systemSettingsClient: SystemSettingsClient
-    private lateinit var vehicleStatusClient: VehicleStatusClient
     private lateinit var availabilityMonitor: AppAvailabilityMonitor
     private lateinit var themeController: LauncherThemeController
     private lateinit var latestUiState: LauncherUiState
@@ -176,15 +173,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-        // Live TC397 telemetry for the status bar. Read-only: HOME never actuates the vehicle.
-        vehicleStatusClient =
-            VehicleStatusClient(this) { snapshot ->
-                runOnUiThread {
-                    stateController.updateVehicleSnapshot(snapshot)
-                    refreshAndRenderState()
-                }
-            }
-
         availabilityMonitor =
             AppAvailabilityMonitor(this, ::handlePackageChanged)
 
@@ -212,7 +200,8 @@ class MainActivity : AppCompatActivity() {
         configureNovaActions()
         configureNavigationCard()
         configureMediaCard()
-        configureClimateActions()
+        configurePhoneAndClimateActions()
+        configureSettingsCard()
         configureBottomNavigation()
 
         refreshAndRenderState()
@@ -296,10 +285,6 @@ class MainActivity : AppCompatActivity() {
             runOptionalIntegration("stop package monitor") { availabilityMonitor.stop() }
         }
 
-        if (::vehicleStatusClient.isInitialized) {
-            runOptionalIntegration("disconnect Vehicle Gateway") { vehicleStatusClient.stop() }
-        }
-
         if (::systemSettingsClient.isInitialized) {
             runOptionalIntegration("disconnect Settings") { systemSettingsClient.disconnect() }
         }
@@ -372,36 +357,26 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Keep only driving-priority widgets on HOME:
-     *
-     *   Climate | Media
-     *   Navigation
-     *
-     * Phone and Settings remain available from the fixed bottom navigation bar.
-     * Their previous dashboard row is completely collapsed so Navigation can
-     * consume the released vertical space.
+     * Reuse the approved card implementations while placing them in the final
+     * hierarchy. The weighted Navigation row consumes the remaining viewport;
+     * the surrounding NestedScrollView provides controlled overflow only when
+     * a smaller portrait display cannot satisfy the Navigation minimum height.
      */
     private fun configureResponsiveDashboardLayout() {
         val cards = mapOf(
             DashboardCard.CLIMATE to binding.climateCard,
             DashboardCard.MEDIA to binding.mediaCard,
+            DashboardCard.SETTINGS to binding.settingsCard,
+            DashboardCard.PHONE to binding.phoneCard,
             DashboardCard.NAVIGATION to binding.navigationCard,
         )
 
         binding.climateMediaRow.removeAllViews()
-
-        // Phone and Settings are controlled from the bottom bar only.
         binding.settingsPhoneRow.removeAllViews()
-        binding.settingsPhoneRow.visibility = View.GONE
-
         binding.navigationDashboardRow.removeAllViews()
 
-        addHalfWidthRow(
-            binding.climateMediaRow,
-            DashboardLayoutOrder.firstRow,
-            cards,
-        )
-
+        addHalfWidthRow(binding.climateMediaRow, DashboardLayoutOrder.firstRow, cards)
+        addHalfWidthRow(binding.settingsPhoneRow, DashboardLayoutOrder.secondRow, cards)
         binding.navigationDashboardRow.addView(
             requireNotNull(cards[DashboardLayoutOrder.dominantRow.single()]),
             LinearLayout.LayoutParams(
@@ -549,7 +524,6 @@ class MainActivity : AppCompatActivity() {
         runOptionalIntegration("connect Climate") { climateStatusClient.connect() }
         runOptionalIntegration("connect Phone") { phoneStatusClient.connect() }
         runOptionalIntegration("connect Settings") { systemSettingsClient.connect() }
-        runOptionalIntegration("connect Vehicle Gateway") { vehicleStatusClient.start() }
         runOptionalIntegration("connect Media") {
             Log.d(TAG, "Connecting to HyperNova MediaSession")
             mediaSessionClient.connect()
@@ -618,17 +592,7 @@ class MainActivity : AppCompatActivity() {
         renderThemeToggle()
 
         binding.buttonThemeToggle.setOnClickListener {
-            // Read the target before toggling: afterwards this activity is being recreated and
-            // isNightModeActive() no longer describes what the driver asked for.
-            val target = if (themeController.isNightModeActive()) {
-                CockpitAppearance.MODE_LIGHT
-            } else {
-                CockpitAppearance.MODE_DARK
-            }
             themeController.toggleTheme()
-            // Remember it for this process too, so a launcher restart comes back the same way.
-            CockpitAppearance.apply(this, target)
-            CockpitAppearance.broadcast(this, target)
         }
     }
 
@@ -748,11 +712,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Configure the Climate HOME widget.
-     *
-     * Phone and Settings are intentionally bottom-bar-only destinations.
+     * Configure Phone and Climate cards.
      */
-    private fun configureClimateActions() {
+    private fun configurePhoneAndClimateActions() {
+        configureDestinationClick(
+            view = binding.phoneCard,
+            destination = AppDestination.PHONE
+        )
+
+        configureDestinationClick(
+            view = binding.buttonOpenPhone,
+            destination = AppDestination.PHONE
+        )
+
+        configureDestinationClick(
+            view = binding.buttonPhoneContacts,
+            destination = AppDestination.PHONE
+        )
+
         configureDestinationClick(
             view = binding.climateCard,
             destination = AppDestination.CLIMATE
@@ -761,6 +738,14 @@ class MainActivity : AppCompatActivity() {
         configureDestinationClick(
             view = binding.buttonOpenClimate,
             destination = AppDestination.CLIMATE
+        )
+    }
+
+    /** Configure the Settings dashboard card. */
+    private fun configureSettingsCard() {
+        configureDestinationClick(
+            view = binding.settingsCard,
+            destination = AppDestination.SETTINGS
         )
     }
 
@@ -1079,8 +1064,9 @@ class MainActivity : AppCompatActivity() {
     private fun renderAssistantState(
         state: LauncherUiState
     ) {
-        // The status chip is the single state indicator for this card. The all-caps eyebrow that
-        // used to sit under the face said the same thing in different words.
+        binding.textNovaGreeting.text =
+            state.assistant.headline
+
         binding.textNovaStatusChip.text = when (state.assistant.runtimeState) {
             AssistantRuntimeState.IDLE -> "READY"
             AssistantRuntimeState.LISTENING -> "LISTENING"
