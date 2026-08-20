@@ -1,3 +1,2 @@
-# Navigation SDK consumer rules will be supplied transitively when the SDK is
-# introduced in Phase 2. Keep project-specific release rules focused here.
-
+# No project-specific rules are required while release minification is disabled.
+# Keep this file for the future signed/minified deployment variant.

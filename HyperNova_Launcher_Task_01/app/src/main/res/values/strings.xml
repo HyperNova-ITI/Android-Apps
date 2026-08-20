@@ -101,6 +101,7 @@
     <string name="navigation_arrival_unavailable">Arrival —</string>
     <string name="navigation_calculating">Calculating route…</string>
     <string name="navigation_route_active">Route active</string>
+    <string name="navigation_route_preview_google">Route preview ready · Google Maps</string>
     <string name="navigation_route_details_unavailable">Route details unavailable from Navigation</string>
     <string name="navigation_arrived">Destination reached</string>
     <string name="navigation_route_error">Navigation route error</string>

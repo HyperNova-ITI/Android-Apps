@@ -4,7 +4,6 @@ import com.hypernova.contracts.navigation.NavigationContract
 import com.hypernova.contracts.navigation.NavigationCurrentPosition
 import com.hypernova.contracts.navigation.NavigationDestination
 import com.hypernova.contracts.navigation.NavigationProgressSnapshot
-import com.hypernova.contracts.navigation.NavigationRoutePoint
 import com.hypernova.contracts.navigation.NavigationRoutePreview
 import com.hypernova.contracts.navigation.NavigationRouteSnapshot
 import com.hypernova.navigation.model.NavigationInitializationState
@@ -57,13 +56,14 @@ object ContractProjection {
         )
     }
 
-    fun preview(state: NavigationSessionState): NavigationRoutePreview {
-        val points = state.routePoints.map { NavigationRoutePoint(it.latitude, it.longitude) }
-        val current =
-            state.vehiclePosition?.point?.let {
-                NavigationRoutePoint(it.latitude, it.longitude)
-            }
-        return NavigationRoutePreview(points, current)
+    fun preview(@Suppress("UNUSED_PARAMETER") state: NavigationSessionState): NavigationRoutePreview {
+        /*
+         * Google route geometry is rendered only by the Google Maps surface.
+         * Republishing that geometry for Launcher to draw over MapLibre would
+         * mix Google content with a non-Google map. Destination, ETA and
+         * distance remain available through the frozen status contract.
+         */
+        return NavigationRoutePreview.empty()
     }
 
     fun routeSnapshot(state: NavigationSessionState): NavigationRouteSnapshot =

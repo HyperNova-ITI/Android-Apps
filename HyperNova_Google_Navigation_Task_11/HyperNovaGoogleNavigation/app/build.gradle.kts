@@ -6,12 +6,6 @@ plugins {
     id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
 }
 
-// Navigation SDK already bundles the Maps surface. Google requires excluding
-// the normal Maps SDK from every transitive dependency (Places includes it).
-configurations.configureEach {
-    exclude(group = "com.google.android.gms", module = "play-services-maps")
-}
-
 android {
     namespace = "com.hypernova.navigation"
 
@@ -84,18 +78,17 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.13.0")
     implementation("androidx.appcompat:appcompat:1.8.0")
     implementation("androidx.constraintlayout:constraintlayout:2.2.2")
-    // 1.19.0 requires compileSdk 37 / AGP 9.1; the Navigation SDK baseline is 36.1.
+    // 1.19.0 requires compileSdk 37 / AGP 9.1; this Android 16 project is 36.1.
     //noinspection GradleDependency
     implementation("androidx.core:core-ktx:1.18.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.11.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.11.0")
     implementation("com.google.android.material:material:1.14.0")
-    implementation("com.google.android.libraries.navigation:navigation:7.9.0")
-    implementation("com.google.android.libraries.places:places:5.3.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.11.0")
 
     testImplementation("junit:junit:4.13.2")
+    // Android's org.json classes are runtime stubs in local JVM tests.
+    testImplementation("org.json:json:20250517")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")

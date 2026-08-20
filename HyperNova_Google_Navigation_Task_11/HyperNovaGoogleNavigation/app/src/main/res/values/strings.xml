@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">HyperNova Navigation</string>
     <string name="navigation_map_content_description">Google navigation map</string>
-    <string name="navigation_initializing">Initializing Google Navigation…</string>
+    <string name="navigation_initializing">Connecting to Google Maps…</string>
     <string name="navigation_unavailable_title">Navigation unavailable</string>
     <string name="configuration_required_title">Google configuration required</string>
     <string name="terms_required_title">Google terms required</string>
@@ -12,14 +12,13 @@
     <string name="search_button_content_description">Search Google Places</string>
     <string name="retry_action">Retry</string>
     <string name="review_terms_action">Review terms</string>
-    <string name="grant_location_action">Allow location</string>
     <string name="start_guidance_action">Start guidance</string>
     <string name="cancel_action">Cancel route</string>
     <string name="simulate_action">Demo drive</string>
-    <string name="simulated_status">SIMULATED — Google SDK demo</string>
+    <string name="simulated_status">DEMO ORIGIN — live Google route</string>
     <string name="route_metrics_format">%1$s • %2$s</string>
     <string name="eta_minutes_format">%1$d min</string>
     <string name="distance_km_format">%1$.1f km</string>
     <string name="destination_result_content_description">Navigate to %1$s, %2$s</string>
-    <string name="notification_permission_required">Notification permission is required for background guidance.</string>
+    <string name="route_preview_only">Google route preview is ready. Turn-by-turn guidance requires a GMS-enabled image.</string>
 </resources>

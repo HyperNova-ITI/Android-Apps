@@ -1,6 +1,7 @@
 package com.hypernova.navigation.ui
 
 import android.app.Application
+import android.view.ViewGroup
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.hypernova.contracts.navigation.NavigationContract
@@ -30,11 +31,17 @@ class NavigationViewModel(application: Application) : AndroidViewModel(applicati
     val busy: StateFlow<Boolean> = mutableBusy.asStateFlow()
     val simulationAvailable: Boolean
         get() = simulation.available
+    val guidanceAvailable: Boolean
+        get() = runtime.supportsGuidance
 
-    fun attach(activity: android.app.Activity, hasFineLocation: Boolean) =
-        runtime.attachActivity(activity, hasFineLocation)
+    fun attach(activity: android.app.Activity) = runtime.attachActivity(activity)
 
-    fun locationDenied() = runtime.markLocationUnavailable()
+    fun attachMapSurface(container: ViewGroup) = runtime.attachMapSurface(container)
+
+    fun detachMapSurface(container: ViewGroup) = runtime.detachMapSurface(container)
+
+    fun setMapInsets(topPixels: Int, bottomPixels: Int) =
+        runtime.setMapSurfaceInsets(topPixels, bottomPixels)
 
     fun search(query: String) {
         if (query.isBlank() || mutableBusy.value) return

@@ -5,6 +5,7 @@ build/
 **/build/
 local.properties
 secrets.properties
+deliverables/google-navigation/SHA256SUMS.txt
 *.jks
 *.keystore
 *.p12
@@ -13,4 +14,3 @@ secrets.properties
 captures/
 .externalNativeBuild/
 .cxx/
-

@@ -1,5 +1,8 @@
 # Gemini Maps Grounding Extension (Design-Only Additive Bridge)
 
+> Historical design input. The implemented Gemini/action boundary is now
+> documented in `04-non-gms-google-maps-web-architecture.md`.
+
 Date: 2026-08-19
 Status: Design only. No Gemini payload code exists in this repository, and
 Frozen API v1 is untouched.

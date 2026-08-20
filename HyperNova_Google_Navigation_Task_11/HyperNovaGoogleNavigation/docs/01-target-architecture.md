@@ -1,5 +1,8 @@
 # Target Architecture — HyperNova Google Navigation
 
+> Superseded on 2026-08-20 because the live Android 16 guest has no GMS.
+> See `04-non-gms-google-maps-web-architecture.md` for the implemented architecture.
+
 Date: 2026-08-19  
 Status: Phase 0 architecture baseline
 

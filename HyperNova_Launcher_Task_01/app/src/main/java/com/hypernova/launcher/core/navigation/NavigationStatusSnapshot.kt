@@ -38,6 +38,12 @@ data class NavigationStatusSnapshot(
 ) {
     val positionAvailable: Boolean
         get() = currentPosition != null
+
+    val hasRoutePreview: Boolean
+        get() =
+            runtimeState == NavigationRuntimeState.IDLE &&
+                routeId.isNotBlank() &&
+                !destinationTitle.isNullOrBlank()
 }
 
 /** Launcher-owned coordinate; contract parcelables never reach the View layer. */

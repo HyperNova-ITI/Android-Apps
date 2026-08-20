@@ -188,7 +188,7 @@ log "============================================================"
 log "8. APK SHA256"
 log "============================================================"
 
-sha256sum "$DST" \
+(cd "$OUT" && sha256sum "$(basename "$DST")") \
     | tee "$OUT/SHA256SUMS.txt" \
     >> "$LOG" \
     || fail "SHA256 generation failed"

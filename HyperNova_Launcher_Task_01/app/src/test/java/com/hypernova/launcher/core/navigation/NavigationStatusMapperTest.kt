@@ -12,11 +12,42 @@ import com.hypernova.contracts.navigation.NavigationRouteSnapshot
 import com.hypernova.contracts.navigation.NavigationResult
 import com.hypernova.launcher.core.state.AppConnectionState
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class NavigationStatusMapperTest {
+    @Test
+    fun `idle destination with route identity is a preview not active guidance`() {
+        val preview =
+            NavigationStatusMapper.withRouteSnapshot(
+                NavigationStatusSnapshot(AppConnectionState.CONNECTING),
+                NavigationRouteSnapshot(
+                    "route-preview",
+                    3L,
+                    NavigationContract.STATE_IDLE,
+                    NavigationDestination(
+                        "preview-token",
+                        NavigationContract.SOURCE_SEARCH,
+                        "Maintenance Center",
+                        "Smart Village",
+                        "vehicle service",
+                        -1L,
+                    ),
+                    600L,
+                    2_000L,
+                    NavigationRoutePreview.empty(),
+                ),
+            )
+
+        assertTrue(preview.hasRoutePreview)
+        assertEquals(NavigationRuntimeState.IDLE, preview.runtimeState)
+        assertFalse(preview.copy(routeId = "").hasRoutePreview)
+        assertFalse(preview.copy(runtimeState = NavigationRuntimeState.ACTIVE).hasRoutePreview)
+    }
+
     @Test
     fun `maps every frozen navigation state`() {
         assertEquals(

@@ -1,6 +1,7 @@
 package com.hypernova.navigation.navigation
 
 import android.app.Activity
+import android.view.ViewGroup
 import com.hypernova.navigation.model.RouteData
 import com.hypernova.navigation.model.VehiclePosition
 import com.hypernova.navigation.model.GoogleDestinationRecord
@@ -14,7 +15,10 @@ enum class NavigatorInitializationFailure {
 }
 
 sealed interface GoogleRouteResult {
-    data class Ready(val route: RouteData) : GoogleRouteResult
+    data class Ready(
+        val route: RouteData,
+        val usesDemoOrigin: Boolean = false,
+    ) : GoogleRouteResult
     data object NoRoute : GoogleRouteResult
     data object NetworkError : GoogleRouteResult
     data object LocationUnavailable : GoogleRouteResult
@@ -35,7 +39,11 @@ interface NavigationGatewayListener {
 
 interface NavigationGateway {
     val isReady: Boolean
+    val supportsGuidance: Boolean
     fun initialize(activity: Activity? = null)
+    fun attachSurface(container: ViewGroup)
+    fun detachSurface(container: ViewGroup)
+    fun setSurfaceInsets(topPixels: Int, bottomPixels: Int)
     suspend fun setDestination(destination: GoogleDestinationRecord): GoogleRouteResult
     fun startGuidance(): Boolean
     fun cancelNavigation()

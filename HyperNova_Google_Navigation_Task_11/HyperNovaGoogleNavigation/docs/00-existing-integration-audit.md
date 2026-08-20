@@ -1,5 +1,8 @@
 # Existing Navigation Integration Audit
 
+> Historical input audit. The frozen identity findings remain authoritative;
+> the deployed non-GMS Maps architecture is documented in `04-non-gms-google-maps-web-architecture.md`.
+
 Date: 2026-08-19  
 Status: Phase 0 source audit complete
 

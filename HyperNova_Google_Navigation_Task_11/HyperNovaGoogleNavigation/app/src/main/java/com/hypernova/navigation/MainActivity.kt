@@ -1,26 +1,16 @@
 package com.hypernova.navigation
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
-import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.LinearLayout
 import androidx.activity.OnBackPressedCallback
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
-import androidx.fragment.app.commitNow
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.GoogleMap.CameraPerspective
-import com.google.android.libraries.navigation.SupportNavigationFragment
-import com.google.android.libraries.navigation.ForceNightMode
 import com.google.android.material.button.MaterialButton
 import com.hypernova.navigation.databinding.ActivityMainBinding
 import com.hypernova.navigation.model.NavigationInitializationState
@@ -35,20 +25,6 @@ import kotlinx.coroutines.launch
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val viewModel: NavigationViewModel by viewModels()
-    private var navigationFragment: SupportNavigationFragment? = null
-    private var googleMap: GoogleMap? = null
-    private var lastOverviewVersion = Long.MIN_VALUE
-
-    private val locationPermissionRequest =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            if (granted) viewModel.attach(this, true) else viewModel.locationDenied()
-        }
-
-    private val notificationPermissionRequest =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            if (granted) startGuidanceWithCamera()
-            else viewModel.reportMessage(getString(R.string.notification_permission_required))
-        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,53 +35,22 @@ class MainActivity : AppCompatActivity() {
             binding.cockpitNavigation,
             CockpitNavigationController.Destination.NAVIGATION,
         )
+        viewModel.attachMapSurface(binding.navigationFragmentContainer)
         configureActions()
         configureBackBehavior()
-        if (viewModel.session.value.initialization != NavigationInitializationState.CONFIGURATION_REQUIRED) {
-            ensureNavigationFragment()
-        }
-        viewModel.attach(this, hasFineLocationPermission())
+        viewModel.attach(this)
         observeState()
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        viewModel.attach(this, hasFineLocationPermission())
+        viewModel.attach(this)
     }
 
-    private fun ensureNavigationFragment() {
-        navigationFragment =
-            supportFragmentManager.findFragmentByTag(NAVIGATION_FRAGMENT_TAG)
-                as? SupportNavigationFragment
-        if (navigationFragment == null) {
-            navigationFragment = SupportNavigationFragment.newInstance()
-            supportFragmentManager.commitNow {
-                replace(
-                    R.id.navigationFragmentContainer,
-                    requireNotNull(navigationFragment),
-                    NAVIGATION_FRAGMENT_TAG,
-                )
-            }
-        }
-        navigationFragment?.apply {
-            setHeaderEnabled(true)
-            // HyperNova's SDK-driven route panel occupies the bottom edge. Disabling
-            // the built-in ETA card makes GoogleMap bottom padding effective.
-            setEtaCardEnabled(false)
-            setTripProgressBarEnabled(true)
-            setRecenterButtonEnabled(true)
-            setTrafficIncidentCardsEnabled(true)
-            setTrafficPromptsEnabled(true)
-            setSpeedLimitIconEnabled(true)
-            setSpeedometerEnabled(true)
-            setForceNightMode(ForceNightMode.AUTO)
-            getMapAsync { map ->
-                googleMap = map
-                map.isTrafficEnabled = true
-                binding.root.post(::updateMapInsets)
-            }
-        }
+    override fun onDestroy() {
+        viewModel.detachMapSurface(binding.navigationFragmentContainer)
+        super.onDestroy()
     }
 
     private fun configureActions() {
@@ -119,25 +64,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
         binding.startGuidanceButton.setOnClickListener {
-            if (hasNotificationPermission()) startGuidanceWithCamera()
-            else notificationPermissionRequest.launch(Manifest.permission.POST_NOTIFICATIONS)
+            if (!viewModel.startGuidance()) {
+                viewModel.reportMessage(getString(R.string.route_preview_only))
+            }
         }
         binding.cancelButton.setOnClickListener { viewModel.cancelNavigation() }
         binding.simulateButton.setOnClickListener { viewModel.startSimulation() }
-        binding.configurationAction.setOnClickListener {
-            when (viewModel.session.value.initialization) {
-                NavigationInitializationState.LOCATION_UNAVAILABLE ->
-                    locationPermissionRequest.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-                NavigationInitializationState.TERMS_REQUIRED,
-                NavigationInitializationState.GOOGLE_SERVICES_UNAVAILABLE,
-                NavigationInitializationState.ERROR,
-                NavigationInitializationState.INITIALIZING,
-                -> viewModel.attach(this, hasFineLocationPermission())
-                NavigationInitializationState.CONFIGURATION_REQUIRED,
-                NavigationInitializationState.READY_IDLE,
-                -> Unit
-            }
-        }
+        binding.configurationAction.setOnClickListener { viewModel.attach(this) }
     }
 
     private fun configureBackBehavior() {
@@ -203,18 +136,10 @@ class MainActivity : AppCompatActivity() {
             binding.routeMetrics.text = formatMetrics(state)
             binding.simulateButton.isVisible = false
             binding.cancelButton.isVisible = true
-            binding.startGuidanceButton.isVisible = state.phase == NavigationPhase.PREVIEW_READY
+            binding.startGuidanceButton.isVisible =
+                viewModel.guidanceAvailable && state.phase == NavigationPhase.PREVIEW_READY
         }
-        binding.root.post {
-            updateMapInsets()
-            if (
-                state.phase == NavigationPhase.PREVIEW_READY &&
-                state.routeVersion != lastOverviewVersion
-            ) {
-                lastOverviewVersion = state.routeVersion
-                navigationFragment?.showRouteOverview()
-            }
-        }
+        binding.root.post(::updateMapInsets)
     }
 
     private fun renderInitialization(state: NavigationSessionState) {
@@ -231,7 +156,7 @@ class MainActivity : AppCompatActivity() {
             }
             NavigationInitializationState.LOCATION_UNAVAILABLE -> {
                 binding.configurationTitle.setText(R.string.location_required_title)
-                binding.configurationAction.setText(R.string.grant_location_action)
+                binding.configurationAction.setText(R.string.retry_action)
                 binding.configurationAction.isVisible = true
             }
             NavigationInitializationState.INITIALIZING -> {
@@ -253,7 +178,11 @@ class MainActivity : AppCompatActivity() {
         binding.searchResults.removeAllViews()
         results.forEach { entry ->
             val button =
-                MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                MaterialButton(
+                    this,
+                    null,
+                    com.google.android.material.R.attr.materialButtonOutlinedStyle,
+                ).apply {
                     text = buildString {
                         append(entry.record.title)
                         if (entry.record.subtitle.isNotBlank()) append("\n${entry.record.subtitle}")
@@ -300,36 +229,12 @@ class MainActivity : AppCompatActivity() {
         return getString(R.string.route_metrics_format, eta, distance)
     }
 
-    private fun hasFineLocationPermission(): Boolean =
-        ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
-            PackageManager.PERMISSION_GRANTED
-
-    private fun hasNotificationPermission(): Boolean =
-        ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
-            PackageManager.PERMISSION_GRANTED
-
-    private fun startGuidanceWithCamera() {
-        if (viewModel.startGuidance()) {
-            navigationFragment?.getMapAsync { map ->
-                if (hasFineLocationPermission()) {
-                    try {
-                        map.followMyLocation(CameraPerspective.TILTED)
-                    } catch (_: SecurityException) {
-                        viewModel.locationDenied()
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Keeps Google controls, attribution, legal notices, and camera calculations
-     * inside the map area that is not obscured by HyperNova overlays.
-     */
+    /** Keeps Google attribution and controls outside the HyperNova overlay panels. */
     private fun updateMapInsets() {
         val top =
             if (binding.searchPanel.isVisible) {
-                (binding.searchPanel.bottom + 8.dp).coerceAtMost(binding.navigationFragmentContainer.height)
+                (binding.searchPanel.bottom + 8.dp)
+                    .coerceAtMost(binding.navigationFragmentContainer.height)
             } else {
                 0
             }
@@ -340,7 +245,7 @@ class MainActivity : AppCompatActivity() {
             } else {
                 0
             }
-        googleMap?.setPadding(0, top, 0, bottom)
+        viewModel.setMapInsets(top, bottom)
     }
 
     private fun returnHome() {
@@ -359,8 +264,4 @@ class MainActivity : AppCompatActivity() {
 
     private val Int.dp: Int
         get() = (this * resources.displayMetrics.density).toInt()
-
-    private companion object {
-        const val NAVIGATION_FRAGMENT_TAG = "hypernova_google_navigation_surface"
-    }
 }

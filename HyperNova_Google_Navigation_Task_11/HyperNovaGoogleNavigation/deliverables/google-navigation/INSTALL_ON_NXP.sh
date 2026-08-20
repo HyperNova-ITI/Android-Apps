@@ -38,16 +38,28 @@ adb -s "$ADB_SERIAL" shell getprop ro.build.version.sdk
 
 echo
 echo "============================================================"
-echo "GOOGLE PLAY SERVICES"
+echo "AOSP WEBVIEW"
 echo "============================================================"
 
-if adb -s "$ADB_SERIAL" shell pm path com.google.android.gms \
-    2>/dev/null | grep -q '^package:'; then
-    echo "Google Play Services: PRESENT"
-    adb -s "$ADB_SERIAL" shell dumpsys package com.google.android.gms \
-      | grep -m2 -E 'versionName=|versionCode=' || true
+if adb -s "$ADB_SERIAL" shell dumpsys webviewupdate \
+    2>/dev/null | grep -q 'Current WebView package'; then
+    echo "Android WebView: PRESENT"
+    adb -s "$ADB_SERIAL" shell dumpsys webviewupdate \
+      | grep -m3 -E 'Current WebView package|Preferred WebView package|Valid package' || true
 else
-    echo "ERROR: Google Play Services NOT FOUND; keeping the existing Navigation app"
+    echo "ERROR: a usable Android WebView was not found; keeping the existing Navigation app"
+    exit 2
+fi
+
+echo
+echo "============================================================"
+echo "ANDROID INTERNET ROUTE"
+echo "============================================================"
+
+if adb -s "$ADB_SERIAL" shell ip route 2>/dev/null | grep -q '^default '; then
+    adb -s "$ADB_SERIAL" shell ip route | grep '^default '
+else
+    echo "ERROR: Android has no default internet route; keeping the existing Navigation app"
     exit 2
 fi
 

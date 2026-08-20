@@ -250,6 +250,7 @@ class LauncherStateController(
         val snapshot = latestNavigationSnapshot
         val runtimeState = snapshot?.runtimeState ?: NavigationRuntimeState.UNAVAILABLE
         val isActive = runtimeState == NavigationRuntimeState.ACTIVE
+        val hasRoutePreview = snapshot?.hasRoutePreview == true
         val appState = createIntegratedAppState(
             availability = availability,
             reportedConnection = snapshot?.connectionState,
@@ -260,6 +261,9 @@ class LauncherStateController(
         val unavailableStatus = createAvailabilityStatus(availability, getAppName(destination))
         val status = when {
             unavailableStatus != null -> unavailableStatus
+
+            hasRoutePreview ->
+                applicationContext.getString(R.string.navigation_route_preview_google)
 
             /*
              * HOME has a deterministic fixed ITI demo location even while
@@ -305,6 +309,8 @@ class LauncherStateController(
         val destinationText = when {
             isActive -> snapshot?.destinationTitle
                 ?: applicationContext.getString(R.string.navigation_route_active)
+            hasRoutePreview -> snapshot?.destinationTitle
+                ?: applicationContext.getString(R.string.navigation_no_active_route)
             runtimeState == NavigationRuntimeState.CALCULATING ->
                 applicationContext.getString(R.string.navigation_calculating)
             runtimeState == NavigationRuntimeState.ARRIVED ->

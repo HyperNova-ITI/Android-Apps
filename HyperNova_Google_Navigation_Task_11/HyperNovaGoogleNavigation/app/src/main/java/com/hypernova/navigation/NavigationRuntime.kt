@@ -1,12 +1,8 @@
 package com.hypernova.navigation
 
-import android.Manifest
 import android.app.Activity
 import android.app.Application
-import android.content.pm.PackageManager
-import androidx.core.content.ContextCompat
-import com.google.android.gms.common.ConnectionResult
-import com.google.android.gms.common.GoogleApiAvailability
+import android.view.ViewGroup
 import com.hypernova.navigation.model.FailureKind
 import com.hypernova.navigation.model.NavigationInitializationState
 import com.hypernova.navigation.model.NavigationPhase
@@ -14,8 +10,8 @@ import com.hypernova.navigation.model.NavigationSessionState
 import com.hypernova.navigation.model.RouteData
 import com.hypernova.navigation.model.RoutePreparationResult
 import com.hypernova.navigation.model.VehiclePosition
-import com.hypernova.navigation.navigation.GoogleNavigationGateway
 import com.hypernova.navigation.navigation.GoogleRouteResult
+import com.hypernova.navigation.navigation.NavigationGateway
 import com.hypernova.navigation.navigation.NavigationGatewayListener
 import com.hypernova.navigation.navigation.NavigatorReadinessGate
 import com.hypernova.navigation.navigation.NavigatorInitializationFailure
@@ -25,8 +21,8 @@ import com.hypernova.navigation.persistence.DestinationTokenStore
 import com.hypernova.navigation.persistence.SharedPreferencesDestinationTokenPersistence
 import com.hypernova.navigation.places.ConfigurationRequiredSearchGateway
 import com.hypernova.navigation.places.DestinationSearchGateway
-import com.hypernova.navigation.places.GooglePlacesSearchGateway
 import com.hypernova.navigation.session.NavigationSessionStore
+import com.hypernova.navigation.web.GoogleMapsWebGateway
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.sync.Mutex
@@ -34,8 +30,8 @@ import kotlinx.coroutines.sync.withLock
 
 class NavigationRuntime private constructor(
     private val application: Application,
+    private val apiKey: String,
     val isGoogleConfigured: Boolean,
-    private val destinationSearchGateway: DestinationSearchGateway,
     private val sessionStore: NavigationSessionStore,
     val destinationTokenStore: DestinationTokenStore,
 ) : NavigationGatewayListener {
@@ -48,8 +44,10 @@ class NavigationRuntime private constructor(
                 NavigatorInitializationFailure.NOT_AUTHORIZED,
             ),
         )
-    private val navigationGateway: GoogleNavigationGateway? =
-        if (isGoogleConfigured) GoogleNavigationGateway(application, this) else null
+    private val navigationGateway: NavigationGateway? =
+        if (isGoogleConfigured) GoogleMapsWebGateway(application, apiKey, this) else null
+    private val destinationSearchGateway: DestinationSearchGateway =
+        (navigationGateway as? DestinationSearchGateway) ?: ConfigurationRequiredSearchGateway()
 
     val state: StateFlow<NavigationSessionState> = sessionStore.state
 
@@ -57,35 +55,29 @@ class NavigationRuntime private constructor(
         if (isGoogleConfigured) initializeWithoutActivityWhenPossible()
     }
 
-    fun attachActivity(activity: Activity, hasFineLocation: Boolean) {
+    fun attachActivity(activity: Activity) {
         if (!isGoogleConfigured) return
-        if (!googlePlayServicesAvailable()) {
-            sessionStore.initialization(
-                NavigationInitializationState.GOOGLE_SERVICES_UNAVAILABLE,
-                "Google Play services are unavailable on this system.",
-                "GOOGLE_PLAY_SERVICES_UNAVAILABLE",
-            )
+        if (navigationGateway?.isReady == true) {
+            onNavigatorReady()
             return
         }
-        if (!hasFineLocation) {
-            markLocationUnavailable()
-            return
-        }
+        readinessGate.waiting()
         sessionStore.initialization(
             NavigationInitializationState.INITIALIZING,
-            "Initializing Google Navigation…",
+            "Connecting to Google Maps…",
         )
         navigationGateway?.initialize(activity)
     }
 
-    fun markLocationUnavailable() {
-        if (!isGoogleConfigured) return
-        sessionStore.initialization(
-            NavigationInitializationState.LOCATION_UNAVAILABLE,
-            "Precise location permission is required for navigation.",
-            "LOCATION_PERMISSION_MISSING",
-        )
-    }
+    fun attachMapSurface(container: ViewGroup) = navigationGateway?.attachSurface(container)
+
+    fun detachMapSurface(container: ViewGroup) = navigationGateway?.detachSurface(container)
+
+    fun setMapSurfaceInsets(topPixels: Int, bottomPixels: Int) =
+        navigationGateway?.setSurfaceInsets(topPixels, bottomPixels)
+
+    val supportsGuidance: Boolean
+        get() = navigationGateway?.supportsGuidance == true
 
     suspend fun search(query: String): List<DestinationTokenEntry> {
         val normalized = query.trim().replace(Regex("\\s+"), " ")
@@ -121,13 +113,13 @@ class NavigationRuntime private constructor(
                     is NavigatorReadinessGate.State.TerminalFailure -> {
                         return@withLock when (readiness.failure) {
                             NavigatorInitializationFailure.NETWORK ->
-                                fail(FailureKind.NETWORK, "Google Play services are unavailable.")
+                                fail(FailureKind.NETWORK, "Google Maps is unavailable over the network.")
                             NavigatorInitializationFailure.LOCATION_PERMISSION_MISSING ->
                                 fail(FailureKind.LOCATION, "Precise location is unavailable.")
                             NavigatorInitializationFailure.TERMS_NOT_ACCEPTED ->
-                                fail(FailureKind.TERMS, "Google Navigation terms are required.")
+                                fail(FailureKind.TERMS, "Google Maps terms are required.")
                             else ->
-                                fail(FailureKind.AUTHORIZATION, "Google Navigation initialization failed.")
+                                fail(FailureKind.AUTHORIZATION, "Google Maps initialization failed.")
                         }
                     }
                 }
@@ -138,12 +130,14 @@ class NavigationRuntime private constructor(
             if (generation != routeCommandGeneration.get()) return@withLock superseded()
             when (result) {
                 is GoogleRouteResult.Ready ->
-                    RoutePreparationResult.Ready(sessionStore.routeReady(result.route))
+                    RoutePreparationResult.Ready(
+                        sessionStore.routeReady(result.route, simulated = result.usesDemoOrigin),
+                    )
                 GoogleRouteResult.NoRoute -> fail(FailureKind.NO_ROUTE, "Google could not find a route.")
                 GoogleRouteResult.NetworkError -> fail(FailureKind.NETWORK, "Google route calculation needs a network connection.")
                 GoogleRouteResult.LocationUnavailable -> fail(FailureKind.LOCATION, "A current location is unavailable.")
                 GoogleRouteResult.Cancelled -> fail(FailureKind.CANCELLED, "Route calculation was cancelled.")
-                GoogleRouteResult.AuthorizationError -> fail(FailureKind.AUTHORIZATION, "Google Navigation authorization failed.")
+                GoogleRouteResult.AuthorizationError -> fail(FailureKind.AUTHORIZATION, "Google Maps authorization failed.")
                 is GoogleRouteResult.InternalError -> fail(FailureKind.INTERNAL, result.message)
             }
         }
@@ -160,8 +154,6 @@ class NavigationRuntime private constructor(
         navigationGateway?.cancelNavigation()
         sessionStore.cancelled()
     }
-
-    internal fun googleGatewayForDebug(): GoogleNavigationGateway? = navigationGateway
 
     internal fun beginDebugSimulation(destination: com.hypernova.navigation.model.GoogleDestinationRecord) {
         sessionStore.calculating(
@@ -185,7 +177,7 @@ class NavigationRuntime private constructor(
         readinessGate.ready()
         sessionStore.initialization(
             NavigationInitializationState.READY_IDLE,
-            "Google Navigation ready",
+            "Google Maps ready",
         )
     }
 
@@ -206,26 +198,31 @@ class NavigationRuntime private constructor(
             NavigatorInitializationFailure.TERMS_NOT_ACCEPTED ->
                 sessionStore.initialization(
                     NavigationInitializationState.TERMS_REQUIRED,
-                    "Google Navigation terms must be accepted.",
+                    "Google Maps terms must be accepted.",
                     "TERMS_NOT_ACCEPTED",
                 )
-            NavigatorInitializationFailure.LOCATION_PERMISSION_MISSING -> markLocationUnavailable()
+            NavigatorInitializationFailure.LOCATION_PERMISSION_MISSING ->
+                sessionStore.initialization(
+                    NavigationInitializationState.LOCATION_UNAVAILABLE,
+                    "A route origin is unavailable.",
+                    "LOCATION_UNAVAILABLE",
+                )
             NavigatorInitializationFailure.NETWORK ->
                 sessionStore.initialization(
                     NavigationInitializationState.GOOGLE_SERVICES_UNAVAILABLE,
-                    "Google Navigation could not reach Google services.",
+                    "Google Maps could not reach Google services.",
                     "GOOGLE_NETWORK_ERROR",
                 )
             NavigatorInitializationFailure.NOT_AUTHORIZED ->
                 sessionStore.initialization(
                     NavigationInitializationState.ERROR,
-                    "The Google API key is not authorized for this app and signing certificate.",
+                    "The Google Maps browser key is not authorized for this app origin.",
                     "GOOGLE_NOT_AUTHORIZED",
                 )
             NavigatorInitializationFailure.INTERNAL ->
                 sessionStore.initialization(
                     NavigationInitializationState.ERROR,
-                    "Google Navigation initialization failed.",
+                    "Google Maps initialization failed.",
                     "GOOGLE_INITIALIZATION_ERROR",
                 )
         }
@@ -243,22 +240,8 @@ class NavigationRuntime private constructor(
     override fun onArrival() = sessionStore.arrived()
 
     private fun initializeWithoutActivityWhenPossible() {
-        if (!googlePlayServicesAvailable()) {
-            onNavigatorInitializationFailed(NavigatorInitializationFailure.NETWORK)
-            return
-        }
-        val permission =
-            ContextCompat.checkSelfPermission(application, Manifest.permission.ACCESS_FINE_LOCATION)
-        if (permission != PackageManager.PERMISSION_GRANTED) {
-            markLocationUnavailable()
-            return
-        }
         navigationGateway?.initialize()
     }
-
-    private fun googlePlayServicesAvailable(): Boolean =
-        GoogleApiAvailability.getInstance()
-            .isGooglePlayServicesAvailable(application) == ConnectionResult.SUCCESS
 
     private fun fail(kind: FailureKind, message: String): RoutePreparationResult.Failed {
         sessionStore.routeFailure(kind, message)
@@ -280,17 +263,14 @@ class NavigationRuntime private constructor(
                             if (configured) NavigationInitializationState.INITIALIZING
                             else NavigationInitializationState.CONFIGURATION_REQUIRED,
                         statusMessage =
-                            if (configured) "Initializing Google Navigation…"
+                            if (configured) "Connecting to Google Maps…"
                             else "Add a restricted Google Maps Platform API key to secrets.properties.",
                     ),
                 )
-            val searchGateway: DestinationSearchGateway =
-                if (configured) GooglePlacesSearchGateway(application, apiKey)
-                else ConfigurationRequiredSearchGateway()
             return NavigationRuntime(
                 application = application,
+                apiKey = apiKey,
                 isGoogleConfigured = configured,
-                destinationSearchGateway = searchGateway,
                 sessionStore = sessionStore,
                 destinationTokenStore =
                     DestinationTokenStore(

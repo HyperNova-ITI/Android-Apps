@@ -226,6 +226,7 @@ internal class NavigationCommandController(
         val id = requestId?.trim().orEmpty()
         scope.launch {
             val state = runtime.state.value
+            val preview = ContractProjection.preview(state)
             val response =
                 if (id.isBlank()) {
                     NavigationRoutePreviewResult(
@@ -234,16 +235,20 @@ internal class NavigationCommandController(
                         "requestId must not be blank.",
                         HyperNovaContract.ERROR_INVALID_ARGUMENT,
                         ContractProjection.state(state),
-                        ContractProjection.preview(state),
+                        preview,
                     )
                 } else {
                     NavigationRoutePreviewResult(
                         id,
                         HyperNovaContract.STATUS_CONFIRMED,
-                        if (state.routePoints.isEmpty()) "Route preview is unavailable." else "Route preview is available.",
+                        if (preview.routePoints.isEmpty()) {
+                            "Route geometry is available only on the Google Maps surface."
+                        } else {
+                            "Route preview is available."
+                        },
                         HyperNovaContract.ERROR_NONE,
                         ContractProjection.state(state),
-                        ContractProjection.preview(state),
+                        preview,
                     )
                 }
             safeDeliver(receiver, response)
