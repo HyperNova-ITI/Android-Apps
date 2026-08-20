@@ -1,0 +1,160 @@
+diff --git a/HyperNova_Launcher_Task_01/app/src/main/java/com/hypernova/launcher/MainActivity.kt b/HyperNova_Launcher_Task_01/app/src/main/java/com/hypernova/launcher/MainActivity.kt
+index 3ef2109a..e8929886 100644
+--- a/HyperNova_Launcher_Task_01/app/src/main/java/com/hypernova/launcher/MainActivity.kt
++++ b/HyperNova_Launcher_Task_01/app/src/main/java/com/hypernova/launcher/MainActivity.kt
+@@ -200,8 +200,7 @@ class MainActivity : AppCompatActivity() {
+         configureNovaActions()
+         configureNavigationCard()
+         configureMediaCard()
+-        configurePhoneAndClimateActions()
+-        configureSettingsCard()
++        configureClimateActions()
+         configureBottomNavigation()
+ 
+         refreshAndRenderState()
+@@ -357,26 +356,36 @@ class MainActivity : AppCompatActivity() {
+     }
+ 
+     /**
+-     * Reuse the approved card implementations while placing them in the final
+-     * hierarchy. The weighted Navigation row consumes the remaining viewport;
+-     * the surrounding NestedScrollView provides controlled overflow only when
+-     * a smaller portrait display cannot satisfy the Navigation minimum height.
++     * Keep only driving-priority widgets on HOME:
++     *
++     *   Climate | Media
++     *   Navigation
++     *
++     * Phone and Settings remain available from the fixed bottom navigation bar.
++     * Their previous dashboard row is completely collapsed so Navigation can
++     * consume the released vertical space.
+      */
+     private fun configureResponsiveDashboardLayout() {
+         val cards = mapOf(
+             DashboardCard.CLIMATE to binding.climateCard,
+             DashboardCard.MEDIA to binding.mediaCard,
+-            DashboardCard.SETTINGS to binding.settingsCard,
+-            DashboardCard.PHONE to binding.phoneCard,
+             DashboardCard.NAVIGATION to binding.navigationCard,
+         )
+ 
+         binding.climateMediaRow.removeAllViews()
++
++        // Phone and Settings are controlled from the bottom bar only.
+         binding.settingsPhoneRow.removeAllViews()
++        binding.settingsPhoneRow.visibility = View.GONE
++
+         binding.navigationDashboardRow.removeAllViews()
+ 
+-        addHalfWidthRow(binding.climateMediaRow, DashboardLayoutOrder.firstRow, cards)
+-        addHalfWidthRow(binding.settingsPhoneRow, DashboardLayoutOrder.secondRow, cards)
++        addHalfWidthRow(
++            binding.climateMediaRow,
++            DashboardLayoutOrder.firstRow,
++            cards,
++        )
++
+         binding.navigationDashboardRow.addView(
+             requireNotNull(cards[DashboardLayoutOrder.dominantRow.single()]),
+             LinearLayout.LayoutParams(
+@@ -712,24 +721,11 @@ class MainActivity : AppCompatActivity() {
+     }
+ 
+     /**
+-     * Configure Phone and Climate cards.
++     * Configure the Climate HOME widget.
++     *
++     * Phone and Settings are intentionally bottom-bar-only destinations.
+      */
+-    private fun configurePhoneAndClimateActions() {
+-        configureDestinationClick(
+-            view = binding.phoneCard,
+-            destination = AppDestination.PHONE
+-        )
+-
+-        configureDestinationClick(
+-            view = binding.buttonOpenPhone,
+-            destination = AppDestination.PHONE
+-        )
+-
+-        configureDestinationClick(
+-            view = binding.buttonPhoneContacts,
+-            destination = AppDestination.PHONE
+-        )
+-
++    private fun configureClimateActions() {
+         configureDestinationClick(
+             view = binding.climateCard,
+             destination = AppDestination.CLIMATE
+@@ -741,14 +737,6 @@ class MainActivity : AppCompatActivity() {
+         )
+     }
+ 
+-    /** Configure the Settings dashboard card. */
+-    private fun configureSettingsCard() {
+-        configureDestinationClick(
+-            view = binding.settingsCard,
+-            destination = AppDestination.SETTINGS
+-        )
+-    }
+-
+     /**
+      * Configure the fixed bottom navigation.
+      */
+diff --git a/HyperNova_Launcher_Task_01/app/src/main/java/com/hypernova/launcher/core/dashboard/DashboardLayoutOrder.kt b/HyperNova_Launcher_Task_01/app/src/main/java/com/hypernova/launcher/core/dashboard/DashboardLayoutOrder.kt
+index cb3e41fc..9d8453cb 100644
+--- a/HyperNova_Launcher_Task_01/app/src/main/java/com/hypernova/launcher/core/dashboard/DashboardLayoutOrder.kt
++++ b/HyperNova_Launcher_Task_01/app/src/main/java/com/hypernova/launcher/core/dashboard/DashboardLayoutOrder.kt
+@@ -8,9 +8,20 @@ enum class DashboardCard {
+     NAVIGATION,
+ }
+ 
+-/** Product-approved HOME hierarchy, kept testable outside Android Views. */
++/**
++ * Product-approved HOME hierarchy.
++ *
++ * Phone and Settings remain available from the fixed bottom navigation bar
++ * and are intentionally not rendered as HOME dashboard widgets.
++ */
+ object DashboardLayoutOrder {
+-    val firstRow = listOf(DashboardCard.CLIMATE, DashboardCard.MEDIA)
+-    val secondRow = listOf(DashboardCard.SETTINGS, DashboardCard.PHONE)
+-    val dominantRow = listOf(DashboardCard.NAVIGATION)
++
++    val firstRow = listOf(
++        DashboardCard.CLIMATE,
++        DashboardCard.MEDIA,
++    )
++
++    val dominantRow = listOf(
++        DashboardCard.NAVIGATION,
++    )
+ }
+diff --git a/HyperNova_Launcher_Task_01/app/src/test/java/com/hypernova/launcher/core/dashboard/DashboardLayoutOrderTest.kt b/HyperNova_Launcher_Task_01/app/src/test/java/com/hypernova/launcher/core/dashboard/DashboardLayoutOrderTest.kt
+index db0a4ed6..d033d69d 100644
+--- a/HyperNova_Launcher_Task_01/app/src/test/java/com/hypernova/launcher/core/dashboard/DashboardLayoutOrderTest.kt
++++ b/HyperNova_Launcher_Task_01/app/src/test/java/com/hypernova/launcher/core/dashboard/DashboardLayoutOrderTest.kt
+@@ -4,16 +4,17 @@ import org.junit.Assert.assertEquals
+ import org.junit.Test
+ 
+ class DashboardLayoutOrderTest {
++
+     @Test
+-    fun `dashboard uses the approved production card hierarchy`() {
++    fun `dashboard keeps only driving priority widgets on home`() {
+         assertEquals(
+-            listOf(DashboardCard.CLIMATE, DashboardCard.MEDIA),
++            listOf(
++                DashboardCard.CLIMATE,
++                DashboardCard.MEDIA,
++            ),
+             DashboardLayoutOrder.firstRow,
+         )
+-        assertEquals(
+-            listOf(DashboardCard.SETTINGS, DashboardCard.PHONE),
+-            DashboardLayoutOrder.secondRow,
+-        )
++
+         assertEquals(
+             listOf(DashboardCard.NAVIGATION),
+             DashboardLayoutOrder.dominantRow,

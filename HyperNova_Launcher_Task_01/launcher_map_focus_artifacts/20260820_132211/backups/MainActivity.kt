@@ -200,7 +200,8 @@ class MainActivity : AppCompatActivity() {
         configureNovaActions()
         configureNavigationCard()
         configureMediaCard()
-        configureClimateActions()
+        configurePhoneAndClimateActions()
+        configureSettingsCard()
         configureBottomNavigation()
 
         refreshAndRenderState()
@@ -356,36 +357,26 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Keep only driving-priority widgets on HOME:
-     *
-     *   Climate | Media
-     *   Navigation
-     *
-     * Phone and Settings remain available from the fixed bottom navigation bar.
-     * Their previous dashboard row is completely collapsed so Navigation can
-     * consume the released vertical space.
+     * Reuse the approved card implementations while placing them in the final
+     * hierarchy. The weighted Navigation row consumes the remaining viewport;
+     * the surrounding NestedScrollView provides controlled overflow only when
+     * a smaller portrait display cannot satisfy the Navigation minimum height.
      */
     private fun configureResponsiveDashboardLayout() {
         val cards = mapOf(
             DashboardCard.CLIMATE to binding.climateCard,
             DashboardCard.MEDIA to binding.mediaCard,
+            DashboardCard.SETTINGS to binding.settingsCard,
+            DashboardCard.PHONE to binding.phoneCard,
             DashboardCard.NAVIGATION to binding.navigationCard,
         )
 
         binding.climateMediaRow.removeAllViews()
-
-        // Phone and Settings are controlled from the bottom bar only.
         binding.settingsPhoneRow.removeAllViews()
-        binding.settingsPhoneRow.visibility = View.GONE
-
         binding.navigationDashboardRow.removeAllViews()
 
-        addHalfWidthRow(
-            binding.climateMediaRow,
-            DashboardLayoutOrder.firstRow,
-            cards,
-        )
-
+        addHalfWidthRow(binding.climateMediaRow, DashboardLayoutOrder.firstRow, cards)
+        addHalfWidthRow(binding.settingsPhoneRow, DashboardLayoutOrder.secondRow, cards)
         binding.navigationDashboardRow.addView(
             requireNotNull(cards[DashboardLayoutOrder.dominantRow.single()]),
             LinearLayout.LayoutParams(
@@ -721,11 +712,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Configure the Climate HOME widget.
-     *
-     * Phone and Settings are intentionally bottom-bar-only destinations.
+     * Configure Phone and Climate cards.
      */
-    private fun configureClimateActions() {
+    private fun configurePhoneAndClimateActions() {
+        configureDestinationClick(
+            view = binding.phoneCard,
+            destination = AppDestination.PHONE
+        )
+
+        configureDestinationClick(
+            view = binding.buttonOpenPhone,
+            destination = AppDestination.PHONE
+        )
+
+        configureDestinationClick(
+            view = binding.buttonPhoneContacts,
+            destination = AppDestination.PHONE
+        )
+
         configureDestinationClick(
             view = binding.climateCard,
             destination = AppDestination.CLIMATE
@@ -734,6 +738,14 @@ class MainActivity : AppCompatActivity() {
         configureDestinationClick(
             view = binding.buttonOpenClimate,
             destination = AppDestination.CLIMATE
+        )
+    }
+
+    /** Configure the Settings dashboard card. */
+    private fun configureSettingsCard() {
+        configureDestinationClick(
+            view = binding.settingsCard,
+            destination = AppDestination.SETTINGS
         )
     }
 
