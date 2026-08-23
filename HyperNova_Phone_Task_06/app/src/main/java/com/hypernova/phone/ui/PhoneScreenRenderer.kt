@@ -22,6 +22,7 @@ import com.hypernova.phone.domain.BluetoothConnectionState
 import com.hypernova.phone.domain.CallStatus
 import com.hypernova.phone.domain.CapabilityStatus
 import com.hypernova.phone.domain.ContactEntry
+import com.hypernova.phone.domain.CallNumberPresentation
 import com.hypernova.phone.domain.PhoneScreen
 import com.hypernova.phone.domain.PhoneUiState
 import com.hypernova.phone.domain.RecentCallEntry
@@ -105,11 +106,18 @@ class PhoneScreenRenderer(
         binding.content
             .removeAllViews()
 
+        val callStatus =
+            state.data.call.status
+
         val fullCall =
             state.screen ==
                 PhoneScreen.CALL &&
-                state.data.call.status !=
-                CallStatus.IDLE
+                (
+                    callStatus in
+                        LIVE_CALL_STATUSES ||
+                        callStatus in
+                        ENDED_CALL_STATUSES
+                    )
 
         binding.header.visibility =
             View.VISIBLE
@@ -217,9 +225,22 @@ class PhoneScreenRenderer(
                 )
 
             PhoneScreen.CALL ->
-                call(
-                    state
-                )
+                if (
+                    fullCall
+                ) {
+                    call(
+                        state
+                    )
+                } else {
+
+                    /*
+                     * No live or just-ended Telecom call owns the screen,
+                     * so never render call controls from stale state.
+                     */
+                    home(
+                        state
+                    )
+                }
         }
     }
 
@@ -252,6 +273,18 @@ class PhoneScreenRenderer(
             CallStatus.DIALING,
             CallStatus.RINGING ->
                 "Calling"
+
+            CallStatus.CALL_ENDED ->
+                "Call ended"
+
+            CallStatus.MISSED ->
+                "Missed call"
+
+            CallStatus.REJECTED ->
+                "Call rejected"
+
+            CallStatus.FAILED ->
+                "Call failed"
 
             else ->
                 when (
@@ -1200,12 +1233,11 @@ class PhoneScreenRenderer(
                     CallStatus.INCOMING ->
                         "Incoming call"
 
-                    CallStatus.ACTIVE ->
-                        elapsed(
-                            call.startedAtMillis,
-                            state.nowMillis
-                        )
-
+                    /*
+                     * The elapsed timer exists only while Telecom reports
+                     * the call as ACTIVE (the ViewModel ticks it only then).
+                     */
+                    CallStatus.ACTIVE,
                     CallStatus.MUTED ->
                         elapsed(
                             call.startedAtMillis,
@@ -1215,19 +1247,26 @@ class PhoneScreenRenderer(
                     CallStatus.HELD ->
                         "On hold"
 
-                    CallStatus.DIALING,
-                    CallStatus.RINGING ->
+                    CallStatus.DIALING ->
                         "Dialing…"
+
+                    CallStatus.RINGING ->
+                        "Ringing…"
 
                     CallStatus.CALL_ENDED ->
                         "Call ended"
 
+                    CallStatus.MISSED ->
+                        "Missed call"
+
+                    CallStatus.REJECTED ->
+                        "Call rejected"
+
+                    CallStatus.FAILED ->
+                        "Call failed"
+
                     else ->
-                        call.status.name
-                            .lowercase()
-                            .replaceFirstChar {
-                                it.titlecase()
-                            }
+                        "Call"
                 }
 
             val accent =
@@ -1244,6 +1283,8 @@ class PhoneScreenRenderer(
                         R.color.hn_warning
 
                     CallStatus.CALL_ENDED,
+                    CallStatus.MISSED,
+                    CallStatus.REJECTED,
                     CallStatus.FAILED ->
                         R.color.hn_error
 
@@ -1279,11 +1320,17 @@ class PhoneScreenRenderer(
                 )
             )
 
+            val primaryIdentity =
+                RecentCallLabels
+                    .primary(
+                        call.displayName,
+                        call.number,
+                        CallNumberPresentation.ALLOWED
+                    )
+
             column.addView(
                 title(
-                    call.displayName
-                        ?: call.number
-                        ?: "Call information unavailable",
+                    primaryIdentity,
                     30,
                     Gravity.CENTER
                 ).withTop(
@@ -1292,10 +1339,10 @@ class PhoneScreenRenderer(
             )
 
             if (
-                call.displayName !=
+                call.number !=
                 null &&
                 call.number !=
-                null
+                primaryIdentity
             ) {
 
                 column.addView(
@@ -1308,29 +1355,54 @@ class PhoneScreenRenderer(
                 )
             }
 
+            /*
+             * Avatar mirrors the resolved caller identity: an initial for a
+             * known contact, the generic phone glyph otherwise.
+             */
             column.addView(
-                icon(
-                    R.drawable.ic_phone
-                ).apply {
+                if (
+                    call.displayName
+                        ?.trim()
+                        ?.isNotEmpty() ==
+                    true
+                ) {
 
-                    background =
-                        drawable(
-                            R.drawable.bg_avatar
+                    TextView(
+                        context
+                    ).apply {
+
+                        text =
+                            call.displayName!!
+                                .trim()
+                                .take(1)
+                                .uppercase()
+
+                        gravity =
+                            Gravity.CENTER
+
+                        textSize =
+                            56f
+
+                        typeface =
+                            Typeface.DEFAULT_BOLD
+
+                        setTextColor(
+                            color(
+                                R.color.hn_text_primary
+                            )
                         )
 
-                    setPadding(
-                        dp(42),
-                        dp(42),
-                        dp(42),
-                        dp(42)
-                    )
+                        background =
+                            drawable(
+                                R.drawable.bg_avatar
+                            )
 
-                    layoutParams =
-                        LinearLayout
-                            .LayoutParams(
-                                dp(150),
-                                dp(150)
-                            ).apply {
+                        layoutParams =
+                            LinearLayout
+                                .LayoutParams(
+                                    dp(150),
+                                    dp(150)
+                                ).apply {
 
                                 topMargin =
                                     dp(24)
@@ -1338,6 +1410,39 @@ class PhoneScreenRenderer(
                                 bottomMargin =
                                     dp(22)
                             }
+                    }
+                } else {
+
+                    icon(
+                        R.drawable.ic_phone
+                    ).apply {
+
+                        background =
+                            drawable(
+                                R.drawable.bg_avatar
+                            )
+
+                        setPadding(
+                            dp(42),
+                            dp(42),
+                            dp(42),
+                            dp(42)
+                        )
+
+                        layoutParams =
+                            LinearLayout
+                                .LayoutParams(
+                                    dp(150),
+                                    dp(150)
+                                ).apply {
+
+                                topMargin =
+                                    dp(24)
+
+                                bottomMargin =
+                                    dp(22)
+                            }
+                    }
                 }
             )
 
@@ -1382,7 +1487,8 @@ class PhoneScreenRenderer(
 
                     choices.addView(
                         primaryButton(
-                            "Answer"
+                            "Answer",
+                            call.canAnswer
                         ) {
                             actions.answer()
                         }.apply {
@@ -1402,8 +1508,15 @@ class PhoneScreenRenderer(
                     )
                 }
 
-                CallStatus.CALL_ENDED -> {
+                CallStatus.CALL_ENDED,
+                CallStatus.MISSED,
+                CallStatus.REJECTED,
+                CallStatus.FAILED -> {
 
+                    /*
+                     * Terminal states show a quiet summary and one way out;
+                     * no in-call controls survive the ended Telecom call.
+                     */
                     column.addView(
                         outlineButton(
                             "Back to recents"
@@ -1416,7 +1529,8 @@ class PhoneScreenRenderer(
                     )
                 }
 
-                else -> {
+                CallStatus.ACTIVE,
+                CallStatus.HELD -> {
 
                     activeCallControls(
                         column,
@@ -1433,16 +1547,47 @@ class PhoneScreenRenderer(
                         )
                     }
 
-                    column.addView(
-                        errorButton(
-                            "END CALL"
-                        ) {
-                            actions.endCall()
-                        }.withTop(
-                            22
+                    if (
+                        call.canDisconnect
+                    ) {
+
+                        column.addView(
+                            errorButton(
+                                "END CALL"
+                            ) {
+                                actions.endCall()
+                            }.withTop(
+                                22
+                            )
                         )
-                    )
+                    }
                 }
+
+                CallStatus.DIALING,
+                CallStatus.RINGING -> {
+
+                    /*
+                     * Outgoing call is not connected yet: no mute, hold,
+                     * route or DTMF controls exist for Telecom to act on.
+                     */
+                    if (
+                        call.canDisconnect
+                    ) {
+
+                        column.addView(
+                            errorButton(
+                                "END CALL"
+                            ) {
+                                actions.endCall()
+                            }.withTop(
+                                22
+                            )
+                        )
+                    }
+                }
+
+                else ->
+                    Unit
             }
         }
 
@@ -1535,6 +1680,10 @@ class PhoneScreenRenderer(
                     Gravity.CENTER
             }
 
+        /*
+         * Hold exists only when Telecom reports CAPABILITY_HOLD; there is
+         * no disabled stand-in button for unsupported calls.
+         */
         if (
             call.canHold ||
             call.status ==
@@ -1553,7 +1702,7 @@ class PhoneScreenRenderer(
                     },
                     selected =
                         call.status ==
-                        CallStatus.HELD
+                            CallStatus.HELD
                 ) {
 
                     actions.holdOrResume(
@@ -1561,20 +1710,6 @@ class PhoneScreenRenderer(
                             CallStatus.HELD
                     )
 
-                }.callWeight(
-                    endMargin =
-                        7
-                )
-            )
-
-        } else {
-
-            secondRow.addView(
-                callControlButton(
-                    "HOLD",
-                    enabled =
-                        false
-                ) {
                 }.callWeight(
                     endMargin =
                         7
@@ -2603,4 +2738,32 @@ class PhoneScreenRenderer(
                 context,
                 resource
             )!!
+
+    private companion object {
+
+        /*
+         * Telecom states where a call genuinely owns the screen and
+         * in-call presentation is meaningful.
+         */
+        val LIVE_CALL_STATUSES =
+            setOf(
+                CallStatus.DIALING,
+                CallStatus.RINGING,
+                CallStatus.INCOMING,
+                CallStatus.ACTIVE,
+                CallStatus.MUTED,
+                CallStatus.HELD
+            )
+
+        /*
+         * Terminal Telecom states: the screen shows a clean ended summary.
+         */
+        val ENDED_CALL_STATUSES =
+            setOf(
+                CallStatus.CALL_ENDED,
+                CallStatus.MISSED,
+                CallStatus.REJECTED,
+                CallStatus.FAILED
+            )
+    }
 }
