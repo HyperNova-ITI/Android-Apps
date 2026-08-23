@@ -584,8 +584,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** Kept as a method so a future higher-resource target can opt in without rewriting HOME. */
-    private fun shouldCreateHomeMapSurface(): Boolean = false
+    /**
+     * HOME owns a small raster-only Google map when the browser key is configured. It mirrors
+     * Navigation's route geometry and performs no Places/Routes requests, so it stays useful
+     * without recreating the expensive Navigation engine inside Launcher.
+     */
+    private fun shouldCreateHomeMapSurface(): Boolean = BuildConfig.MAPS_API_KEY.isNotBlank()
 
     /** Overlay the local fallback with a Google-owned, read-only destination preview. */
     private fun initializeGoogleNavigationMap() {
@@ -630,9 +634,10 @@ class MainActivity : AppCompatActivity() {
                     ),
                 )
                 if (::latestUiState.isInitialized) {
-                    controller.setDestination(
+                    controller.setRoute(
                         latestUiState.navigation.routeId,
-                        latestUiState.navigation.destination,
+                        latestUiState.navigation.routeVersion,
+                        latestUiState.navigation.routePoints,
                     )
                 }
             }
@@ -906,6 +911,11 @@ class MainActivity : AppCompatActivity() {
                 "com.hypernova.navigation.action.OPEN"
             ).apply {
                 setPackage("com.hypernova.navigation")
+                addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP,
+                )
             }
 
         runCatching {
@@ -923,6 +933,11 @@ class MainActivity : AppCompatActivity() {
                 )
 
             if (fallbackIntent != null) {
+                fallbackIntent.addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP,
+                )
                 runCatching {
                     startActivity(fallbackIntent)
                 }.onFailure { fallbackFailure ->
@@ -1464,13 +1479,21 @@ class MainActivity : AppCompatActivity() {
             navigationMapController?.clearNavigation()
         }
 
-        googleNavigationMapController?.setDestination(
+        googleNavigationMapController?.setRoute(
             navigation.routeId,
-            navigation.destination,
+            navigation.routeVersion,
+            navigation.routePoints,
         )
 
         binding.textNavigationAttribution.visibility =
-            if (navigation.routePoints.size >= 2) View.VISIBLE else View.GONE
+            if (
+                navigation.routePoints.size >= 2 ||
+                    (googleNavigationMapController != null && navigation.mapAvailable)
+            ) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
 
 
         val showMap = navigation.mapAvailable && navigation.routePoints.size >= 2
@@ -1493,7 +1516,10 @@ class MainActivity : AppCompatActivity() {
          */
         navigationIdleFallbackOverlay?.visibility = View.GONE
         binding.navigationRoutePreview.visibility =
-            if (navigationMapView != null) {
+            if (
+                navigationMapView != null ||
+                    (googleNavigationMapController != null && navigation.mapAvailable)
+            ) {
                 View.INVISIBLE
             } else {
                 View.VISIBLE

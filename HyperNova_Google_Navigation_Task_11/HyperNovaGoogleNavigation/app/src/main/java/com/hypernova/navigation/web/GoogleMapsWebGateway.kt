@@ -21,7 +21,6 @@ import android.webkit.WebViewClient
 import com.hypernova.navigation.BuildConfig
 import com.hypernova.navigation.model.GeoPoint
 import com.hypernova.navigation.model.GoogleDestinationRecord
-import com.hypernova.navigation.model.VehiclePosition
 import com.hypernova.navigation.navigation.GoogleRouteResult
 import com.hypernova.navigation.navigation.NavigationGateway
 import com.hypernova.navigation.navigation.NavigationGatewayListener
@@ -30,7 +29,6 @@ import com.hypernova.navigation.places.DestinationSearchGateway
 import com.hypernova.navigation.places.GooglePlacesException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.UUID
-import kotlin.math.roundToLong
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -64,12 +62,11 @@ class GoogleMapsWebGateway internal constructor(
     override val isReady: Boolean
         get() = engineState.value is EngineState.Ready
 
-    /*
-     * This is HyperNova route-session guidance over real Google route data, not
-     * Google's native Navigation SDK. The latter is unavailable on the bare-AOSP
-     * guest because it requires Google Play services.
-     */
-    override val supportsGuidance: Boolean = true
+    // The bare-AOSP guest has no Google Navigation SDK. We truthfully provide search and a real
+    // route preview, but do not imitate turn-by-turn movement with a synthetic timer.
+    override val supportsGuidance: Boolean = false
+
+    private var lastSurfaceNotificationAtMillis = Long.MIN_VALUE
 
     override fun initialize(activity: Activity?) {
         if (isReady) {
@@ -198,9 +195,7 @@ class GoogleMapsWebGateway internal constructor(
     }
 
     override fun startGuidance(): Boolean {
-        if (!isReady) return false
-        evaluate("window.hypernovaStartGuidance();")
-        return true
+        return false
     }
 
     override fun cancelNavigation() {
@@ -356,6 +351,9 @@ class GoogleMapsWebGateway internal constructor(
     }
 
     private fun notifySurfaceAttached(mapWebView: WebView) {
+        val now = android.os.SystemClock.uptimeMillis()
+        if (now - lastSurfaceNotificationAtMillis < SURFACE_NOTIFICATION_DEBOUNCE_MILLIS) return
+        lastSurfaceNotificationAtMillis = now
         mapWebView.post {
             if (isReady && mapWebView.parent != null) {
                 mapWebView.evaluateJavascript("window.hypernovaSurfaceAttached();", null)
@@ -383,52 +381,6 @@ class GoogleMapsWebGateway internal constructor(
                 }
             runOnMain { listener.onMapDestinationRequested(destination) }
         }
-
-        @JavascriptInterface
-        fun onGuidanceProgress(
-            etaSeconds: Double,
-            distanceMeters: Double,
-            latitude: Double,
-            longitude: Double,
-            bearingDegrees: Double,
-            speedMetersPerSecond: Double,
-        ) {
-            if (
-                !etaSeconds.isFinite() ||
-                !distanceMeters.isFinite() ||
-                !latitude.isFinite() ||
-                !longitude.isFinite() ||
-                latitude !in -90.0..90.0 ||
-                longitude !in -180.0..180.0
-            ) {
-                return
-            }
-            runOnMain {
-                listener.onProgress(
-                    etaSeconds.coerceAtLeast(0.0).roundToLong(),
-                    distanceMeters.coerceAtLeast(0.0).roundToLong(),
-                )
-                listener.onPosition(
-                    VehiclePosition(
-                        point = GeoPoint(latitude, longitude),
-                        bearingDegrees =
-                            bearingDegrees
-                                .takeIf(Double::isFinite)
-                                ?.let { (((it % 360.0) + 360.0) % 360.0).toFloat() }
-                                ?: Float.NaN,
-                        speedMetersPerSecond =
-                            speedMetersPerSecond
-                                .takeIf { it.isFinite() && it >= 0.0 }
-                                ?.toFloat()
-                                ?: Float.NaN,
-                        timestampMillis = System.currentTimeMillis(),
-                    ),
-                )
-            }
-        }
-
-        @JavascriptInterface
-        fun onGuidanceArrival() = runOnMain(listener::onArrival)
 
         @JavascriptInterface
         fun onResponse(
@@ -472,6 +424,7 @@ class GoogleMapsWebGateway internal constructor(
     private companion object {
         const val TAG = "HN-GoogleMapsWeb"
         const val BRIDGE_NAME = "HyperNovaBridge"
+        const val SURFACE_NOTIFICATION_DEBOUNCE_MILLIS = 350L
         const val OP_SEARCH = "search"
         const val OP_ROUTE = "route"
         const val ERROR_NO_ROUTE = "NO_ROUTE"

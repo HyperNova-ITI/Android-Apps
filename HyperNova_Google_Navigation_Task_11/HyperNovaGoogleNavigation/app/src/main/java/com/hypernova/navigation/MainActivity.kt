@@ -86,11 +86,6 @@ class MainActivity : AppCompatActivity() {
                 false
             }
         }
-        binding.startGuidanceButton.setOnClickListener {
-            if (!viewModel.startGuidance()) {
-                viewModel.reportMessage(getString(R.string.route_preview_only))
-            }
-        }
         binding.cancelButton.setOnClickListener { viewModel.cancelNavigation() }
         binding.simulateButton.setOnClickListener { viewModel.startSimulation() }
         binding.configurationAction.setOnClickListener { viewModel.attach(this) }
@@ -160,8 +155,6 @@ class MainActivity : AppCompatActivity() {
             binding.routeMetrics.text = formatMetrics(state)
             binding.simulateButton.isVisible = false
             binding.cancelButton.isVisible = true
-            // A prepared route stays a preview until the driver or NOVA explicitly starts it.
-            binding.startGuidanceButton.isVisible = state.phase == NavigationPhase.PREVIEW_READY
         }
         binding.root.post(::updateMapInsets)
     }

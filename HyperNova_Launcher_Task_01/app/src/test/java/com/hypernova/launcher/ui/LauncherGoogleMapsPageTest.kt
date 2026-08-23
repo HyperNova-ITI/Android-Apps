@@ -10,9 +10,15 @@ class LauncherGoogleMapsPageTest {
 
         assertTrue(page.contains("mapId: '${LauncherGoogleMapsPage.MAP_ID}'"))
         assertTrue(page.contains("colorScheme: 'LIGHT'"))
+        assertTrue(page.contains("renderingType: RenderingType.RASTER"))
         assertTrue(page.contains("disableDefaultUI: true"))
         assertTrue(page.contains("gestureHandling: 'none'"))
         assertTrue(page.contains("HyperNovaLauncherBridge.openNavigation()"))
+        assertTrue(page.contains("window.hypernovaShowRoute"))
+        assertTrue(page.contains("new google.maps.Polyline"))
+        assertTrue(!page.contains("searchByText"))
+        assertTrue(!page.contains("computeRoutes"))
+        assertTrue(!page.contains("libraries=places,routes,marker"))
     }
 
     @Test

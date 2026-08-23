@@ -13,6 +13,8 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import com.hypernova.launcher.core.navigation.NavigationPreviewPoint
+import org.json.JSONArray
 import org.json.JSONObject
 
 /** Small Google map renderer for HOME; it never sends a navigation command. */
@@ -24,11 +26,12 @@ class LauncherGoogleMapController(
     private val onAvailabilityChanged: (Boolean) -> Unit,
 ) {
     private val mainHandler = Handler(Looper.getMainLooper())
-    val view: WebView = createWebView(context)
+    val view: WebView = createWebView(context, isNightMode)
     private var ready = false
     private var destroyed = false
-    private var pendingDestination: String? = null
-    private var renderedDestination: String? = null
+    private var pendingRouteKey = ""
+    private var pendingRoutePoints: List<NavigationPreviewPoint> = emptyList()
+    private var renderedRouteKey: String? = null
 
     init {
         view.visibility = android.view.View.INVISIBLE
@@ -41,14 +44,28 @@ class LauncherGoogleMapController(
         )
     }
 
-    fun setDestination(routeId: String, destination: String?) {
-        val query = destination?.trim()?.takeIf { routeId.isNotBlank() && it.isNotBlank() }
-        pendingDestination = query
+    /**
+     * Render Navigation's already-computed, bounded route geometry.
+     *
+     * HOME must never repeat a Places search or Routes request just to draw its widget. Navigation
+     * remains the sole route authority and this small raster map only mirrors the resulting path.
+     */
+    fun setRoute(
+        routeId: String,
+        routeVersion: Long,
+        routePoints: List<NavigationPreviewPoint>,
+    ) {
+        pendingRouteKey =
+            routeId
+                .takeIf { routePoints.size >= 2 }
+                ?.let { "$it@$routeVersion" }
+                .orEmpty()
+        pendingRoutePoints = routePoints.takeIf { pendingRouteKey.isNotBlank() }.orEmpty()
         renderPending()
     }
 
     fun refresh() {
-        if (ready && renderedDestination == null && pendingDestination != null) renderPending()
+        if (ready && renderedRouteKey != pendingRouteKey) renderPending()
     }
 
     /** Release the launcher's Chromium surface before another app creates its own WebView. */
@@ -78,22 +95,35 @@ class LauncherGoogleMapController(
 
     private fun renderPending() {
         if (!ready || destroyed) return
-        val destination = pendingDestination
-        if (destination == renderedDestination) return
-        renderedDestination = destination
+        if (pendingRouteKey == renderedRouteKey) return
+        renderedRouteKey = pendingRouteKey
         val script =
-            if (destination == null) {
+            if (pendingRoutePoints.size < 2) {
                 "window.hypernovaShowIdle();"
             } else {
-                "window.hypernovaShowDestination(${JSONObject.quote(destination)});"
+                val points =
+                    JSONArray().apply {
+                        pendingRoutePoints.forEach { point ->
+                            put(
+                                JSONObject()
+                                    .put("lat", point.latitude)
+                                    .put("lng", point.longitude),
+                            )
+                        }
+                    }
+                "window.hypernovaShowRoute($points);"
             }
         view.evaluateJavascript(script, null)
     }
 
     @SuppressLint("SetJavaScriptEnabled", "JavascriptInterface")
-    private fun createWebView(context: Context): WebView =
+    private fun createWebView(context: Context, isNightMode: Boolean): WebView =
         WebView(context).apply {
-            setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            // An opaque backing prevents the NXP compositor exposing a gray/black frame while
+            // Chromium swaps raster tiles during Launcher <-> Navigation transitions.
+            setBackgroundColor(
+                android.graphics.Color.parseColor(if (isNightMode) "#07121d" else "#edf5f7"),
+            )
             settings.apply {
                 javaScriptEnabled = true
                 domStorageEnabled = true
@@ -104,6 +134,7 @@ class LauncherGoogleMapController(
                 mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
                 cacheMode = WebSettings.LOAD_DEFAULT
             }
+            setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_BOUND, false)
             addJavascriptInterface(Bridge(), BRIDGE_NAME)
             webViewClient =
                 object : WebViewClient() {
@@ -157,12 +188,6 @@ class LauncherGoogleMapController(
 
         @JavascriptInterface
         fun onInitializationFailed(message: String) = fail(message)
-
-        @JavascriptInterface
-        fun onRenderFailed(message: String) {
-            Log.w(TAG, "Could not render Google destination: $message")
-            renderedDestination = null
-        }
 
         @JavascriptInterface
         fun openNavigation() = mainHandler.post(onOpenNavigation)

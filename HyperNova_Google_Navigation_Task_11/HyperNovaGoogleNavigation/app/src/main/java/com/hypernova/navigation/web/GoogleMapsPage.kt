@@ -110,11 +110,10 @@ internal object GoogleMapsPage {
                 let vehicleMarker = null;
                 let lastRouteBounds = null;
                 let lastRoutePath = [];
-                let lastRouteDurationSeconds = -1;
-                let lastRouteDistanceMeters = -1;
-                let guidanceTimer = null;
                 let topInset = 0;
                 let bottomInset = 0;
+                let lastSurfaceWidth = 0;
+                let lastSurfaceHeight = 0;
                 let currentSelectedPlace = null;
                 let selectedPlaceGeneration = 0;
                 let reviewsPlaceId = '';
@@ -370,55 +369,6 @@ internal object GoogleMapsPage {
                   });
                 }
 
-                function stopGuidanceTimer() {
-                  if (guidanceTimer != null) clearInterval(guidanceTimer);
-                  guidanceTimer = null;
-                }
-
-                function bearingBetween(first, second) {
-                  const lat1 = first.latitude * Math.PI / 180;
-                  const lat2 = second.latitude * Math.PI / 180;
-                  const delta = (second.longitude - first.longitude) * Math.PI / 180;
-                  const y = Math.sin(delta) * Math.cos(lat2);
-                  const x = Math.cos(lat1) * Math.sin(lat2) -
-                    Math.sin(lat1) * Math.cos(lat2) * Math.cos(delta);
-                  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
-                }
-
-                function publishGuidanceSample(tick, totalTicks) {
-                  const fraction = Math.min(1, tick / totalTicks);
-                  const pathIndex = Math.min(
-                    lastRoutePath.length - 1,
-                    Math.round(fraction * (lastRoutePath.length - 1))
-                  );
-                  const current = lastRoutePath[pathIndex];
-                  const next = lastRoutePath[Math.min(lastRoutePath.length - 1, pathIndex + 1)];
-                  const bearing = bearingBetween(current, next);
-                  const position = { lat: current.latitude, lng: current.longitude };
-                  if (vehicleMarker) vehicleMarker.position = position;
-                  if (map) {
-                    map.panTo(position);
-                    if (map.getZoom() < 16) map.setZoom(16);
-                  }
-                  const eta = Math.max(0, Math.round(lastRouteDurationSeconds * (1 - fraction)));
-                  const remaining = Math.max(0, Math.round(lastRouteDistanceMeters * (1 - fraction)));
-                  const speed = lastRouteDurationSeconds > 0
-                    ? lastRouteDistanceMeters / lastRouteDurationSeconds
-                    : 0;
-                  HyperNovaBridge.onGuidanceProgress(
-                    eta,
-                    remaining,
-                    current.latitude,
-                    current.longitude,
-                    bearing,
-                    speed
-                  );
-                  if (fraction >= 1) {
-                    stopGuidanceTimer();
-                    HyperNovaBridge.onGuidanceArrival();
-                  }
-                }
-
                 window.gm_authFailure = function() {
                   HyperNovaBridge.onInitializationFailed('AUTHORIZATION', 'Google Maps rejected the browser API key.');
                 };
@@ -509,7 +459,6 @@ internal object GoogleMapsPage {
                 window.hypernovaRoute = async function(requestId, destination, originLatitude, originLongitude) {
                   try {
                     await Promise.all([ensurePlacesLibrary(), ensureRoutesLibrary()]);
-                    stopGuidanceTimer();
                     const destinationPlace = new PlaceClass({ id: destination.placeId });
                     await destinationPlace.fetchFields({ fields: ['location'] });
                     hidePlaceSheet(false);
@@ -546,8 +495,6 @@ internal object GoogleMapsPage {
                     }
                     lastRouteBounds = route.viewport || null;
                     lastRoutePath = path;
-                    lastRouteDurationSeconds = Math.max(0, Math.round((route.durationMillis || 0) / 1000));
-                    lastRouteDistanceMeters = Math.max(0, Math.round(route.distanceMeters || 0));
                     fitRoute();
                     respond(requestId, 'route', true, {
                       points: path,
@@ -561,38 +508,13 @@ internal object GoogleMapsPage {
                 };
 
                 window.hypernovaCancelRoute = function() {
-                  stopGuidanceTimer();
                   clearObjects(routePolylines, 'setMap');
                   clearObjects(routeMarkers, 'map');
                   lastRouteBounds = null;
                   lastRoutePath = [];
-                  lastRouteDurationSeconds = -1;
-                  lastRouteDistanceMeters = -1;
                   if (vehicleMarker) vehicleMarker.position = demoOrigin;
                   hidePlaceSheet(true);
                   recenterOnVehicle();
-                };
-
-                window.hypernovaStartGuidance = function() {
-                  if (!map || lastRoutePath.length < 2) return false;
-                  stopGuidanceTimer();
-                  /*
-                   * The NXP guest has no Google Navigation SDK. This deterministic,
-                   * route-generic demo follows the real Google route while keeping the
-                   * update rate at 1 Hz. It is explicitly surfaced as simulated whenever
-                   * the fixed ITI origin is in use.
-                   */
-                  const totalTicks = Math.max(
-                    20,
-                    Math.min(60, Math.ceil(Math.max(1, lastRouteDurationSeconds) / 30))
-                  );
-                  let tick = 0;
-                  publishGuidanceSample(tick, totalTicks);
-                  guidanceTimer = setInterval(() => {
-                    tick += 1;
-                    publishGuidanceSample(tick, totalTicks);
-                  }, 1000);
-                  return true;
                 };
 
                 window.hypernovaSetInsets = function(top, bottom) {
@@ -604,6 +526,12 @@ internal object GoogleMapsPage {
 
                 window.hypernovaSurfaceAttached = function() {
                   if (!map) return;
+                  const mapElement = document.getElementById('map');
+                  const width = mapElement.clientWidth;
+                  const height = mapElement.clientHeight;
+                  if (width === lastSurfaceWidth && height === lastSurfaceHeight) return;
+                  lastSurfaceWidth = width;
+                  lastSurfaceHeight = height;
                   requestAnimationFrame(() => {
                     google.maps.event.trigger(map, 'resize');
                     if (lastRoutePath.length >= 2) fitRoute();

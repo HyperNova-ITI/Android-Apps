@@ -1,9 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="hn_navigation_surface">#F2F7FA</color>
-    <color name="hn_navigation_status_surface">#E6F8FA</color>
-    <color name="hn_navigation_status_stroke">#5EBEC7</color>
-    <color name="hn_navigation_text_primary">#061722</color>
-    <color name="hn_navigation_text_secondary">#34505C</color>
+    <color name="hn_navigation_status_surface">#FAFDFE</color>
+    <color name="hn_navigation_status_stroke">#4719D3C5</color>
+    <color name="hn_navigation_text_primary">#092331</color>
+    <color name="hn_navigation_text_secondary">#46616E</color>
     <color name="hn_navigation_error">#B3261E</color>
+    <color name="hn_navigation_soft_surface">#0F092331</color>
+    <color name="hn_navigation_action">#19D3C5</color>
+    <color name="hn_navigation_action_text">#021116</color>
+
+    <!-- Navigation-only overrides for the shared cockpit bar, matching the Google POI sheet. -->
+    <color name="hn_cockpit_bottom_nav_start">#FAFDFE</color>
+    <color name="hn_cockpit_bottom_nav_center">#FAFDFE</color>
+    <color name="hn_cockpit_bottom_nav_end">#FAFDFE</color>
+    <color name="hn_cockpit_border">#4719D3C5</color>
+    <color name="hn_cockpit_icon_primary">#092331</color>
 </resources>
