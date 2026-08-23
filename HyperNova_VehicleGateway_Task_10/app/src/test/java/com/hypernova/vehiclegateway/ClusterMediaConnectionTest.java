@@ -2,6 +2,8 @@ package com.hypernova.vehiclegateway;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.After;
@@ -18,6 +20,9 @@ import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Focused integration-style unit tests for the HNMC media connection.
@@ -289,6 +294,191 @@ public final class ClusterMediaConnectionTest {
         assertTrue(connection.isReady());
     }
 
+    @Test
+    public void offerNewestInstallsOnlyNonOlderCandidates() {
+        AtomicReference<ClusterMediaConnection.Outgoing> slot =
+                new AtomicReference<>();
+
+        ClusterMediaConnection.Outgoing first =
+                new ClusterMediaConnection.Outgoing(5, new byte[]{1});
+
+        ClusterMediaConnection.offerNewest(slot, first);
+        assertSame(first, slot.get());
+
+        // A stale candidate never displaces what is already queued.
+        ClusterMediaConnection.offerNewest(
+                slot, new ClusterMediaConnection.Outgoing(2, new byte[]{9}));
+        assertSame(first, slot.get());
+
+        // An equal sequence is treated as the same publication.
+        ClusterMediaConnection.offerNewest(
+                slot, new ClusterMediaConnection.Outgoing(5, new byte[]{8}));
+        assertSame(first, slot.get());
+
+        // A newer candidate wins.
+        ClusterMediaConnection.Outgoing newest =
+                new ClusterMediaConnection.Outgoing(6, new byte[]{3});
+
+        ClusterMediaConnection.offerNewest(slot, newest);
+        assertSame(newest, slot.get());
+    }
+
+    @Test
+    public void handshakeMergeFillsEmptyPendingFromLatestSnapshot() {
+        AtomicReference<ClusterMediaConnection.Outgoing> pending =
+                new AtomicReference<>();
+
+        byte[] frame = {0x07};
+
+        AtomicReference<ClusterMediaConnection.Outgoing> latest =
+                new AtomicReference<>(
+                        new ClusterMediaConnection.Outgoing(7, frame));
+
+        ClusterMediaConnection.mergeLatestIntoPending(pending, latest);
+
+        assertNotNull(pending.get());
+        assertEquals(7, pending.get().sequence);
+        assertSame(frame, pending.get().frame);
+    }
+
+    /**
+     * Regression for the HELLO_ACK race: handle() used to execute an
+     * unconditional pending.set(latest.get()), so a publication landing
+     * between the worker reading a stale latest snapshot and installing it
+     * lost its newer frame.
+     */
+    @Test
+    public void handshakeMergeNeverReplacesNewerPendingWithStaleSnapshot() {
+        byte[] newerFrame = {0x0A};
+        byte[] staleFrame = {0x01};
+
+        AtomicReference<ClusterMediaConnection.Outgoing> pending =
+                new AtomicReference<>(
+                        new ClusterMediaConnection.Outgoing(20, newerFrame));
+
+        AtomicReference<ClusterMediaConnection.Outgoing> latest =
+                new AtomicReference<>(
+                        new ClusterMediaConnection.Outgoing(19, staleFrame));
+
+        ClusterMediaConnection.mergeLatestIntoPending(pending, latest);
+
+        assertEquals(20, pending.get().sequence);
+        assertSame(newerFrame, pending.get().frame);
+    }
+
+    @Test
+    public void handshakeMergeUpgradesStalePendingToNewerLatest() {
+        byte[] staleFrame = {0x01};
+        byte[] currentFrame = {0x02};
+
+        AtomicReference<ClusterMediaConnection.Outgoing> pending =
+                new AtomicReference<>(
+                        new ClusterMediaConnection.Outgoing(3, staleFrame));
+
+        AtomicReference<ClusterMediaConnection.Outgoing> latest =
+                new AtomicReference<>(
+                        new ClusterMediaConnection.Outgoing(11, currentFrame));
+
+        ClusterMediaConnection.mergeLatestIntoPending(pending, latest);
+
+        assertEquals(11, pending.get().sequence);
+        assertSame(currentFrame, pending.get().frame);
+    }
+
+    /**
+     * On-wire invariant check: publications completing before the fake
+     * cluster accepts the HELLO_ACK must be reflected by the first state
+     * frame delivered after the handshake, and delivered sequences must
+     * never regress across reconnects.
+     */
+    @Test
+    public void publicationRacingHelloAckPreservesNewestStateOnWire()
+            throws Exception {
+
+        openServer();
+        startConnectionAsync();
+
+        AtomicInteger publishCounter = new AtomicInteger();
+        AtomicInteger completedMax = new AtomicInteger();
+        AtomicBoolean publishing = new AtomicBoolean(true);
+
+        Thread publisher = new Thread(() -> {
+            while (publishing.get()) {
+                int sequence = publishCounter.incrementAndGet();
+
+                connection.publishMediaState(
+                        true,
+                        true,
+                        sequence,
+                        1_000L,
+                        "media",
+                        "v" + sequence,
+                        "",
+                        "");
+
+                int observed = completedMax.get();
+
+                while (observed < sequence
+                        && !completedMax.compareAndSet(observed, sequence)) {
+                    observed = completedMax.get();
+                }
+
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+        }, "hnmc-test-publisher");
+
+        publisher.start();
+
+        try {
+            long previousDelivered = 0;
+
+            for (int round = 0; round < 12; round++) {
+                InputStream input = acceptFakeCluster().getInputStream();
+
+                byte[] hello = new byte[EXPECTED_HELLO_FRAME.length];
+                readFully(input, hello);
+
+                /*
+                 * Snapshot taken before HELLO_ACK: everything completed by
+                 * now is causally visible to the handshake restore (the ACK
+                 * bytes are written after this read), so the delivered
+                 * frame must carry at least this publication sequence.
+                 */
+                int completedBeforeHandshake = completedMax.get();
+
+                writeHelloAck();
+                awaitReadyEvent();
+
+                WireFrame state = readFrameOfType(input, TYPE_MEDIA_STATE, 4);
+                long deliveredSequence = readPublishedSequence(state);
+
+                assertTrue(
+                        "handshake delivered stale state "
+                                + deliveredSequence
+                                + " though publication "
+                                + completedBeforeHandshake
+                                + " had already completed",
+                        deliveredSequence >= completedBeforeHandshake);
+                assertTrue(
+                        "delivered presentation regressed across reconnects",
+                        deliveredSequence >= previousDelivered);
+
+                previousDelivered = deliveredSequence;
+
+                // Force remote disconnect; the client reconnects itself.
+                fakeCluster.close();
+            }
+        } finally {
+            publishing.set(false);
+            publisher.join(5_000);
+        }
+    }
+
     /*
      * Helpers.
      */
@@ -369,6 +559,39 @@ public final class ClusterMediaConnectionTest {
             this.type = type;
             this.payload = payload;
         }
+    }
+
+    /**
+     * Extracts the publication sequence ("v&lt;n&gt;" title) from a captured
+     * MEDIA_STATE payload. Layout: flags+reserved(4), position(8),
+     * duration(8), four uint16 lengths, concatenated UTF-8 text.
+     */
+    private static long readPublishedSequence(WireFrame frame) {
+        ByteBuffer payload = ByteBuffer
+                .wrap(frame.payload)
+                .order(ByteOrder.BIG_ENDIAN);
+
+        payload.position(20);
+
+        int idLength = payload.getShort() & 0xFFFF;
+        int titleLength = payload.getShort() & 0xFFFF;
+        payload.getShort(); // artist length
+        payload.getShort(); // album length
+
+        byte[] idBytes = new byte[idLength];
+        payload.get(idBytes);
+
+        byte[] titleBytes = new byte[titleLength];
+        payload.get(titleBytes);
+
+        assertEquals("media", new String(idBytes, StandardCharsets.UTF_8));
+
+        String title = new String(titleBytes, StandardCharsets.UTF_8);
+
+        assertTrue("unexpected published title: " + title,
+                title.startsWith("v"));
+
+        return Long.parseLong(title.substring(1));
     }
 
     private static WireFrame readFrame(InputStream input) throws IOException {

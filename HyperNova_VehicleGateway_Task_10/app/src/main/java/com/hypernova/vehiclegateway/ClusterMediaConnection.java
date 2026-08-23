@@ -10,6 +10,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -56,7 +57,7 @@ final class ClusterMediaConnection {
      * It is intentionally retained across reconnects so QNX can immediately
      * reconstruct the current media screen after a cluster restart.
      */
-    private final AtomicReference<byte[]> latestPresentation =
+    private final AtomicReference<Outgoing> latestPresentation =
             new AtomicReference<>();
 
     /**
@@ -64,8 +65,11 @@ final class ClusterMediaConnection {
      *
      * New media updates replace older unsent updates.
      */
-    private final AtomicReference<byte[]> pendingPresentation =
+    private final AtomicReference<Outgoing> pendingPresentation =
             new AtomicReference<>();
+
+    /** Monotonic publication sequence backing strict newest-wins updates. */
+    private final AtomicLong publishSequence = new AtomicLong();
 
     private volatile boolean ready;
     private volatile Socket socket;
@@ -152,8 +156,7 @@ final class ClusterMediaConnection {
             );
         }
 
-        latestPresentation.set(frame);
-        pendingPresentation.set(frame);
+        storePresentation(frame);
     }
 
     /**
@@ -169,8 +172,55 @@ final class ClusterMediaConnection {
                 null
         );
 
-        latestPresentation.set(frame);
-        pendingPresentation.set(frame);
+        storePresentation(frame);
+    }
+
+    private void storePresentation(byte[] frame) {
+        Outgoing outgoing =
+                new Outgoing(publishSequence.incrementAndGet(), frame);
+
+        offerNewest(latestPresentation, outgoing);
+        offerNewest(pendingPresentation, outgoing);
+    }
+
+    /**
+     * Installs candidate into slot unless an equally or more recent frame is
+     * already present.
+     *
+     * Concurrent publishers converge on the highest sequence, so strict
+     * latest-state-wins holds even when updates race each other.
+     */
+    static void offerNewest(AtomicReference<Outgoing> slot, Outgoing candidate) {
+        for (;;) {
+            Outgoing current = slot.get();
+
+            if (current != null && current.sequence >= candidate.sequence) {
+                return;
+            }
+
+            if (slot.compareAndSet(current, candidate)) {
+                return;
+            }
+        }
+    }
+
+    /**
+     * HELLO_ACK handoff: atomically offers the newest known presentation as
+     * the pending frame.
+     *
+     * Regression guard for reconnect restoration: a publication racing the
+     * handshake keeps its newer frame instead of being overwritten by an
+     * older latest-state snapshot.
+     */
+    static void mergeLatestIntoPending(
+            AtomicReference<Outgoing> pending,
+            AtomicReference<Outgoing> latest
+    ) {
+        Outgoing candidate = latest.get();
+
+        if (candidate != null) {
+            offerNewest(pending, candidate);
+        }
     }
 
     private void supervise() {
@@ -270,10 +320,10 @@ final class ClusterMediaConnection {
              * remains pending for the next iteration.
              */
             if (ready) {
-                byte[] frame = pendingPresentation.getAndSet(null);
+                Outgoing outgoing = pendingPresentation.getAndSet(null);
 
-                if (frame != null) {
-                    output.write(frame);
+                if (outgoing != null) {
+                    output.write(outgoing.frame);
                     output.flush();
                 }
             }
@@ -363,12 +413,17 @@ final class ClusterMediaConnection {
             case ClusterMediaProtocol.TYPE_HELLO_ACK:
                 ClusterMediaProtocol.validateHelloAck(frame.payload);
 
-                ready = true;
-
                 /*
-                 * Immediately restore current presentation after reconnect.
+                 * Restore the current presentation BEFORE going ready so no
+                 * send can slip between readiness and restoration.
+                 *
+                 * mergeLatestIntoPending is an atomic newest-wins merge: a
+                 * publication racing this handshake keeps its newer frame
+                 * instead of being clobbered by a stale snapshot read here.
                  */
                 pendingPresentation.set(latestPresentation.get());
+
+                ready = true;
 
                 notifyConnectionState(true);
 
@@ -408,6 +463,21 @@ final class ClusterMediaConnection {
             current.close();
         } catch (IOException ignored) {
             // Best effort during shutdown/reconnect.
+        }
+    }
+
+    /**
+     * Presentation frame tagged with its publication sequence so that
+     * concurrent publishers and the handshake restore resolve strictly
+     * newest-wins.
+     */
+    static final class Outgoing {
+        final long sequence;
+        final byte[] frame;
+
+        Outgoing(long sequence, byte[] frame) {
+            this.sequence = sequence;
+            this.frame = frame;
         }
     }
 }
