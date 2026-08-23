@@ -29,8 +29,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * No TCP I/O happens on Binder callback threads: publishing or clearing
  * media only swaps atomically retained presentation frames, so a slow or
  * busy cluster socket can never stall the Media process.
+ *
+ * Every form of connection loss (service disconnected, binding died, null
+ * binding, rejected bind) releases the stale binding immediately and then
+ * schedules exactly one controlled rebind attempt. stop() cancels that
+ * retry, releases the binding, and stays idempotent.
  */
-final class MediaClusterBridge {
+class MediaClusterBridge {
 
     private static final String TAG = "HN-MediaClusterBridge";
 
@@ -47,13 +52,24 @@ final class MediaClusterBridge {
 
     private final Context context;
     private final ClusterMediaConnection clusterConnection;
-    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+
+    /**
+     * Created lazily so plain-JVM tests can drive the bridge through the
+     * overridden framework hooks without touching android.os.Handler.
+     */
+    private Handler mainHandler;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
 
     private volatile boolean bound;
     private boolean rebindScheduled;
     private volatile IMediaStatusService mediaService;
+
+    /**
+     * Created lazily because constructing an AIDL Stub instantiates a
+     * native-backed Binder, which plain-JVM tests must not trigger.
+     */
+    private IMediaStatusCallback statusCallbackInstance;
 
     MediaClusterBridge(
             Context context,
@@ -81,30 +97,22 @@ final class MediaClusterBridge {
 
         if (service != null) {
             try {
-                service.unregisterMediaStatusCallback(statusCallback);
+                service.unregisterMediaStatusCallback(statusCallback());
             } catch (RemoteException ignored) {
                 // Media process may already be gone.
             }
         }
 
-        if (bound) {
-            try {
-                context.unbindService(serviceConnection);
-            } catch (IllegalArgumentException ignored) {
-                // Already unbound by the framework.
-            }
-        }
-
-        bound = false;
+        releaseStaleBinding();
 
         /*
          * Cancels any pending controlled rebind so stop() leaves no
          * scheduled retries behind and stays idempotent.
          */
-        mainHandler.removeCallbacksAndMessages(null);
+        cancelScheduledWork();
         rebindScheduled = false;
 
-        Log.i(TAG, "Media cluster bridge stopped");
+        logInfo("Media cluster bridge stopped");
     }
 
     private void bindMediaService() {
@@ -112,39 +120,50 @@ final class MediaClusterBridge {
             return;
         }
 
-        Intent intent = new Intent(MediaContract.BIND_STATUS_ACTION);
-        intent.setComponent(
-                new ComponentName(
-                        MediaContract.PACKAGE_NAME,
-                        MediaContract.STATUS_SERVICE
-                )
-        );
-
         try {
-            bound = context.bindService(
-                    intent,
-                    serviceConnection,
-                    Context.BIND_AUTO_CREATE
-            );
+            bound = performBind();
 
             if (bound) {
-                Log.i(
-                        TAG,
-                        "Bind requested for HyperNova Media status service"
-                );
+                logInfo("Bind requested for HyperNova Media status service");
             } else {
-                Log.w(TAG, "Media status service bind request was rejected");
-                scheduleRebind();
+                logWarning("Media status service bind request was rejected");
+                scheduleControlledRebind();
             }
         } catch (RuntimeException error) {
             bound = false;
-            Log.w(
-                    TAG,
+            logWarning(
                     "Unable to bind Media status service: "
                             + error.getMessage()
             );
-            scheduleRebind();
+            scheduleControlledRebind();
         }
+    }
+
+    /**
+     * Releases a still-held binding exactly once.
+     *
+     * Used on connection loss and during stop() so a stale binding can
+     * never block the controlled rebind.
+     */
+    private void releaseStaleBinding() {
+        if (!bound) {
+            return;
+        }
+
+        performUnbind();
+        bound = false;
+    }
+
+    /**
+     * Shared recovery path for disconnect, binding death, and null binding:
+     * drop the service reference, release the stale binding, then schedule
+     * exactly one controlled rebind.
+     */
+    private void handleServiceLost(String message) {
+        mediaService = null;
+        logWarning(message);
+        releaseStaleBinding();
+        scheduleControlledRebind();
     }
 
     /**
@@ -154,30 +173,28 @@ final class MediaClusterBridge {
      * bind) into a single pending retry; the flag is cleared only when the
      * retry actually runs or when stop() cancels it.
      */
-    private void scheduleRebind() {
+    private void scheduleControlledRebind() {
         if (!running.get() || rebindScheduled) {
             return;
         }
 
         rebindScheduled = true;
 
-        Log.i(
-                TAG,
+        logInfo(
                 "Scheduling Media status rebind in "
                         + REBIND_DELAY_MILLIS
                         + " ms"
         );
 
-        mainHandler.postDelayed(
+        scheduleRetry(
                 () -> {
                     rebindScheduled = false;
                     bindMediaService();
-                },
-                REBIND_DELAY_MILLIS
+                }
         );
     }
 
-    private final ServiceConnection serviceConnection =
+    final ServiceConnection serviceConnection =
             new ServiceConnection() {
                 @Override
                 public void onServiceConnected(
@@ -195,8 +212,7 @@ final class MediaClusterBridge {
                         int apiVersion = service.getApiVersion();
 
                         if (apiVersion != MediaContract.API_VERSION) {
-                            Log.e(
-                                    TAG,
+                            logError(
                                     "Media API mismatch: "
                                             + apiVersion
                                             + " (expected "
@@ -206,7 +222,7 @@ final class MediaClusterBridge {
                             return;
                         }
 
-                        service.registerMediaStatusCallback(statusCallback);
+                        service.registerMediaStatusCallback(statusCallback());
 
                         mediaService = service;
 
@@ -219,14 +235,19 @@ final class MediaClusterBridge {
                                 clusterConnection,
                                 service.getCurrentSnapshot());
 
-                        Log.i(
-                                TAG,
+                        logInfo(
                                 "Subscribed to HyperNova Media playback status"
                         );
                     } catch (RemoteException error) {
+
+                        /*
+                         * The binding itself stays alive, so the framework
+                         * redelivers onServiceConnected when Media returns;
+                         * releasing the binding here could fight that
+                         * automatic reconnection.
+                         */
                         mediaService = null;
-                        Log.w(
-                                TAG,
+                        logWarning(
                                 "Media subscription failed: "
                                         + error.getMessage()
                         );
@@ -235,71 +256,46 @@ final class MediaClusterBridge {
 
                 @Override
                 public void onServiceDisconnected(ComponentName name) {
-                    mediaService = null;
-                    Log.w(TAG, "Media status service disconnected");
-
-                    /*
-                     * The framework keeps the binding alive and usually
-                     * reconnects on its own; a controlled retry is skipped
-                     * while still bound and recovers the rare case where
-                     * automatic reconnection never completes.
-                     */
-                    scheduleRebind();
+                    handleServiceLost("Media status service disconnected");
                 }
 
                 @Override
                 public void onBindingDied(ComponentName name) {
-                    mediaService = null;
-                    Log.w(TAG, "Media status service binding died");
-
-                    if (bound) {
-                        try {
-                            context.unbindService(serviceConnection);
-                        } catch (IllegalArgumentException ignored) {
-                            // The system already detached this binding.
-                        }
-                        bound = false;
-                    }
-
-                    scheduleRebind();
+                    handleServiceLost("Media status service binding died");
                 }
 
                 @Override
                 public void onNullBinding(ComponentName name) {
-                    mediaService = null;
-                    Log.e(TAG, "Media status service returned null binding");
+                    handleServiceLost(
+                            "Media status service returned null binding");
+                }
+            };
 
-                    if (bound) {
-                        try {
-                            context.unbindService(serviceConnection);
-                        } catch (IllegalArgumentException ignored) {
-                            // Nothing left to release.
+    private IMediaStatusCallback statusCallback() {
+        if (statusCallbackInstance == null) {
+            statusCallbackInstance =
+                    new IMediaStatusCallback.Stub() {
+                        @Override
+                        public void onMediaPlaybackSnapshot(
+                                MediaPlaybackSnapshot snapshot
+                        ) {
+                            if (!running.get()) {
+                                return;
+                            }
+
+                            /*
+                             * Binder thread: applySnapshot only performs
+                             * atomic latest-state updates on
+                             * ClusterMediaConnection and never blocks on
+                             * TCP I/O.
+                             */
+                            applySnapshot(clusterConnection, snapshot);
                         }
-                        bound = false;
-                    }
+                    };
+        }
 
-                    scheduleRebind();
-                }
-            };
-
-    private final IMediaStatusCallback statusCallback =
-            new IMediaStatusCallback.Stub() {
-                @Override
-                public void onMediaPlaybackSnapshot(
-                        MediaPlaybackSnapshot snapshot
-                ) {
-                    if (!running.get()) {
-                        return;
-                    }
-
-                    /*
-                     * Binder thread: applySnapshot only performs atomic
-                     * latest-state updates on ClusterMediaConnection and
-                     * never blocks on TCP I/O.
-                     */
-                    applySnapshot(clusterConnection, snapshot);
-                }
-            };
+        return statusCallbackInstance;
+    }
 
     /**
      * Maps one Media playback snapshot onto the HNMC presentation state.
@@ -345,5 +341,69 @@ final class MediaClusterBridge {
         return value.length() <= MAX_TEXT_CHARS
                 ? value
                 : value.substring(0, MAX_TEXT_CHARS);
+    }
+
+    /*
+     * Framework hooks.
+     *
+     * The defaults wrap the real Android calls; focused plain-JVM tests
+     * override them to observe binding and retry behavior without an
+     * Android runtime. Production behavior is identical either way.
+     */
+
+    /**
+     * Explicitly binds the HyperNova Media status service by action and
+     * ComponentName. Returns false when the framework rejects the request.
+     */
+    boolean performBind() {
+        Intent intent = new Intent(MediaContract.BIND_STATUS_ACTION);
+        intent.setComponent(
+                new ComponentName(
+                        MediaContract.PACKAGE_NAME,
+                        MediaContract.STATUS_SERVICE
+                )
+        );
+
+        return context.bindService(
+                intent,
+                serviceConnection,
+                Context.BIND_AUTO_CREATE
+        );
+    }
+
+    void performUnbind() {
+        try {
+            context.unbindService(serviceConnection);
+        } catch (IllegalArgumentException ignored) {
+            // Already unbound by the framework.
+        }
+    }
+
+    void scheduleRetry(Runnable retry) {
+        mainHandler().postDelayed(retry, REBIND_DELAY_MILLIS);
+    }
+
+    void cancelScheduledWork() {
+        mainHandler().removeCallbacksAndMessages(null);
+    }
+
+    private Handler mainHandler() {
+        if (mainHandler == null) {
+            mainHandler = new Handler(Looper.getMainLooper());
+        }
+
+        return mainHandler;
+    }
+
+    void logInfo(String message) {
+        Log.i(TAG, message);
+    }
+
+    void logWarning(String message) {
+        Log.w(TAG, message);
+    }
+
+    void logError(String message) {
+        Log.e(TAG, message);
     }
 }
