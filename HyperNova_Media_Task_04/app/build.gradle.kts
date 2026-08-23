@@ -14,7 +14,7 @@ android {
     defaultConfig {
         applicationId = "com.hypernova.media"
 
-        minSdk = 26
+        minSdk = 35
         targetSdk = 36
 
         versionCode = 2
@@ -48,6 +48,7 @@ android {
 
 dependencies {
     implementation(project(":nova-visuals"))
+    implementation(project(":hypernova-contracts"))
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.constraintlayout)

@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Headless, signature-protected Android broker for QNX integration.
  *
- * Two independent transports are owned here:
+ * Three independent transports are owned here:
  *
  *   1. GatewayConnection
  *      HNVG / TCP 6100
@@ -44,8 +44,13 @@ import java.util.concurrent.atomic.AtomicLong;
  *      HNCL / TCP 6200
  *      Navigation presentation -> QNX Digital Cluster.
  *
- * The two sessions intentionally have independent sockets and lifecycle state,
- * so a Digital Cluster failure cannot tear down Climate/Vehicle connectivity.
+ *   3. ClusterMediaConnection
+ *      HNMC / TCP 6300
+ *      Media playback status -> QNX Digital Cluster.
+ *
+ * The sessions intentionally have independent sockets and lifecycle state,
+ * so a Digital Cluster failure cannot tear down Climate/Vehicle connectivity
+ * and a media failure cannot tear down navigation or vehicle connectivity.
  */
 public final class VehicleGatewayService extends Service
         implements GatewayConnection.Listener {
@@ -90,6 +95,16 @@ public final class VehicleGatewayService extends Service
      * Navigation AIDL -> HNCL adapter.
      */
     private NavigationClusterBridge navigationClusterBridge;
+
+    /*
+     * Dedicated HNMC/6300 Digital Cluster media connection.
+     */
+    private ClusterMediaConnection clusterMediaConnection;
+
+    /*
+     * Media AIDL -> HNMC adapter.
+     */
+    private MediaClusterBridge mediaClusterBridge;
 
     private final IVehicleGatewayService.Stub binder =
             new IVehicleGatewayService.Stub() {
@@ -294,15 +309,58 @@ public final class VehicleGatewayService extends Service
                         clusterConnection
                 );
 
+        /*
+         * Independent Digital Cluster media transport.
+         */
+        clusterMediaConnection =
+                new ClusterMediaConnection(
+                        BuildConfig.MEDIA_CLUSTER_HOST,
+                        BuildConfig.MEDIA_CLUSTER_PORT,
+                        connected ->
+                                Log.i(
+                                        TAG,
+                                        connected
+                                                ? "QNX Digital Cluster HNMC link ready"
+                                                : "QNX Digital Cluster HNMC link disconnected"
+                                )
+                );
+
+        /*
+         * Subscribe to the HyperNova Media AIDL playback status stream
+         * and translate it to HNMC presentation frames.
+         */
+        mediaClusterBridge =
+                new MediaClusterBridge(
+                        this,
+                        clusterMediaConnection
+                );
+
         if (BuildConfig.ALLOW_PLAINTEXT_GATEWAY) {
 
             /*
-             * HNVG and HNCL are both allowed on the isolated development
-             * bench in debug builds.
+             * HNVG, HNCL, and HNMC are all allowed on the isolated
+             * development bench in debug builds.
              */
             connection.start();
             clusterConnection.start();
             navigationClusterBridge.start();
+
+            try {
+
+                /*
+                 * Media is strictly additive: an HNMC failure must never
+                 * stop or tear down HNVG or HNCL.
+                 */
+                clusterMediaConnection.start();
+                mediaClusterBridge.start();
+            } catch (RuntimeException error) {
+                Log.w(
+                        TAG,
+                        "HNMC media transport failed to start; vehicle "
+                                + "and navigation transports unaffected",
+                        error
+                );
+            }
 
             Log.i(
                     TAG,
@@ -315,6 +373,10 @@ public final class VehicleGatewayService extends Service
                             + BuildConfig.CLUSTER_HOST
                             + ":"
                             + BuildConfig.CLUSTER_PORT
+                            + ", HNMC "
+                            + BuildConfig.MEDIA_CLUSTER_HOST
+                            + ":"
+                            + BuildConfig.MEDIA_CLUSTER_PORT
             );
         } else {
             Log.e(
@@ -348,6 +410,19 @@ public final class VehicleGatewayService extends Service
 
         if (clusterConnection != null) {
             clusterConnection.stop();
+        }
+
+        /*
+         * Media bridge stops first so no new playback state can enter the
+         * media connection during teardown, then the HNMC link itself.
+         * HNVG teardown order is preserved last.
+         */
+        if (mediaClusterBridge != null) {
+            mediaClusterBridge.stop();
+        }
+
+        if (clusterMediaConnection != null) {
+            clusterMediaConnection.stop();
         }
 
         if (connection != null) {
