@@ -32,6 +32,10 @@ public final class MediaStatusService extends Service implements PlaybackControl
         @Override public MediaPlaybackSnapshot getCurrentSnapshot() { return latest; }
 
         @Override public void registerMediaStatusCallback(IMediaStatusCallback callback) {
+            if (callback == null) {
+                Log.w(TAG, "Ignored registration with null callback");
+                return;
+            }
             callbacks.register(callback);
             try {
                 callback.onMediaPlaybackSnapshot(latest);
@@ -42,6 +46,7 @@ public final class MediaStatusService extends Service implements PlaybackControl
         }
 
         @Override public void unregisterMediaStatusCallback(IMediaStatusCallback callback) {
+            if (callback == null) return;
             callbacks.unregister(callback);
         }
     };

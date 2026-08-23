@@ -45,11 +45,11 @@ public final class MediaPlaybackSnapshot implements Parcelable {
         playbackState = in.readInt();
         positionMs = in.readLong();
         durationMs = in.readLong();
-        mediaId = in.readString();
-        title = in.readString();
-        artist = in.readString();
-        album = in.readString();
-        artworkUri = in.readString();
+        mediaId = safe(in.readString());
+        title = safe(in.readString());
+        artist = safe(in.readString());
+        album = safe(in.readString());
+        artworkUri = safe(in.readString());
     }
 
     private static String safe(String value) {
