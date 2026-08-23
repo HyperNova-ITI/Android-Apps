@@ -57,7 +57,7 @@ final class ClusterMediaConnection {
      * It is intentionally retained across reconnects so QNX can immediately
      * reconstruct the current media screen after a cluster restart.
      */
-    private final AtomicReference<Outgoing> latestPresentation =
+    final AtomicReference<Outgoing> latestPresentation =
             new AtomicReference<>();
 
     /**
@@ -65,11 +65,11 @@ final class ClusterMediaConnection {
      *
      * New media updates replace older unsent updates.
      */
-    private final AtomicReference<Outgoing> pendingPresentation =
+    final AtomicReference<Outgoing> pendingPresentation =
             new AtomicReference<>();
 
     /** Monotonic publication sequence backing strict newest-wins updates. */
-    private final AtomicLong publishSequence = new AtomicLong();
+    final AtomicLong publishSequence = new AtomicLong();
 
     private volatile boolean ready;
     private volatile Socket socket;
@@ -176,11 +176,57 @@ final class ClusterMediaConnection {
     }
 
     private void storePresentation(byte[] frame) {
-        Outgoing outgoing =
-                new Outgoing(publishSequence.incrementAndGet(), frame);
+        publishTo(latestPresentation, pendingPresentation, publishSequence, frame);
+    }
 
-        offerNewest(latestPresentation, outgoing);
-        offerNewest(pendingPresentation, outgoing);
+    /**
+     * Production publication path, in one place so tests exercise exactly
+     * what the connection executes.
+     *
+     * The pending slot is never offered the local outgoing directly: after
+     * the authoritative latest slot is updated, the authoritative latest is
+     * merged into pending. An older publisher that resumes after a newer
+     * publication (or after a drain) therefore re-offers the newest
+     * authoritative state and can never install stale pending frames.
+     */
+    static void publishTo(
+            AtomicReference<Outgoing> latest,
+            AtomicReference<Outgoing> pending,
+            AtomicLong sequence,
+            byte[] frame
+    ) {
+        beginPublish(latest, sequence, frame);
+        finishPublish(pending, latest);
+    }
+
+    /**
+     * Publication phase one: allocates the sequence number and advances the
+     * authoritative latest slot. The returned outgoing is informational only
+     * — completion must go through {@link #finishPublish}, which re-reads
+     * the authoritative latest so paused older publishers cannot install
+     * stale pending frames.
+     */
+    static Outgoing beginPublish(
+            AtomicReference<Outgoing> latest,
+            AtomicLong sequence,
+            byte[] frame
+    ) {
+        Outgoing outgoing = new Outgoing(sequence.incrementAndGet(), frame);
+
+        offerNewest(latest, outgoing);
+
+        return outgoing;
+    }
+
+    /**
+     * Publication phase two: mirrors the authoritative latest into the
+     * pending slot atomically.
+     */
+    static void finishPublish(
+            AtomicReference<Outgoing> pending,
+            AtomicReference<Outgoing> latest
+    ) {
+        mergeLatestIntoPending(pending, latest);
     }
 
     /**
@@ -406,6 +452,20 @@ final class ClusterMediaConnection {
         }
     }
 
+    /**
+     * HELLO_ACK restoration step, kept as its own production method so the
+     * owned tests exercise exactly what the connection executes at
+     * handshake time: an atomic newest-wins merge into the pending slot.
+     * Never an unconditional snapshot assignment, which could replace a
+     * newer racing publication with an older latest-state snapshot.
+     */
+    void restorePresentationForHandshake() {
+        mergeLatestIntoPending(
+                pendingPresentation,
+                latestPresentation
+        );
+    }
+
     private void handle(ClusterMediaProtocol.Frame frame)
             throws ClusterMediaProtocol.ProtocolException {
 
@@ -421,7 +481,7 @@ final class ClusterMediaConnection {
                  * publication racing this handshake keeps its newer frame
                  * instead of being clobbered by a stale snapshot read here.
                  */
-                pendingPresentation.set(latestPresentation.get());
+                restorePresentationForHandshake();
 
                 ready = true;
 

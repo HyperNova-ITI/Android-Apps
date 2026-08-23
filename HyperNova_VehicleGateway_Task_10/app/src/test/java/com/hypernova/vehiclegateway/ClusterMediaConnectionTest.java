@@ -3,6 +3,7 @@ package com.hypernova.vehiclegateway;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
@@ -22,6 +23,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -383,6 +385,239 @@ public final class ClusterMediaConnectionTest {
 
         assertEquals(11, pending.get().sequence);
         assertSame(currentFrame, pending.get().frame);
+    }
+
+    /**
+     * Drives the real handshake restoration method on a bare connection
+     * after a drain: pending is empty, so the authoritative latest must be
+     * queued for resend.
+     */
+    @Test
+    public void handshakeRestoreOnLiveConnectionFillsPendingFromLatest() {
+        ClusterMediaConnection connection =
+                new ClusterMediaConnection("127.0.0.1", 1, null);
+
+        connection.publishMediaState(
+                true, true, 5, 10, "m", "track", "", "");
+
+        assertEquals(1, connection.publishSequence.get());
+        assertNotNull(connection.pendingPresentation.get());
+
+        // Simulate the drain of the pending frame before the handshake.
+        connection.pendingPresentation.set(null);
+        assertNull(connection.pendingPresentation.get());
+
+        connection.restorePresentationForHandshake();
+
+        assertNotNull(connection.pendingPresentation.get());
+        assertEquals(1, connection.pendingPresentation.get().sequence);
+    }
+
+    /**
+     * Invariant guard on the real restoration method: even if the slots are
+     * momentarily inconsistent (a racing publication landed in pending while
+     * latest still holds an older snapshot), restoring at HELLO_ACK time
+     * must never downgrade the pending frame.
+     */
+    @Test
+    public void handshakeRestoreOnLiveConnectionNeverDowngradesNewerPending() {
+        ClusterMediaConnection connection =
+                new ClusterMediaConnection("127.0.0.1", 1, null);
+
+        byte[] staleSnapshotFrame = {0x01};
+        byte[] racedFrame = {0x02};
+
+        // A publication completed normally: both slots hold sequence 1.
+        connection.publishMediaState(
+                true, true, 1, 10, "m", "stale", "", "");
+
+        // A newer publication raced the handshake: its frame won pending,
+        // while the restoring thread still holds the older snapshot below.
+        AtomicLong racerSequence = new AtomicLong(1);
+
+        ClusterMediaConnection.Outgoing raced =
+                ClusterMediaConnection.beginPublish(
+                        connection.latestPresentation,
+                        racerSequence,
+                        racedFrame);
+
+        connection.pendingPresentation.set(raced);
+        connection.latestPresentation.set(
+                new ClusterMediaConnection.Outgoing(1, staleSnapshotFrame));
+
+        connection.restorePresentationForHandshake();
+
+        assertNotNull(connection.pendingPresentation.get());
+        assertEquals(2, connection.pendingPresentation.get().sequence);
+        assertSame(racedFrame, connection.pendingPresentation.get().frame);
+        assertTrue(connection.pendingPresentation.get().sequence
+                >= connection.latestPresentation.get().sequence);
+    }
+
+    @Test
+    public void publishToMirrorsAuthoritativeLatestIntoPending() {        AtomicReference<ClusterMediaConnection.Outgoing> latest =
+                new AtomicReference<>();
+        AtomicReference<ClusterMediaConnection.Outgoing> pending =
+                new AtomicReference<>();
+        AtomicLong sequence = new AtomicLong();
+
+        byte[] firstFrame = {0x01};
+        byte[] secondFrame = {0x02};
+
+        ClusterMediaConnection.publishTo(
+                latest, pending, sequence, firstFrame);
+
+        assertEquals(1, latest.get().sequence);
+        assertEquals(1, pending.get().sequence);
+        assertSame(firstFrame, latest.get().frame);
+        assertSame(firstFrame, pending.get().frame);
+
+        ClusterMediaConnection.publishTo(
+                latest, pending, sequence, secondFrame);
+
+        assertEquals(2, latest.get().sequence);
+        assertEquals(2, pending.get().sequence);
+        assertSame(secondFrame, latest.get().frame);
+        assertSame(secondFrame, pending.get().frame);
+    }
+
+    /**
+     * Deterministic replay of the delayed older-publisher interleaving.
+     *
+     * Publisher A is paused after the first production publication phase
+     * (beginPublish); publisher B then completes the whole path and its
+     * frame is drained and delivered. When A resumes through the second
+     * production phase (finishPublish), it must re-offer the authoritative
+     * latest slot — which B advanced — never A's own stale outgoing. Under
+     * a local-outgoing composition this interleaving reinstalls sequence 1
+     * after sequence 2 was already delivered, a wire regression.
+     */
+    @Test
+    public void delayedOlderPublisherCannotInstallStalePendingAfterDrain() {
+        AtomicReference<ClusterMediaConnection.Outgoing> latest =
+                new AtomicReference<>();
+        AtomicReference<ClusterMediaConnection.Outgoing> pending =
+                new AtomicReference<>();
+        AtomicLong sequence = new AtomicLong();
+
+        byte[] staleFrame = {0x01};
+        byte[] newerFrame = {0x06};
+
+        // Publisher A: phase one of the real publication path... paused.
+        ClusterMediaConnection.Outgoing staleOutgoing =
+                ClusterMediaConnection.beginPublish(
+                        latest, sequence, staleFrame);
+
+        assertEquals(1, staleOutgoing.sequence);
+
+        // Publisher B completes both phases.
+        ClusterMediaConnection.publishTo(latest, pending, sequence, newerFrame);
+
+        assertEquals(2, latest.get().sequence);
+        assertEquals(2, pending.get().sequence);
+
+        // The connection drains and delivers B's frame.
+        ClusterMediaConnection.Outgoing delivered = pending.getAndSet(null);
+
+        assertEquals(2, delivered.sequence);
+        assertSame(newerFrame, delivered.frame);
+        assertNull(pending.get());
+
+        /*
+         * Publisher A resumes through the real second phase. Re-offering
+         * A's own staleOutgoing here would regress the wire to sequence 1;
+         * finishPublish instead merges the authoritative latest (B's).
+         */
+        ClusterMediaConnection.finishPublish(pending, latest);
+
+        assertNotNull(pending.get());
+        assertEquals(2, pending.get().sequence);
+        assertSame(newerFrame, pending.get().frame);
+    }
+
+    /**
+     * Sustained concurrency over the real connection API: several publisher
+     * threads hammering publishMediaState while the fake cluster drains must
+     * never produce a decreasing publication sequence on the wire. Coalesced
+     * (skipped) updates are fine — only ordering matters.
+     */
+    @Test
+    public void concurrentPublishersNeverRegressSequenceOnWire()
+            throws Exception {
+
+        openServer();
+        startConnectionAsync();
+
+        InputStream input = acceptFakeCluster().getInputStream();
+        OutputStream output = fakeCluster.getOutputStream();
+
+        readFully(input, new byte[EXPECTED_HELLO_FRAME.length]);
+        output.write(HELLO_ACK_FRAME);
+        output.flush();
+        awaitReadyEvent();
+
+        final int publishers = 3;
+        final int publishesPerPublisher = 150;
+
+        AtomicInteger globalSequence = new AtomicInteger();
+
+        Runnable publisherJob = () -> {
+            for (int i = 0; i < publishesPerPublisher; i++) {
+                int n = globalSequence.incrementAndGet();
+
+                connection.publishMediaState(
+                        true,
+                        true,
+                        n,
+                        1_000L,
+                        "media",
+                        "v" + n,
+                        "",
+                        "");
+
+                Thread.yield();
+            }
+        };
+
+        Thread[] threads = new Thread[publishers];
+
+        for (int i = 0; i < publishers; i++) {
+            threads[i] = new Thread(publisherJob, "hnmc-stress-" + i);
+            threads[i].start();
+        }
+
+        for (Thread thread : threads) {
+            thread.join(30_000);
+        }
+
+        long previousDelivered = -1;
+        boolean anyDelivered = false;
+        int idleChecks = 0;
+
+        while (idleChecks < 20) {
+            if (input.available() == 0) {
+                Thread.sleep(25);
+                idleChecks++;
+                continue;
+            }
+
+            idleChecks = 0;
+
+            WireFrame state = readFrameOfType(input, TYPE_MEDIA_STATE, 16);
+            long deliveredSequence = readPublishedSequence(state);
+
+            if (anyDelivered) {
+                assertTrue(
+                        "wire regression: " + deliveredSequence + " after "
+                                + previousDelivered,
+                        deliveredSequence >= previousDelivered);
+            }
+
+            anyDelivered = true;
+            previousDelivered = deliveredSequence;
+        }
+
+        assertTrue("expected media frames to reach the wire", anyDelivered);
     }
 
     /**
