@@ -65,6 +65,15 @@ class HyperNovaInCallService : InCallService() {
 
         observeTelecomState()
 
+        /*
+         * Seed the mute state Telecom already holds so a service
+         * rebinding during a muted call does not present a stale
+         * default until the next onCallAudioStateChanged() arrives.
+         */
+        callAudioState?.let(
+            TelecomCallController::onCallAudioStateChanged
+        )
+
         Log.i(
             TAG,
             "InCallService created"
