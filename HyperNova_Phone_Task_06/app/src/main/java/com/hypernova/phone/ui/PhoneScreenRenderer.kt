@@ -1,8 +1,11 @@
 package com.hypernova.phone.ui
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.Typeface
+import android.provider.ContactsContract
 import android.content.res.ColorStateList
 import android.view.MotionEvent
 import android.view.Gravity
@@ -29,6 +32,7 @@ import com.hypernova.phone.domain.RecentCallEntry
 import com.hypernova.phone.domain.RecentCallLabels
 import com.hypernova.phone.domain.RecentFilter
 import com.hypernova.phone.domain.RecentsStatus
+import com.hypernova.phone.domain.TelecomCallState
 import java.text.DateFormat
 import java.util.Date
 
@@ -1356,94 +1360,15 @@ class PhoneScreenRenderer(
             }
 
             /*
-             * Avatar mirrors the resolved caller identity: an initial for a
-             * known contact, the generic phone glyph otherwise.
+             * Avatar mirrors the resolved caller identity. The contact photo
+             * is shown only when a real ContactsProvider URI is present and
+             * actually decodes; otherwise we keep the initial or generic
+             * glyph fallback. No photo is ever fabricated or fetched.
              */
             column.addView(
-                if (
-                    call.displayName
-                        ?.trim()
-                        ?.isNotEmpty() ==
-                    true
-                ) {
-
-                    TextView(
-                        context
-                    ).apply {
-
-                        text =
-                            call.displayName!!
-                                .trim()
-                                .take(1)
-                                .uppercase()
-
-                        gravity =
-                            Gravity.CENTER
-
-                        textSize =
-                            56f
-
-                        typeface =
-                            Typeface.DEFAULT_BOLD
-
-                        setTextColor(
-                            color(
-                                R.color.hn_text_primary
-                            )
-                        )
-
-                        background =
-                            drawable(
-                                R.drawable.bg_avatar
-                            )
-
-                        layoutParams =
-                            LinearLayout
-                                .LayoutParams(
-                                    dp(150),
-                                    dp(150)
-                                ).apply {
-
-                                topMargin =
-                                    dp(24)
-
-                                bottomMargin =
-                                    dp(22)
-                            }
-                    }
-                } else {
-
-                    icon(
-                        R.drawable.ic_phone
-                    ).apply {
-
-                        background =
-                            drawable(
-                                R.drawable.bg_avatar
-                            )
-
-                        setPadding(
-                            dp(42),
-                            dp(42),
-                            dp(42),
-                            dp(42)
-                        )
-
-                        layoutParams =
-                            LinearLayout
-                                .LayoutParams(
-                                    dp(150),
-                                    dp(150)
-                                ).apply {
-
-                                topMargin =
-                                    dp(24)
-
-                                bottomMargin =
-                                    dp(22)
-                            }
-                    }
-                }
+                callerAvatar(
+                    call
+                )
             )
 
             when (
@@ -1590,6 +1515,252 @@ class PhoneScreenRenderer(
                     Unit
             }
         }
+
+    private fun callerAvatar(
+        call: TelecomCallState
+    ): View {
+        val photo =
+            if (
+                isPhotoUriPresent(
+                    call.photoUri
+                )
+            ) {
+                decodeContactPhoto(
+                    call.photoUri
+                )
+            } else {
+                null
+            }
+
+        if (
+            photo !=
+            null
+        ) {
+
+            return ImageView(
+                context
+            ).apply {
+
+                background =
+                    drawable(
+                        R.drawable.bg_avatar
+                    )
+
+                setImageBitmap(
+                    photo
+                )
+
+                scaleType =
+                    ImageView.ScaleType.CENTER_CROP
+
+                contentDescription =
+                    call.displayName
+                        ?: context.getString(
+                            R.string.cd_contact_photo
+                        )
+
+                layoutParams =
+                    LinearLayout
+                        .LayoutParams(
+                            dp(150),
+                            dp(150)
+                        ).apply {
+
+                            topMargin =
+                                dp(24)
+
+                            bottomMargin =
+                                dp(22)
+                        }
+            }
+        }
+
+        if (
+            call.displayName
+                ?.trim()
+                ?.isNotEmpty() ==
+            true
+        ) {
+
+            return TextView(
+                context
+            ).apply {
+
+                text =
+                    call.displayName!!
+                        .trim()
+                        .take(1)
+                        .uppercase()
+
+                gravity =
+                    Gravity.CENTER
+
+                textSize =
+                    56f
+
+                typeface =
+                    Typeface.DEFAULT_BOLD
+
+                setTextColor(
+                    color(
+                        R.color.hn_text_primary
+                    )
+                )
+
+                background =
+                    drawable(
+                        R.drawable.bg_avatar
+                    )
+
+                layoutParams =
+                    LinearLayout
+                        .LayoutParams(
+                            dp(150),
+                            dp(150)
+                        ).apply {
+
+                            topMargin =
+                                dp(24)
+
+                            bottomMargin =
+                                dp(22)
+                        }
+            }
+        }
+
+        return icon(
+            R.drawable.ic_phone
+        ).apply {
+
+            background =
+                drawable(
+                    R.drawable.bg_avatar
+                )
+
+            setPadding(
+                dp(42),
+                dp(42),
+                dp(42),
+                dp(42)
+            )
+
+            layoutParams =
+                LinearLayout
+                    .LayoutParams(
+                        dp(150),
+                        dp(150)
+                    ).apply {
+
+                        topMargin =
+                            dp(24)
+
+                        bottomMargin =
+                            dp(22)
+                    }
+        }
+    }
+
+    private fun decodeContactPhoto(
+        uri: String?
+    ): Bitmap? {
+
+        if (
+            uri
+                .isNullOrBlank()
+        ) {
+            return null
+        }
+
+        return try {
+
+            val parsed =
+                android.net
+                    .Uri
+                    .parse(
+                        uri
+                    )
+
+            context
+                .contentResolver
+                .openInputStream(
+                    parsed
+                )
+                ?.use { stream ->
+
+                    /*
+                     * Decode at a bounded size so a large photo cannot
+                     * exhaust memory; the avatar is a fixed 150dp circle.
+                     */
+                    val bounds =
+                        BitmapFactory
+                            .Options()
+                            .apply {
+                                inJustDecodeBounds =
+                                    true
+                            }
+
+                    BitmapFactory
+                        .decodeStream(
+                            stream,
+                            null,
+                            bounds
+                        )
+
+                    val sample =
+                        if (
+                            bounds.outWidth >
+                            0 &&
+                            bounds.outHeight >
+                            0
+                        ) {
+                            maxOf(
+                                1,
+                                (
+                                    bounds.outWidth /
+                                        512
+                                    ).coerceAtLeast(
+                                        bounds.outHeight /
+                                            512
+                                    )
+                            )
+                        } else {
+                            1
+                        }
+
+                    context
+                        .contentResolver
+                        .openInputStream(
+                            parsed
+                        )
+                        ?.use { decode ->
+
+                            BitmapFactory
+                                .Options()
+                                .apply {
+                                    inSampleSize =
+                                        sample
+                                }
+                                .let { options ->
+
+                                    BitmapFactory
+                                        .decodeStream(
+                                            decode,
+                                            null,
+                                            options
+                                        )
+                                }
+                        }
+                }
+        } catch (
+            ignored: Exception
+        ) {
+            /*
+             * Any failure to read the real provider URI means no photo;
+             * the caller falls back to the generic avatar.
+             */
+            null
+        }
+    }
 
     private fun activeCallControls(
         column: LinearLayout,
@@ -2766,4 +2937,69 @@ class PhoneScreenRenderer(
                 CallStatus.FAILED
             )
     }
+}
+
+/**
+ * UI-safety gate for the in-call contact photo.
+ *
+ * A photo is only ever shown when a real ContactsProvider URI is present,
+ * i.e. a parsed content:// URI whose authority is ContactsContract.AUTHORITY
+ * (the standard ContactsProvider). Any other scheme or authority — http,
+ * file, media, etc. — is rejected so the renderer never fabricates an image
+ * and never reaches the network. A blank, null or unparseable value keeps
+ * the existing initial/generic avatar.
+ */
+internal fun isPhotoUriPresent(
+    uri: String?
+): Boolean {
+
+    if (
+        uri.isNullOrBlank()
+    ) {
+        return false
+    }
+
+    val schemeEnd =
+        uri.indexOf(
+            "://"
+        )
+
+    if (
+        schemeEnd <=
+        0
+    ) {
+        return false
+    }
+
+    val scheme =
+        uri.substring(
+            0,
+            schemeEnd
+        )
+
+    if (
+        scheme.equals(
+            "content",
+            ignoreCase = true
+        ).not()
+    ) {
+        return false
+    }
+
+    val rest =
+        uri.substring(
+            schemeEnd +
+                3
+        )
+
+    val authority =
+        rest
+            .substringBefore(
+                '/'
+            ).substringBefore(
+                '?'
+            )
+
+    return authority ==
+        ContactsContract.AUTHORITY
 }

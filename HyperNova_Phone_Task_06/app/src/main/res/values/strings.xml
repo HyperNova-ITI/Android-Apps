@@ -8,4 +8,5 @@
     <string name="cd_keypad">Keypad</string>
     <string name="cd_contacts">Contacts</string>
     <string name="cd_recents">Recents</string>
+    <string name="cd_contact_photo">Contact photo</string>
 </resources>
