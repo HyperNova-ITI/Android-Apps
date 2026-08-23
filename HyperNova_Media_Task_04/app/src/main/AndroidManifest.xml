@@ -70,6 +70,18 @@
 
         </service>
 
+        <service
+            android:name=".cluster.MediaStatusService"
+            android:exported="true"
+            android:permission="com.hypernova.permission.ACCESS_VEHICLE_GATEWAY"
+            android:label="@string/app_name">
+
+            <intent-filter>
+                <action android:name="com.hypernova.media.action.BIND_STATUS" />
+            </intent-filter>
+
+        </service>
+
     </application>
 
 </manifest>
