@@ -8,6 +8,9 @@ val relayPort = providers.gradleProperty("gatewayPort").orElse("6100")
 val clusterHost = providers.gradleProperty("clusterHost").orElse(relayHost)
 val clusterPort = providers.gradleProperty("clusterPort").orElse("6200")
 
+val mediaClusterHost = providers.gradleProperty("mediaClusterHost").orElse(clusterHost)
+val mediaClusterPort = providers.gradleProperty("mediaClusterPort").orElse("6300")
+
 val allowPlaintextGateway = providers.gradleProperty("gatewayAllowPlaintext")
     .map { it.toBooleanStrict() }
     .orElse(false)
@@ -37,6 +40,12 @@ android {
         // the existing vehicle/climate gateway session.
         buildConfigField("String", "CLUSTER_HOST", "\"${clusterHost.get()}\"")
         buildConfigField("int", "CLUSTER_PORT", clusterPort.get())
+
+        // Dedicated Android -> QNX Digital Cluster media channel.
+        // Kept separate from HNVG/6100 and HNCL/6200 so a media failure
+        // cannot disturb the other cluster/vehicle sessions.
+        buildConfigField("String", "MEDIA_CLUSTER_HOST", "\"${mediaClusterHost.get()}\"")
+        buildConfigField("int", "MEDIA_CLUSTER_PORT", mediaClusterPort.get())
     }
 
     buildTypes {
