@@ -209,6 +209,7 @@ data class TelecomCallState(
     val status: CallStatus = CallStatus.IDLE,
     val displayName: String? = null,
     val number: String? = null,
+    val photoUri: String? = null,
     val startedAtMillis: Long? = null,
     val isMuted: Boolean = false,
     val canHold: Boolean = false,

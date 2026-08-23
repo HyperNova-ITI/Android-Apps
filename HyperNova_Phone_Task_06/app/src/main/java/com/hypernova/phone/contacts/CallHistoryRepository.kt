@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.provider.CallLog
 import android.provider.ContactsContract
-import android.telephony.PhoneNumberUtils
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.hypernova.phone.domain.CallHistoryType
@@ -97,30 +96,42 @@ class CallHistoryRepository(
                     identityResolver.resolve(
                         raw
                             .mapNotNull { it.number }
-                            .filter { it.isUsableNumber() }
+                            .filter {
+                                PhoneNumberMatching.isUsableNumber(it)
+                            }
                             .toSet()
                     )
 
                 val entries =
                     raw.map { row ->
 
+                        val usableNumber =
+                            row.number
+                                ?.trim()
+                                ?.takeIf {
+                                    PhoneNumberMatching.isUsableNumber(it)
+                                }
+
+                        /*
+                         * Deterministic fallback order:
+                         * ContactsProvider name, then CallLog cached
+                         * name, then the raw number itself.
+                         */
+                        val displayName =
+                            CallerIdentityFallbacks.resolve(
+                                contactsProviderName = usableNumber
+                                    ?.let { resolvedNames[it] },
+                                contactsProviderPhotoUri = null,
+                                callLogCachedName = row.cachedName,
+                                number = usableNumber
+                            ).displayName
+
                         RecentCallEntry(
                             id = row.id,
 
-                            displayName =
-                                row.cachedName
-                                    ?.trim()
-                                    ?.takeIf {
-                                        it.isNotEmpty()
-                                    }
-                                    ?: resolvedNames[row.number],
+                            displayName = displayName,
 
-                            number =
-                                row.number
-                                    ?.trim()
-                                    ?.takeIf {
-                                        it.isNotEmpty()
-                                    },
+                            number = usableNumber,
 
                             /*
                              * Preserve the existing UI behavior:
@@ -236,7 +247,7 @@ class CallHistoryRepository(
                 numbers.filter {
                     synchronized(cache) {
                         !cache.containsKey(
-                            it.cacheKey()
+                            keyOf(it)
                         )
                     }
                 }
@@ -260,7 +271,7 @@ class CallHistoryRepository(
                         val candidateNumber =
                             cursor.getString(0)
                                 ?.takeIf {
-                                    it.isUsableNumber()
+                                    PhoneNumberMatching.isUsableNumber(it)
                                 }
                                 ?: continue
 
@@ -287,12 +298,10 @@ class CallHistoryRepository(
                                 .firstOrNull {
                                         (candidate, _) ->
 
-                                    candidate.cacheKey() ==
-                                        number.cacheKey() ||
-                                        PhoneNumberUtils.compare(
-                                            candidate,
-                                            number
-                                        )
+                                    PhoneNumberMatching.sameNumber(
+                                        candidate,
+                                        number
+                                    )
                                 }
                                 ?.second
 
@@ -302,12 +311,12 @@ class CallHistoryRepository(
                          */
                         if (resolvedName != null) {
                             cache[
-                                number.cacheKey()
+                                keyOf(number)
                             ] =
                                 resolvedName
                         } else {
                             cache.remove(
-                                number.cacheKey()
+                                keyOf(number)
                             )
                         }
                     }
@@ -319,11 +328,17 @@ class CallHistoryRepository(
 
                 synchronized(cache) {
                     cache[
-                        number.cacheKey()
+                        keyOf(number)
                     ]
                 }
             }
         }
+
+        private fun keyOf(
+            raw: String
+        ): String =
+            PhoneNumberMatching.cacheKey(raw)
+                ?: raw.trim()
 
         private fun hasContactsPermission():
             Boolean =
@@ -422,16 +437,4 @@ private fun Int.toPresentation():
         else ->
             CallNumberPresentation.PRIVATE
     }
-
-private fun String.isUsableNumber():
-    Boolean =
-    trim().isNotEmpty()
-
-private fun String.cacheKey():
-    String =
-    PhoneNumberUtils
-        .normalizeNumber(this)
-        .ifEmpty {
-            trim()
-        }
 

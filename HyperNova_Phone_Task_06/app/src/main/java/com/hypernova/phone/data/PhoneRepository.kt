@@ -10,7 +10,9 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import com.hypernova.phone.bluetooth.BluetoothPhoneClient
 import com.hypernova.phone.contacts.CallHistoryRepository
+import com.hypernova.phone.contacts.CallerIdentity
 import com.hypernova.phone.contacts.ContactDetailsRecord
+import com.hypernova.phone.contacts.PhoneNumberMatching
 import com.hypernova.phone.contacts.RecentCallsLoadResult
 import com.hypernova.phone.contacts.ContactsRepository
 import com.hypernova.phone.domain.CallStatus
@@ -108,13 +110,14 @@ class PhoneRepository(
         )
 
     /**
-     * Contact name resolved specifically for the current real Telecom call.
+     * Caller identity (real display name + real photo URI) resolved
+     * specifically for the current real Telecom call.
      *
      * The TelecomCallController remains the owner of call state.
      * This flow adds presentation identity only.
      */
-    private val resolvedCallName =
-        MutableStateFlow<String?>(null)
+    private val resolvedCallIdentity =
+        MutableStateFlow<CallerIdentity?>(null)
 
     /**
      * Remember the number already queried so repeated Telecom Details
@@ -205,18 +208,46 @@ class PhoneRepository(
     private val presentedCall =
         combine(
             telecom.state,
-            resolvedCallName
-        ) { call, resolvedName ->
+            resolvedCallIdentity
+        ) { call, resolvedIdentity ->
 
             val telecomName =
                 meaningfulTelecomDisplayName(
                     call
                 )
 
+            /*
+             * Guard against cross-call leakage: only surface a resolved
+             * identity when it was resolved for this call's number.
+             */
+            val callNumber =
+                call.number
+                    ?.let {
+                        PhoneNumberMatching.normalize(
+                            it
+                        )
+                    }
+
+            val safeIdentity =
+                if (
+                    callNumber != null &&
+                    resolvedCallNumber != null &&
+                    PhoneNumberMatching.sameNumber(
+                        callNumber,
+                        resolvedCallNumber
+                    )
+                ) {
+                    resolvedIdentity
+                } else {
+                    null
+                }
+
             call.copy(
                 displayName =
                     telecomName
-                        ?: resolvedName
+                        ?: safeIdentity?.displayName,
+                photoUri =
+                    safeIdentity?.photoUri
             )
         }
 
@@ -560,14 +591,6 @@ class PhoneRepository(
             return
         }
 
-        if (
-            meaningfulTelecomDisplayName(
-                current
-            ) != null
-        ) {
-            return
-        }
-
         val number =
             current.number
                 ?.trim()
@@ -576,15 +599,10 @@ class PhoneRepository(
                 }
                 ?: return
 
-        val contactName =
-            contacts
-                .findDisplayNameByNumber(
-                    number
-                )
-                ?.trim()
-                ?.takeIf {
-                    it.isNotEmpty()
-                }
+        val identity =
+            resolveCallerIdentity(
+                number
+            )
 
         val afterLookup =
             telecom.state.value
@@ -607,8 +625,8 @@ class PhoneRepository(
             resolvedCallNumber =
                 number
 
-            resolvedCallName.value =
-                contactName
+            resolvedCallIdentity.value =
+                identity
         }
     }
 
@@ -646,35 +664,8 @@ class PhoneRepository(
                         resolvedCallNumber =
                             null
 
-                        resolvedCallName.value =
+                        resolvedCallIdentity.value =
                             null
-
-                        return@collectLatest
-                    }
-
-                    /*
-                     * If Telecom already supplied a meaningful real name,
-                     * there is no reason to query Contacts.
-                     */
-                    val telecomName =
-                        meaningfulTelecomDisplayName(
-                            call
-                        )
-
-                    if (
-                        telecomName != null
-                    ) {
-
-                        resolvedCallNumber =
-                            number
-
-                        resolvedCallName.value =
-                            telecomName
-
-                        Log.i(
-                            TAG,
-                            "Using caller identity supplied by Android Telecom"
-                        )
 
                         return@collectLatest
                     }
@@ -686,7 +677,7 @@ class PhoneRepository(
                         resolvedCallNumber =
                             null
 
-                        resolvedCallName.value =
+                        resolvedCallIdentity.value =
                             null
 
                         return@collectLatest
@@ -707,18 +698,13 @@ class PhoneRepository(
                     resolvedCallNumber =
                         number
 
-                    resolvedCallName.value =
+                    resolvedCallIdentity.value =
                         null
 
-                    val contactName =
-                        contacts
-                            .findDisplayNameByNumber(
-                                number
-                            )
-                            ?.trim()
-                            ?.takeIf {
-                                it.isNotEmpty()
-                            }
+                    val identity =
+                        resolveCallerIdentity(
+                            number
+                        )
 
                     /*
                      * Ensure the lookup result still belongs to the
@@ -751,11 +737,24 @@ class PhoneRepository(
                         return@collectLatest
                     }
 
-                    resolvedCallName.value =
-                        contactName
+                    resolvedCallIdentity.value =
+                        identity
+
+                    val hasResolvedIdentity =
+                        identity != null &&
+                            (
+                                identity.photoUri != null ||
+                                    (
+                                        identity.displayName != null &&
+                                            !PhoneNumberMatching.sameNumber(
+                                                identity.displayName,
+                                                number
+                                            )
+                                    )
+                            )
 
                     if (
-                        contactName != null
+                        hasResolvedIdentity
                     ) {
 
                         Log.i(
@@ -943,6 +942,18 @@ class PhoneRepository(
         number: String
     ): Long? =
         contacts.findContactIdByNumber(
+            number
+        )
+
+    /**
+     * Resolve caller identity using real ContactsProvider data only.
+     *
+     * Includes real photo URI, stale lookup protection, and provider-change retry.
+     */
+    suspend fun resolveCallerIdentity(
+        number: String
+    ): com.hypernova.phone.contacts.CallerIdentity? =
+        contacts.resolveCallerIdentity(
             number
         )
 

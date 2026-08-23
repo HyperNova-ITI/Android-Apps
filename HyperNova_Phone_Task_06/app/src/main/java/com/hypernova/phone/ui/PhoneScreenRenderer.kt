@@ -1,8 +1,11 @@
 package com.hypernova.phone.ui
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.Typeface
+import android.provider.ContactsContract
 import android.content.res.ColorStateList
 import android.view.MotionEvent
 import android.view.Gravity
@@ -22,12 +25,14 @@ import com.hypernova.phone.domain.BluetoothConnectionState
 import com.hypernova.phone.domain.CallStatus
 import com.hypernova.phone.domain.CapabilityStatus
 import com.hypernova.phone.domain.ContactEntry
+import com.hypernova.phone.domain.CallNumberPresentation
 import com.hypernova.phone.domain.PhoneScreen
 import com.hypernova.phone.domain.PhoneUiState
 import com.hypernova.phone.domain.RecentCallEntry
 import com.hypernova.phone.domain.RecentCallLabels
 import com.hypernova.phone.domain.RecentFilter
 import com.hypernova.phone.domain.RecentsStatus
+import com.hypernova.phone.domain.TelecomCallState
 import java.text.DateFormat
 import java.util.Date
 
@@ -105,11 +110,18 @@ class PhoneScreenRenderer(
         binding.content
             .removeAllViews()
 
+        val callStatus =
+            state.data.call.status
+
         val fullCall =
             state.screen ==
                 PhoneScreen.CALL &&
-                state.data.call.status !=
-                CallStatus.IDLE
+                (
+                    callStatus in
+                        LIVE_CALL_STATUSES ||
+                        callStatus in
+                        ENDED_CALL_STATUSES
+                    )
 
         binding.header.visibility =
             View.VISIBLE
@@ -217,9 +229,22 @@ class PhoneScreenRenderer(
                 )
 
             PhoneScreen.CALL ->
-                call(
-                    state
-                )
+                if (
+                    fullCall
+                ) {
+                    call(
+                        state
+                    )
+                } else {
+
+                    /*
+                     * No live or just-ended Telecom call owns the screen,
+                     * so never render call controls from stale state.
+                     */
+                    home(
+                        state
+                    )
+                }
         }
     }
 
@@ -252,6 +277,18 @@ class PhoneScreenRenderer(
             CallStatus.DIALING,
             CallStatus.RINGING ->
                 "Calling"
+
+            CallStatus.CALL_ENDED ->
+                "Call ended"
+
+            CallStatus.MISSED ->
+                "Missed call"
+
+            CallStatus.REJECTED ->
+                "Call rejected"
+
+            CallStatus.FAILED ->
+                "Call failed"
 
             else ->
                 when (
@@ -1200,12 +1237,11 @@ class PhoneScreenRenderer(
                     CallStatus.INCOMING ->
                         "Incoming call"
 
-                    CallStatus.ACTIVE ->
-                        elapsed(
-                            call.startedAtMillis,
-                            state.nowMillis
-                        )
-
+                    /*
+                     * The elapsed timer exists only while Telecom reports
+                     * the call as ACTIVE (the ViewModel ticks it only then).
+                     */
+                    CallStatus.ACTIVE,
                     CallStatus.MUTED ->
                         elapsed(
                             call.startedAtMillis,
@@ -1215,19 +1251,26 @@ class PhoneScreenRenderer(
                     CallStatus.HELD ->
                         "On hold"
 
-                    CallStatus.DIALING,
-                    CallStatus.RINGING ->
+                    CallStatus.DIALING ->
                         "Dialing…"
+
+                    CallStatus.RINGING ->
+                        "Ringing…"
 
                     CallStatus.CALL_ENDED ->
                         "Call ended"
 
+                    CallStatus.MISSED ->
+                        "Missed call"
+
+                    CallStatus.REJECTED ->
+                        "Call rejected"
+
+                    CallStatus.FAILED ->
+                        "Call failed"
+
                     else ->
-                        call.status.name
-                            .lowercase()
-                            .replaceFirstChar {
-                                it.titlecase()
-                            }
+                        "Call"
                 }
 
             val accent =
@@ -1244,6 +1287,8 @@ class PhoneScreenRenderer(
                         R.color.hn_warning
 
                     CallStatus.CALL_ENDED,
+                    CallStatus.MISSED,
+                    CallStatus.REJECTED,
                     CallStatus.FAILED ->
                         R.color.hn_error
 
@@ -1279,11 +1324,17 @@ class PhoneScreenRenderer(
                 )
             )
 
+            val primaryIdentity =
+                RecentCallLabels
+                    .primary(
+                        call.displayName,
+                        call.number,
+                        CallNumberPresentation.ALLOWED
+                    )
+
             column.addView(
                 title(
-                    call.displayName
-                        ?: call.number
-                        ?: "Call information unavailable",
+                    primaryIdentity,
                     30,
                     Gravity.CENTER
                 ).withTop(
@@ -1292,10 +1343,10 @@ class PhoneScreenRenderer(
             )
 
             if (
-                call.displayName !=
+                call.number !=
                 null &&
                 call.number !=
-                null
+                primaryIdentity
             ) {
 
                 column.addView(
@@ -1308,37 +1359,16 @@ class PhoneScreenRenderer(
                 )
             }
 
+            /*
+             * Avatar mirrors the resolved caller identity. The contact photo
+             * is shown only when a real ContactsProvider URI is present and
+             * actually decodes; otherwise we keep the initial or generic
+             * glyph fallback. No photo is ever fabricated or fetched.
+             */
             column.addView(
-                icon(
-                    R.drawable.ic_phone
-                ).apply {
-
-                    background =
-                        drawable(
-                            R.drawable.bg_avatar
-                        )
-
-                    setPadding(
-                        dp(42),
-                        dp(42),
-                        dp(42),
-                        dp(42)
-                    )
-
-                    layoutParams =
-                        LinearLayout
-                            .LayoutParams(
-                                dp(150),
-                                dp(150)
-                            ).apply {
-
-                                topMargin =
-                                    dp(24)
-
-                                bottomMargin =
-                                    dp(22)
-                            }
-                }
+                callerAvatar(
+                    call
+                )
             )
 
             when (
@@ -1382,7 +1412,8 @@ class PhoneScreenRenderer(
 
                     choices.addView(
                         primaryButton(
-                            "Answer"
+                            "Answer",
+                            call.canAnswer
                         ) {
                             actions.answer()
                         }.apply {
@@ -1402,8 +1433,15 @@ class PhoneScreenRenderer(
                     )
                 }
 
-                CallStatus.CALL_ENDED -> {
+                CallStatus.CALL_ENDED,
+                CallStatus.MISSED,
+                CallStatus.REJECTED,
+                CallStatus.FAILED -> {
 
+                    /*
+                     * Terminal states show a quiet summary and one way out;
+                     * no in-call controls survive the ended Telecom call.
+                     */
                     column.addView(
                         outlineButton(
                             "Back to recents"
@@ -1416,7 +1454,8 @@ class PhoneScreenRenderer(
                     )
                 }
 
-                else -> {
+                CallStatus.ACTIVE,
+                CallStatus.HELD -> {
 
                     activeCallControls(
                         column,
@@ -1433,18 +1472,295 @@ class PhoneScreenRenderer(
                         )
                     }
 
-                    column.addView(
-                        errorButton(
-                            "END CALL"
-                        ) {
-                            actions.endCall()
-                        }.withTop(
-                            22
+                    if (
+                        call.canDisconnect
+                    ) {
+
+                        column.addView(
+                            errorButton(
+                                "END CALL"
+                            ) {
+                                actions.endCall()
+                            }.withTop(
+                                22
+                            )
                         )
-                    )
+                    }
                 }
+
+                CallStatus.DIALING,
+                CallStatus.RINGING -> {
+
+                    /*
+                     * Outgoing call is not connected yet: no mute, hold,
+                     * route or DTMF controls exist for Telecom to act on.
+                     */
+                    if (
+                        call.canDisconnect
+                    ) {
+
+                        column.addView(
+                            errorButton(
+                                "END CALL"
+                            ) {
+                                actions.endCall()
+                            }.withTop(
+                                22
+                            )
+                        )
+                    }
+                }
+
+                else ->
+                    Unit
             }
         }
+
+    private fun callerAvatar(
+        call: TelecomCallState
+    ): View {
+        val photo =
+            if (
+                isPhotoUriPresent(
+                    call.photoUri
+                )
+            ) {
+                decodeContactPhoto(
+                    call.photoUri
+                )
+            } else {
+                null
+            }
+
+        if (
+            photo !=
+            null
+        ) {
+
+            return ImageView(
+                context
+            ).apply {
+
+                background =
+                    drawable(
+                        R.drawable.bg_avatar
+                    )
+
+                setImageBitmap(
+                    photo
+                )
+
+                scaleType =
+                    ImageView.ScaleType.CENTER_CROP
+
+                contentDescription =
+                    call.displayName
+                        ?: context.getString(
+                            R.string.cd_contact_photo
+                        )
+
+                layoutParams =
+                    LinearLayout
+                        .LayoutParams(
+                            dp(150),
+                            dp(150)
+                        ).apply {
+
+                            topMargin =
+                                dp(24)
+
+                            bottomMargin =
+                                dp(22)
+                        }
+            }
+        }
+
+        if (
+            call.displayName
+                ?.trim()
+                ?.isNotEmpty() ==
+            true
+        ) {
+
+            return TextView(
+                context
+            ).apply {
+
+                text =
+                    call.displayName!!
+                        .trim()
+                        .take(1)
+                        .uppercase()
+
+                gravity =
+                    Gravity.CENTER
+
+                textSize =
+                    56f
+
+                typeface =
+                    Typeface.DEFAULT_BOLD
+
+                setTextColor(
+                    color(
+                        R.color.hn_text_primary
+                    )
+                )
+
+                background =
+                    drawable(
+                        R.drawable.bg_avatar
+                    )
+
+                layoutParams =
+                    LinearLayout
+                        .LayoutParams(
+                            dp(150),
+                            dp(150)
+                        ).apply {
+
+                            topMargin =
+                                dp(24)
+
+                            bottomMargin =
+                                dp(22)
+                        }
+            }
+        }
+
+        return icon(
+            R.drawable.ic_phone
+        ).apply {
+
+            background =
+                drawable(
+                    R.drawable.bg_avatar
+                )
+
+            setPadding(
+                dp(42),
+                dp(42),
+                dp(42),
+                dp(42)
+            )
+
+            layoutParams =
+                LinearLayout
+                    .LayoutParams(
+                        dp(150),
+                        dp(150)
+                    ).apply {
+
+                        topMargin =
+                            dp(24)
+
+                        bottomMargin =
+                            dp(22)
+                    }
+        }
+    }
+
+    private fun decodeContactPhoto(
+        uri: String?
+    ): Bitmap? {
+
+        if (
+            uri
+                .isNullOrBlank()
+        ) {
+            return null
+        }
+
+        return try {
+
+            val parsed =
+                android.net
+                    .Uri
+                    .parse(
+                        uri
+                    )
+
+            context
+                .contentResolver
+                .openInputStream(
+                    parsed
+                )
+                ?.use { stream ->
+
+                    /*
+                     * Decode at a bounded size so a large photo cannot
+                     * exhaust memory; the avatar is a fixed 150dp circle.
+                     */
+                    val bounds =
+                        BitmapFactory
+                            .Options()
+                            .apply {
+                                inJustDecodeBounds =
+                                    true
+                            }
+
+                    BitmapFactory
+                        .decodeStream(
+                            stream,
+                            null,
+                            bounds
+                        )
+
+                    val sample =
+                        if (
+                            bounds.outWidth >
+                            0 &&
+                            bounds.outHeight >
+                            0
+                        ) {
+                            maxOf(
+                                1,
+                                (
+                                    bounds.outWidth /
+                                        512
+                                    ).coerceAtLeast(
+                                        bounds.outHeight /
+                                            512
+                                    )
+                            )
+                        } else {
+                            1
+                        }
+
+                    context
+                        .contentResolver
+                        .openInputStream(
+                            parsed
+                        )
+                        ?.use { decode ->
+
+                            BitmapFactory
+                                .Options()
+                                .apply {
+                                    inSampleSize =
+                                        sample
+                                }
+                                .let { options ->
+
+                                    BitmapFactory
+                                        .decodeStream(
+                                            decode,
+                                            null,
+                                            options
+                                        )
+                                }
+                        }
+                }
+        } catch (
+            ignored: Exception
+        ) {
+            /*
+             * Any failure to read the real provider URI means no photo;
+             * the caller falls back to the generic avatar.
+             */
+            null
+        }
+    }
 
     private fun activeCallControls(
         column: LinearLayout,
@@ -1535,6 +1851,10 @@ class PhoneScreenRenderer(
                     Gravity.CENTER
             }
 
+        /*
+         * Hold exists only when Telecom reports CAPABILITY_HOLD; there is
+         * no disabled stand-in button for unsupported calls.
+         */
         if (
             call.canHold ||
             call.status ==
@@ -1553,7 +1873,7 @@ class PhoneScreenRenderer(
                     },
                     selected =
                         call.status ==
-                        CallStatus.HELD
+                            CallStatus.HELD
                 ) {
 
                     actions.holdOrResume(
@@ -1561,20 +1881,6 @@ class PhoneScreenRenderer(
                             CallStatus.HELD
                     )
 
-                }.callWeight(
-                    endMargin =
-                        7
-                )
-            )
-
-        } else {
-
-            secondRow.addView(
-                callControlButton(
-                    "HOLD",
-                    enabled =
-                        false
-                ) {
                 }.callWeight(
                     endMargin =
                         7
@@ -2603,4 +2909,97 @@ class PhoneScreenRenderer(
                 context,
                 resource
             )!!
+
+    private companion object {
+
+        /*
+         * Telecom states where a call genuinely owns the screen and
+         * in-call presentation is meaningful.
+         */
+        val LIVE_CALL_STATUSES =
+            setOf(
+                CallStatus.DIALING,
+                CallStatus.RINGING,
+                CallStatus.INCOMING,
+                CallStatus.ACTIVE,
+                CallStatus.MUTED,
+                CallStatus.HELD
+            )
+
+        /*
+         * Terminal Telecom states: the screen shows a clean ended summary.
+         */
+        val ENDED_CALL_STATUSES =
+            setOf(
+                CallStatus.CALL_ENDED,
+                CallStatus.MISSED,
+                CallStatus.REJECTED,
+                CallStatus.FAILED
+            )
+    }
+}
+
+/**
+ * UI-safety gate for the in-call contact photo.
+ *
+ * A photo is only ever shown when a real ContactsProvider URI is present,
+ * i.e. a parsed content:// URI whose authority is ContactsContract.AUTHORITY
+ * (the standard ContactsProvider). Any other scheme or authority — http,
+ * file, media, etc. — is rejected so the renderer never fabricates an image
+ * and never reaches the network. A blank, null or unparseable value keeps
+ * the existing initial/generic avatar.
+ */
+internal fun isPhotoUriPresent(
+    uri: String?
+): Boolean {
+
+    if (
+        uri.isNullOrBlank()
+    ) {
+        return false
+    }
+
+    val schemeEnd =
+        uri.indexOf(
+            "://"
+        )
+
+    if (
+        schemeEnd <=
+        0
+    ) {
+        return false
+    }
+
+    val scheme =
+        uri.substring(
+            0,
+            schemeEnd
+        )
+
+    if (
+        scheme.equals(
+            "content",
+            ignoreCase = true
+        ).not()
+    ) {
+        return false
+    }
+
+    val rest =
+        uri.substring(
+            schemeEnd +
+                3
+        )
+
+    val authority =
+        rest
+            .substringBefore(
+                '/'
+            ).substringBefore(
+                '?'
+            )
+
+    return authority ==
+        ContactsContract.AUTHORITY
 }
