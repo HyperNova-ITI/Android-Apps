@@ -172,20 +172,10 @@ class NovaRuntimeService : Service(),
                 val text = message.optionalText("text")
                     ?: if (active) "A vehicle fault is active" else "Vehicle fault cleared"
                 lastActionBlocked = active
-                if (active) {
-                    NovaRuntimeState.publishAction(
-                        turnId = turnId,
-                        domain = "vehicle",
-                        name = code ?: "fault",
-                        result = text,
-                        blocked = true,
-                        errorMessage = text,
-                    )
-                    publishControlState(NovaVisibleState.ERROR)
-                } else {
-                    NovaRuntimeState.publishResult(turnId, text, success = true)
-                    publishControlState(NovaVisibleState.IDLE)
-                }
+                NovaRuntimeState.publishVehicleAlert(code, text, active)
+                publishControlState(
+                    if (active) NovaVisibleState.ERROR else NovaVisibleState.IDLE,
+                )
             }
             "action" -> {
                 lastActionBlocked = message.optBoolean("blocked", false)

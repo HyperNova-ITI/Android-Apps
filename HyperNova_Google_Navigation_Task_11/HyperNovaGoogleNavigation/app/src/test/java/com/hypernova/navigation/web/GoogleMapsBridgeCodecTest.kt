@@ -7,6 +7,34 @@ import org.junit.Test
 
 class GoogleMapsBridgeCodecTest {
     @Test
+    fun interactiveMapDestinationIsValidatedBeforeEnteringNavigationRuntime() {
+        val value =
+            GoogleMapsBridgeCodec.parseMapDestination(
+                """{
+                    "placeId":"ChIJ_demo",
+                    "title":"Smart Village",
+                    "subtitle":"Cairo - Alexandria Desert Road",
+                    "category":"Business park",
+                    "latitude":30.07112,
+                    "longitude":31.02075
+                }""".trimIndent(),
+            )
+
+        assertEquals("ChIJ_demo", value.placeId)
+        assertEquals("Smart Village", value.title)
+        assertEquals(30.07112, value.latitude!!, 0.0)
+    }
+
+    @Test
+    fun invalidInteractiveMapDestinationIsRejected() {
+        assertThrows(IllegalArgumentException::class.java) {
+            GoogleMapsBridgeCodec.parseMapDestination(
+                """{"placeId":"valid","title":"","latitude":300,"longitude":31}""",
+            )
+        }
+    }
+
+    @Test
     fun destinationResultsAreValidatedAndBoundedToFrozenMaximum() {
         val payload =
             """[

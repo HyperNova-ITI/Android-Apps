@@ -56,10 +56,11 @@ echo "============================================================"
 echo "ANDROID INTERNET ROUTE"
 echo "============================================================"
 
-if adb -s "$ADB_SERIAL" shell ip route 2>/dev/null | grep -q '^default '; then
-    adb -s "$ADB_SERIAL" shell ip route | grep '^default '
+if adb -s "$ADB_SERIAL" shell su 0 ip route show table 1014 2>/dev/null \
+    | grep -q '^default via 192\.168\.0\.40 dev eth0'; then
+    adb -s "$ADB_SERIAL" shell su 0 ip route show table 1014 | grep '^default '
 else
-    echo "ERROR: Android has no default internet route; keeping the existing Navigation app"
+    echo "ERROR: Android table 1014 is not routed through laptop .40; keeping the existing Navigation app"
     exit 2
 fi
 

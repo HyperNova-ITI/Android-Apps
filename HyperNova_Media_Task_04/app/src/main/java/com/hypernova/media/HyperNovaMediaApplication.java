@@ -21,16 +21,37 @@ public final class HyperNovaMediaApplication extends Application {
     public void onCreate() {
         super.onCreate();
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
-        playbackController = new PlaybackController(this);
-        radioStations = new RadioRepository(this);
-        radioBackend = new InternetRadioBackend(radioStations, playbackController);
-        bluetoothBackend = new PhoneBluetoothAudioBackend(this);
-        youtubeWebSession = new YoutubeWebSession();
     }
 
-    public PlaybackController playback() { return playbackController; }
-    public RadioRepository radioStations() { return radioStations; }
-    public InternetRadioBackend radio() { return radioBackend; }
-    public PhoneBluetoothAudioBackend bluetooth() { return bluetoothBackend; }
-    public YoutubeWebSession youtubeWeb() { return youtubeWebSession; }
+    /**
+     * Launcher connects directly to HyperNovaPlaybackService for its media card. Keep every
+     * Activity-only controller lazy so starting that service does not also create a second
+     * MediaController, radio stack, Bluetooth client and progress ticker in Application.onCreate.
+     */
+    public synchronized PlaybackController playback() {
+        if (playbackController == null) playbackController = new PlaybackController(this);
+        return playbackController;
+    }
+
+    public synchronized RadioRepository radioStations() {
+        if (radioStations == null) radioStations = new RadioRepository(this);
+        return radioStations;
+    }
+
+    public synchronized InternetRadioBackend radio() {
+        if (radioBackend == null) {
+            radioBackend = new InternetRadioBackend(radioStations(), playback());
+        }
+        return radioBackend;
+    }
+
+    public synchronized PhoneBluetoothAudioBackend bluetooth() {
+        if (bluetoothBackend == null) bluetoothBackend = new PhoneBluetoothAudioBackend(this);
+        return bluetoothBackend;
+    }
+
+    public synchronized YoutubeWebSession youtubeWeb() {
+        if (youtubeWebSession == null) youtubeWebSession = new YoutubeWebSession();
+        return youtubeWebSession;
+    }
 }

@@ -42,7 +42,7 @@ class ContractProjectionTest {
     }
 
     @Test
-    fun googleRouteGeometryIsNotRepublishedForMapLibreRendering() {
+    fun googleRouteGeometryIsBoundedForTheAttributedLauncherCanvas() {
         val projected =
             ContractProjection.preview(
                 state(
@@ -51,7 +51,7 @@ class ContractProjectionTest {
                 ),
             )
 
-        assertTrue(projected.routePoints.isEmpty())
+        assertEquals(2, projected.routePoints.size)
         assertNull(projected.currentPosition)
     }
 

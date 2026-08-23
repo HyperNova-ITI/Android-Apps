@@ -157,6 +157,61 @@ class NavigationStatusMapperTest {
     }
 
     @Test
+    fun `current-state destination token is a route preview identity fallback`() {
+        val result = NavigationResult(
+            "launcher-request",
+            NavigationContract.OP_GET_CURRENT_STATE,
+            HyperNovaContract.STATUS_CONFIRMED,
+            "Route preview ready",
+            HyperNovaContract.ERROR_NONE,
+            emptyList(),
+            NavigationDestination(
+                "google-place-token",
+                NavigationContract.SOURCE_SEARCH,
+                "TyrePro Continental Egypt",
+                "Smart Village",
+                "vehicle service",
+                -1L,
+            ),
+            NavigationContract.STATE_IDLE,
+            300L,
+            2_500L,
+        )
+
+        val snapshot = NavigationStatusMapper.fromResult(result)
+
+        assertEquals("google-place-token", snapshot.routeId)
+        assertTrue(snapshot.hasRoutePreview)
+        assertEquals(300L, snapshot.etaSeconds)
+        assertEquals(2_500L, snapshot.distanceMeters)
+    }
+
+    @Test
+    fun `non-current command destination is not treated as route identity`() {
+        val result = NavigationResult(
+            "search-request",
+            NavigationContract.OP_SEARCH_DESTINATIONS,
+            HyperNovaContract.STATUS_CONFIRMED,
+            "Search complete",
+            HyperNovaContract.ERROR_NONE,
+            emptyList(),
+            NavigationDestination(
+                "search-token",
+                NavigationContract.SOURCE_SEARCH,
+                "A place",
+                "Cairo",
+                "place",
+                -1L,
+            ),
+            NavigationContract.STATE_IDLE,
+            -1L,
+            -1L,
+        )
+
+        assertEquals("", NavigationStatusMapper.fromResult(result).routeId)
+    }
+
+    @Test
     fun `invalid coordinates are removed but two valid points remain usable`() {
         val result = previewResult(
             state = NavigationContract.STATE_ACTIVE,

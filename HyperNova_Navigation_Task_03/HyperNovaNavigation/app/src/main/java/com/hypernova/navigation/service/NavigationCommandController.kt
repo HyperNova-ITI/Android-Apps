@@ -362,6 +362,57 @@ class NavigationCommandController(
         }
     }
 
+    /** Activate only the route that was explicitly prepared by setDestination. */
+    fun startNavigation(
+        requestId: String?,
+        callback: INavigationCommandCallback?
+    ) {
+        val receiver = callback ?: return
+        val id = requestId?.trim().orEmpty()
+        if (id.isBlank()) {
+            executeDelivery(
+                receiver,
+                resultFactory.invalidArgument(
+                    requestId = id,
+                    operation = NavigationContract.OP_START_NAVIGATION,
+                    message = "requestId must not be blank."
+                )
+            )
+            return
+        }
+
+        executor.execute {
+            val key = RequestKey(id, NavigationContract.OP_START_NAVIGATION)
+            val accepted =
+                resultFactory.accepted(
+                    requestId = id,
+                    operation = key.operation,
+                    message = "Navigation start accepted.",
+                    navigationState = resultFactory.currentContractState()
+                )
+            when (
+                begin(
+                    key = key,
+                    fingerprint = key.operation,
+                    accepted = accepted,
+                    callback = receiver
+                )
+            ) {
+                BeginDecision.NEW -> {
+                    val activated = repository.activateCurrentRoute()
+                    finish(
+                        key,
+                        resultFactory.navigationStartedResult(
+                            requestId = id,
+                            activated = activated
+                        )
+                    )
+                }
+                BeginDecision.HANDLED -> Unit
+            }
+        }
+    }
+
     fun cancelNavigation(
         requestId: String?,
         callback: INavigationCommandCallback?

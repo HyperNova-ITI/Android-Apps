@@ -124,6 +124,46 @@ class NavigationResultFactory(
         }
     }
 
+    fun navigationStartedResult(
+        requestId: String,
+        activated: Boolean,
+        state: NavigationSessionState = stateProvider()
+    ): NavigationResult {
+        val route = state.routePlan?.selected
+        return if (
+            activated &&
+            state.status == NavigationSessionStatus.ACTIVE &&
+            state.destination != null &&
+            route != null
+        ) {
+            NavigationResult(
+                requestId,
+                NavigationContract.OP_START_NAVIGATION,
+                HyperNovaContract.STATUS_CONFIRMED,
+                "Navigation started.",
+                HyperNovaContract.ERROR_NONE,
+                emptyList(),
+                state.destination.toContract(),
+                NavigationContract.STATE_ACTIVE,
+                route.durationSeconds.roundToLong(),
+                route.distanceMeters.roundToLong()
+            )
+        } else {
+            NavigationResult(
+                requestId,
+                NavigationContract.OP_START_NAVIGATION,
+                HyperNovaContract.STATUS_REJECTED,
+                "Prepare a route before starting navigation.",
+                NavigationContract.ERROR_ROUTE_NOT_FOUND,
+                emptyList(),
+                state.destination?.toContract(),
+                state.toContractState(),
+                UNAVAILABLE,
+                UNAVAILABLE
+            )
+        }
+    }
+
     fun destinationResolutionFailure(
         requestId: String,
         errorCode: String,

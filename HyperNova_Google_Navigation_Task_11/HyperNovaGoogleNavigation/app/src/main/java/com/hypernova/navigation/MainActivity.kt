@@ -2,12 +2,15 @@ package com.hypernova.navigation
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.widget.LinearLayout
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -30,6 +33,11 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        window.setSoftInputMode(
+            WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN or
+                WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE,
+        )
+        dismissSearchKeyboard()
 
         CockpitNavigationController.bind(
             binding.cockpitNavigation,
@@ -40,12 +48,27 @@ class MainActivity : AppCompatActivity() {
         configureBackBehavior()
         viewModel.attach(this)
         observeState()
+        handleOpenPlaceIntent(intent)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Reused cockpit activities can resume after their application-owned WebView was
+        // temporarily detached. This is idempotent and does not reload the Google document.
+        viewModel.attachMapSurface(binding.navigationFragmentContainer)
+        viewModel.attach(this)
+        // An EditText is otherwise Android's first focus candidate and opens the IME every time the
+        // cockpit switches from Launcher to Navigation. Navigation is map-first; text entry starts
+        // only after the driver explicitly taps the search box.
+        binding.root.post(::dismissSearchKeyboard)
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        viewModel.attachMapSurface(binding.navigationFragmentContainer)
         viewModel.attach(this)
+        handleOpenPlaceIntent(intent)
     }
 
     override fun onDestroy() {
@@ -71,6 +94,14 @@ class MainActivity : AppCompatActivity() {
         binding.cancelButton.setOnClickListener { viewModel.cancelNavigation() }
         binding.simulateButton.setOnClickListener { viewModel.startSimulation() }
         binding.configurationAction.setOnClickListener { viewModel.attach(this) }
+    }
+
+    private fun handleOpenPlaceIntent(value: Intent?) {
+        val query = value?.getStringExtra(EXTRA_PLACE_QUERY)?.trim().orEmpty()
+        if (query.isBlank()) return
+        value?.removeExtra(EXTRA_PLACE_QUERY)
+        binding.searchInput.setText(query)
+        viewModel.openPlace(query)
     }
 
     private fun configureBackBehavior() {
@@ -123,21 +154,14 @@ class MainActivity : AppCompatActivity() {
         if (initializationBlocking) renderInitialization(state)
 
         val hasRoute = state.routeId.isNotBlank()
-        val canSimulate = ready && viewModel.simulationAvailable && !hasRoute
-        binding.routePanel.isVisible = hasRoute || canSimulate
-        if (canSimulate) {
-            binding.routeTitle.text = getString(R.string.simulate_action)
-            binding.routeMetrics.text = getString(R.string.simulated_status)
-            binding.simulateButton.isVisible = true
-            binding.cancelButton.isVisible = false
-            binding.startGuidanceButton.isVisible = false
-        } else if (hasRoute) {
+        binding.routePanel.isVisible = hasRoute
+        if (hasRoute) {
             binding.routeTitle.text = state.selectedDestination?.title.orEmpty()
             binding.routeMetrics.text = formatMetrics(state)
             binding.simulateButton.isVisible = false
             binding.cancelButton.isVisible = true
-            binding.startGuidanceButton.isVisible =
-                viewModel.guidanceAvailable && state.phase == NavigationPhase.PREVIEW_READY
+            // A prepared route stays a preview until the driver or NOVA explicitly starts it.
+            binding.startGuidanceButton.isVisible = state.phase == NavigationPhase.PREVIEW_READY
         }
         binding.root.post(::updateMapInsets)
     }
@@ -210,7 +234,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun submitSearch() {
+        dismissSearchKeyboard()
         viewModel.search(binding.searchInput.text?.toString().orEmpty())
+    }
+
+    private fun dismissSearchKeyboard() {
+        binding.searchInput.clearFocus()
+        binding.root.requestFocus()
+        ViewCompat.getWindowInsetsController(binding.root)
+            ?.hide(WindowInsetsCompat.Type.ime())
     }
 
     private fun formatMetrics(state: NavigationSessionState): String {
@@ -264,4 +296,8 @@ class MainActivity : AppCompatActivity() {
 
     private val Int.dp: Int
         get() = (this * resources.displayMetrics.density).toInt()
+
+    private companion object {
+        const val EXTRA_PLACE_QUERY = "com.hypernova.navigation.extra.PLACE_QUERY"
+    }
 }

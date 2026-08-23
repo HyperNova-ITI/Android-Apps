@@ -52,7 +52,11 @@ class NovaActivity : AppCompatActivity() {
             val remainingSeconds = ((remainingMs + 999L) / 1_000L).toInt()
             binding.textSessionHint.text =
                 getString(R.string.follow_up_countdown, remainingSeconds)
-            countdownHandler.postDelayed(this, minOf(remainingMs, 250L))
+            // The label changes once per second. Wake exactly at the next displayed boundary
+            // instead of invalidating this Activity four times per second throughout the window.
+            val untilNextSecond = remainingMs % 1_000L
+            val delay = if (untilNextSecond == 0L) 1_000L else untilNextSecond
+            countdownHandler.postDelayed(this, minOf(remainingMs, delay))
         }
     }
 

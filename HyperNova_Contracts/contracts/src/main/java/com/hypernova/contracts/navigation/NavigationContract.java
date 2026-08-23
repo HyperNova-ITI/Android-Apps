@@ -12,6 +12,7 @@ public final class NavigationContract {
     public static final String OP_SEARCH_DESTINATIONS = "search_destinations";
     public static final String OP_GET_SAVED_DESTINATIONS = "get_saved_destinations";
     public static final String OP_SET_DESTINATION = "set_destination";
+    public static final String OP_START_NAVIGATION = "start_navigation";
     public static final String OP_CANCEL_NAVIGATION = "cancel_navigation";
     public static final String OP_GET_CURRENT_STATE = "get_current_state";
     public static final String OP_GET_ROUTE_PREVIEW = "get_route_preview";

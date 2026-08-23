@@ -30,6 +30,7 @@ sealed interface GoogleRouteResult {
 interface NavigationGatewayListener {
     fun onNavigatorReady()
     fun onNavigatorInitializationFailed(failure: NavigatorInitializationFailure)
+    fun onMapDestinationRequested(destination: GoogleDestinationRecord)
     fun onRouteChanged(route: RouteData)
     fun onRerouting()
     fun onProgress(etaSeconds: Long, distanceMeters: Long)

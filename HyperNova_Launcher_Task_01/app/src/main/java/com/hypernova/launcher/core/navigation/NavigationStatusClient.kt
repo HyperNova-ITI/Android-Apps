@@ -199,7 +199,11 @@ class NavigationStatusClient(
     fun refresh() {
         if (!started) return
         if (service != null) {
-            if (!observerRegistered) requestCurrentState()
+            // Keep the frozen read-only operation as a reconciliation path even when the
+            // additive observer registered successfully. Android may coalesce or drop a Binder
+            // callback while Launcher is backgrounded; the current-state snapshot is cheap and
+            // prevents a prepared destination from remaining invisible on HOME.
+            if (pendingRequestId == null) requestCurrentState()
         } else if (!bound) {
             bind()
         }
@@ -370,6 +374,8 @@ class NavigationStatusClient(
         private const val TAG = "NavigationStatusClient"
         private const val STATUS_TIMEOUT_MS = 3_000L
         private val PREVIEW_STATES = setOf(
+            // Prepared preview: routeId distinguishes it from true no-route idle.
+            NavigationRuntimeState.IDLE,
             NavigationRuntimeState.CALCULATING,
             NavigationRuntimeState.ACTIVE,
             NavigationRuntimeState.ARRIVED,

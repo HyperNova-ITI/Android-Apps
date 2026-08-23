@@ -12,13 +12,13 @@
     <string name="search_button_content_description">Search Google Places</string>
     <string name="retry_action">Retry</string>
     <string name="review_terms_action">Review terms</string>
-    <string name="start_guidance_action">Start guidance</string>
+    <string name="start_guidance_action">START</string>
     <string name="cancel_action">Cancel route</string>
     <string name="simulate_action">Demo drive</string>
-    <string name="simulated_status">DEMO ORIGIN — live Google route</string>
+    <string name="simulated_status">Navigation active</string>
     <string name="route_metrics_format">%1$s • %2$s</string>
     <string name="eta_minutes_format">%1$d min</string>
     <string name="distance_km_format">%1$.1f km</string>
     <string name="destination_result_content_description">Navigate to %1$s, %2$s</string>
-    <string name="route_preview_only">Google route preview is ready. Turn-by-turn guidance requires a GMS-enabled image.</string>
+    <string name="route_preview_only">Route ready</string>
 </resources>

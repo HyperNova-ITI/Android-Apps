@@ -3,6 +3,7 @@ package com.hypernova.navigation.web
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Application
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.os.Handler
 import android.os.Looper
@@ -18,7 +19,9 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import com.hypernova.navigation.BuildConfig
+import com.hypernova.navigation.model.GeoPoint
 import com.hypernova.navigation.model.GoogleDestinationRecord
+import com.hypernova.navigation.model.VehiclePosition
 import com.hypernova.navigation.navigation.GoogleRouteResult
 import com.hypernova.navigation.navigation.NavigationGateway
 import com.hypernova.navigation.navigation.NavigationGatewayListener
@@ -27,6 +30,7 @@ import com.hypernova.navigation.places.DestinationSearchGateway
 import com.hypernova.navigation.places.GooglePlacesException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.UUID
+import kotlin.math.roundToLong
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,8 +40,9 @@ import org.json.JSONObject
 
 /**
  * One process-owned Google Maps JavaScript engine shared by the AIDL service
- * and visible Navigation activity. It remains alive while Navigation is not on
- * screen, so launcher-originated NOVA commands keep their headless semantics.
+ * and visible Navigation activity. Creation is lazy so a Launcher status bind
+ * does not start Chromium. Once created, it remains alive while Navigation is
+ * off screen so NOVA route commands and fast task switching retain map state.
  */
 @SuppressLint("SetJavaScriptEnabled")
 class GoogleMapsWebGateway internal constructor(
@@ -48,8 +53,10 @@ class GoogleMapsWebGateway internal constructor(
 ) : NavigationGateway, DestinationSearchGateway {
     private val mainHandler = Handler(Looper.getMainLooper())
     private val pending = ConcurrentHashMap<String, PendingBridgeRequest>()
-    private val engineState = MutableStateFlow<EngineState>(EngineState.Loading)
-    private val webView = createWebView()
+    private val engineState = MutableStateFlow<EngineState>(EngineState.Idle)
+
+    @Volatile
+    private var webView: WebView? = null
 
     @Volatile
     private var loadInProgress = false
@@ -57,11 +64,12 @@ class GoogleMapsWebGateway internal constructor(
     override val isReady: Boolean
         get() = engineState.value is EngineState.Ready
 
-    override val supportsGuidance: Boolean = false
-
-    init {
-        initialize()
-    }
+    /*
+     * This is HyperNova route-session guidance over real Google route data, not
+     * Google's native Navigation SDK. The latter is unavailable on the bare-AOSP
+     * guest because it requires Google Play services.
+     */
+    override val supportsGuidance: Boolean = true
 
     override fun initialize(activity: Activity?) {
         if (isReady) {
@@ -72,9 +80,14 @@ class GoogleMapsWebGateway internal constructor(
             if (loadInProgress) return@runOnMain
             loadInProgress = true
             engineState.value = EngineState.Loading
-            webView.loadDataWithBaseURL(
+            getOrCreateWebView().loadDataWithBaseURL(
                 GoogleMapsPage.DOCUMENT_ORIGIN,
-                GoogleMapsPage.render(apiKey),
+                GoogleMapsPage.render(
+                    apiKey = apiKey,
+                    isNightMode =
+                        application.resources.configuration.uiMode and
+                            Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES,
+                ),
                 "text/html",
                 Charsets.UTF_8.name(),
                 null,
@@ -84,21 +97,29 @@ class GoogleMapsWebGateway internal constructor(
 
     override fun attachSurface(container: ViewGroup) {
         runOnMain {
-            (webView.parent as? ViewGroup)?.removeView(webView)
+            val mapWebView = getOrCreateWebView()
+            if (mapWebView.parent === container) {
+                notifySurfaceAttached(mapWebView)
+                return@runOnMain
+            }
+            (mapWebView.parent as? ViewGroup)?.removeView(mapWebView)
             container.removeAllViews()
             container.addView(
-                webView,
+                mapWebView,
                 ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT,
                 ),
             )
+            notifySurfaceAttached(mapWebView)
         }
     }
 
     override fun detachSurface(container: ViewGroup) {
         runOnMain {
-            if (webView.parent === container) container.removeView(webView)
+            webView?.let { mapWebView ->
+                if (mapWebView.parent === container) container.removeView(mapWebView)
+            }
         }
     }
 
@@ -176,17 +197,27 @@ class GoogleMapsWebGateway internal constructor(
         }
     }
 
-    override fun startGuidance(): Boolean = false
+    override fun startGuidance(): Boolean {
+        if (!isReady) return false
+        evaluate("window.hypernovaStartGuidance();")
+        return true
+    }
 
     override fun cancelNavigation() {
         if (isReady) evaluate("window.hypernovaCancelRoute();")
     }
 
     private suspend fun awaitReadyForSearch() {
-        when (val value = engineState.first { it !is EngineState.Loading }) {
+        when (
+            val value =
+                engineState.first {
+                    it is EngineState.Ready || it is EngineState.Failed
+                }
+        ) {
             EngineState.Ready -> Unit
             is EngineState.Failed ->
                 throw GooglePlacesException.RequestFailed(IllegalStateException(value.message))
+            EngineState.Idle,
             EngineState.Loading -> error("Unreachable engine state")
         }
     }
@@ -201,7 +232,9 @@ class GoogleMapsWebGateway internal constructor(
         pending[requestId] = request
         return try {
             withContext(Dispatchers.Main.immediate) {
-                webView.evaluateJavascript(invocation(requestId), null)
+                val mapWebView = webView
+                    ?: error("Google Maps web engine was not initialized")
+                mapWebView.evaluateJavascript(invocation(requestId), null)
             }
             result.await()
         } finally {
@@ -210,7 +243,7 @@ class GoogleMapsWebGateway internal constructor(
     }
 
     private fun evaluate(script: String) {
-        runOnMain { webView.evaluateJavascript(script, null) }
+        runOnMain { webView?.evaluateJavascript(script, null) }
     }
 
     private fun runOnMain(action: () -> Unit) {
@@ -259,6 +292,10 @@ class GoogleMapsWebGateway internal constructor(
                 cacheMode = WebSettings.LOAD_DEFAULT
             }
             WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
+            // There is only one Google renderer in the product. Keep it bound while its
+            // Activity is briefly hidden so Launcher ↔ Navigation switches reattach the
+            // existing map instead of paying another Chromium/Maps cold start.
+            setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_BOUND, false)
             addJavascriptInterface(Bridge(), BRIDGE_NAME)
             webViewClient =
                 object : WebViewClient() {
@@ -311,6 +348,21 @@ class GoogleMapsWebGateway internal constructor(
                 }
         }
 
+    private fun getOrCreateWebView(): WebView {
+        check(Looper.myLooper() == Looper.getMainLooper()) {
+            "Google Maps WebView must be created on the main thread"
+        }
+        return webView ?: createWebView().also { webView = it }
+    }
+
+    private fun notifySurfaceAttached(mapWebView: WebView) {
+        mapWebView.post {
+            if (isReady && mapWebView.parent != null) {
+                mapWebView.evaluateJavascript("window.hypernovaSurfaceAttached();", null)
+            }
+        }
+    }
+
     private inner class Bridge {
         @JavascriptInterface
         fun onReady() = handleReady()
@@ -319,6 +371,64 @@ class GoogleMapsWebGateway internal constructor(
         fun onInitializationFailed(code: String, message: String) {
             handleInitializationFailure(code, message)
         }
+
+        @JavascriptInterface
+        fun onDestinationRequested(payload: String) {
+            val destination =
+                try {
+                    GoogleMapsBridgeCodec.parseMapDestination(payload)
+                } catch (failure: Exception) {
+                    Log.w(TAG, "Rejected invalid map destination", failure)
+                    return
+                }
+            runOnMain { listener.onMapDestinationRequested(destination) }
+        }
+
+        @JavascriptInterface
+        fun onGuidanceProgress(
+            etaSeconds: Double,
+            distanceMeters: Double,
+            latitude: Double,
+            longitude: Double,
+            bearingDegrees: Double,
+            speedMetersPerSecond: Double,
+        ) {
+            if (
+                !etaSeconds.isFinite() ||
+                !distanceMeters.isFinite() ||
+                !latitude.isFinite() ||
+                !longitude.isFinite() ||
+                latitude !in -90.0..90.0 ||
+                longitude !in -180.0..180.0
+            ) {
+                return
+            }
+            runOnMain {
+                listener.onProgress(
+                    etaSeconds.coerceAtLeast(0.0).roundToLong(),
+                    distanceMeters.coerceAtLeast(0.0).roundToLong(),
+                )
+                listener.onPosition(
+                    VehiclePosition(
+                        point = GeoPoint(latitude, longitude),
+                        bearingDegrees =
+                            bearingDegrees
+                                .takeIf(Double::isFinite)
+                                ?.let { (((it % 360.0) + 360.0) % 360.0).toFloat() }
+                                ?: Float.NaN,
+                        speedMetersPerSecond =
+                            speedMetersPerSecond
+                                .takeIf { it.isFinite() && it >= 0.0 }
+                                ?.toFloat()
+                                ?: Float.NaN,
+                        timestampMillis = System.currentTimeMillis(),
+                    ),
+                )
+            }
+        }
+
+        @JavascriptInterface
+        fun onGuidanceArrival() = runOnMain(listener::onArrival)
 
         @JavascriptInterface
         fun onResponse(
@@ -341,6 +451,7 @@ class GoogleMapsWebGateway internal constructor(
     }
 
     private sealed interface EngineState {
+        data object Idle : EngineState
         data object Loading : EngineState
         data object Ready : EngineState
         data class Failed(val message: String) : EngineState

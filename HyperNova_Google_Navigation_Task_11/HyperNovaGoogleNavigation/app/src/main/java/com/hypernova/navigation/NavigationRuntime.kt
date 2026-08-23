@@ -25,6 +25,9 @@ import com.hypernova.navigation.session.NavigationSessionStore
 import com.hypernova.navigation.web.GoogleMapsWebGateway
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -48,12 +51,12 @@ class NavigationRuntime private constructor(
         if (isGoogleConfigured) GoogleMapsWebGateway(application, apiKey, this) else null
     private val destinationSearchGateway: DestinationSearchGateway =
         (navigationGateway as? DestinationSearchGateway) ?: ConfigurationRequiredSearchGateway()
+    private val mutableMapDestinationRequests =
+        MutableSharedFlow<DestinationTokenEntry>(extraBufferCapacity = 1)
 
     val state: StateFlow<NavigationSessionState> = sessionStore.state
-
-    init {
-        if (isGoogleConfigured) initializeWithoutActivityWhenPossible()
-    }
+    val mapDestinationRequests: SharedFlow<DestinationTokenEntry> =
+        mutableMapDestinationRequests.asSharedFlow()
 
     fun attachActivity(activity: Activity) {
         if (!isGoogleConfigured) return
@@ -84,6 +87,7 @@ class NavigationRuntime private constructor(
         require(normalized.isNotBlank())
         sessionStore.searching(true)
         return try {
+            navigationGateway?.initialize()
             destinationTokenStore.createSearchTokens(destinationSearchGateway.search(normalized))
         } finally {
             sessionStore.searching(false)
@@ -105,6 +109,10 @@ class NavigationRuntime private constructor(
                     FailureKind.CONFIGURATION,
                     "Google Maps configuration is required.",
                 )
+
+            // Saved destinations can calculate a route without a preceding search. Start the
+            // lazy Google engine here as well, then wait on the same readiness gate.
+            gateway.initialize()
 
             if (!gateway.isReady) {
                 when (val readiness = readinessGate.await()) {
@@ -228,6 +236,11 @@ class NavigationRuntime private constructor(
         }
     }
 
+    override fun onMapDestinationRequested(destination: com.hypernova.navigation.model.GoogleDestinationRecord) {
+        val entry = destinationTokenStore.createSearchTokens(listOf(destination)).singleOrNull() ?: return
+        mutableMapDestinationRequests.tryEmit(entry)
+    }
+
     override fun onRouteChanged(route: RouteData) {
         if (sessionStore.current().phase != NavigationPhase.CALCULATING) {
             sessionStore.routeChanged(route)
@@ -238,10 +251,6 @@ class NavigationRuntime private constructor(
         sessionStore.progress(etaSeconds, distanceMeters)
     override fun onPosition(position: VehiclePosition) = sessionStore.position(position)
     override fun onArrival() = sessionStore.arrived()
-
-    private fun initializeWithoutActivityWhenPossible() {
-        navigationGateway?.initialize()
-    }
 
     private fun fail(kind: FailureKind, message: String): RoutePreparationResult.Failed {
         sessionStore.routeFailure(kind, message)
@@ -260,10 +269,10 @@ class NavigationRuntime private constructor(
                 NavigationSessionStore(
                     NavigationSessionState(
                         initialization =
-                            if (configured) NavigationInitializationState.INITIALIZING
+                            if (configured) NavigationInitializationState.READY_IDLE
                             else NavigationInitializationState.CONFIGURATION_REQUIRED,
                         statusMessage =
-                            if (configured) "Connecting to Google Maps…"
+                            if (configured) "Google Maps ready when needed"
                             else "Add a restricted Google Maps Platform API key to secrets.properties.",
                     ),
                 )

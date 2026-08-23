@@ -5,6 +5,7 @@ import com.hypernova.contracts.navigation.NavigationCurrentPosition
 import com.hypernova.contracts.navigation.NavigationDestination
 import com.hypernova.contracts.navigation.NavigationProgressSnapshot
 import com.hypernova.contracts.navigation.NavigationRoutePreview
+import com.hypernova.contracts.navigation.NavigationRoutePoint
 import com.hypernova.contracts.navigation.NavigationRouteSnapshot
 import com.hypernova.navigation.model.NavigationInitializationState
 import com.hypernova.navigation.model.NavigationPhase
@@ -56,14 +57,35 @@ object ContractProjection {
         )
     }
 
-    fun preview(@Suppress("UNUSED_PARAMETER") state: NavigationSessionState): NavigationRoutePreview {
+    fun preview(state: NavigationSessionState): NavigationRoutePreview {
+        if (
+            state.phase !in
+                setOf(
+                    NavigationPhase.PREVIEW_READY,
+                    NavigationPhase.GUIDING,
+                    NavigationPhase.REROUTING,
+                    NavigationPhase.ARRIVED,
+                )
+        ) {
+            return NavigationRoutePreview.empty()
+        }
+
         /*
-         * Google route geometry is rendered only by the Google Maps surface.
-         * Republishing that geometry for Launcher to draw over MapLibre would
-         * mix Google content with a non-Google map. Destination, ETA and
-         * distance remain available through the frozen status contract.
+         * This bounded projection is rendered by Launcher on an abstract Canvas,
+         * never over MapLibre or another map provider. The Launcher labels the
+         * route as Google Maps data and does not persist the coordinates.
          */
-        return NavigationRoutePreview.empty()
+        val points = simplifyRoutePoints(state.routePoints)
+        if (points.size < 2) return NavigationRoutePreview.empty()
+        val current =
+            state.vehiclePosition
+                ?.point
+                ?.takeIf(::isValidPoint)
+                ?.let { NavigationRoutePoint(it.latitude, it.longitude) }
+        return NavigationRoutePreview(
+            points.map { NavigationRoutePoint(it.latitude, it.longitude) },
+            current,
+        )
     }
 
     fun routeSnapshot(state: NavigationSessionState): NavigationRouteSnapshot =
@@ -104,4 +126,22 @@ object ContractProjection {
             },
             state.distanceMeters,
         )
+
+    private fun simplifyRoutePoints(
+        source: List<com.hypernova.navigation.model.GeoPoint>,
+    ): List<com.hypernova.navigation.model.GeoPoint> {
+        val valid = source.filter(::isValidPoint)
+        val maximum = NavigationContract.MAX_ROUTE_PREVIEW_POINTS
+        if (valid.size <= maximum) return valid
+        val last = valid.lastIndex
+        return List(maximum) { outputIndex ->
+            valid[(outputIndex.toLong() * last / (maximum - 1L)).toInt()]
+        }
+    }
+
+    private fun isValidPoint(point: com.hypernova.navigation.model.GeoPoint): Boolean =
+        point.latitude.isFinite() &&
+            point.longitude.isFinite() &&
+            point.latitude in -90.0..90.0 &&
+            point.longitude in -180.0..180.0
 }

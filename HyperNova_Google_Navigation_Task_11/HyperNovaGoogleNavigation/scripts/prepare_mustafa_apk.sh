@@ -69,7 +69,7 @@ run_gradle_step() {
     "$PROJECT/gradlew" \
         -p "$PROJECT" \
         "$TASK" \
-        -j10 \
+        --max-workers=10 \
         --console=plain \
         >> "$LOG" 2>&1 \
         || fail "$NAME"

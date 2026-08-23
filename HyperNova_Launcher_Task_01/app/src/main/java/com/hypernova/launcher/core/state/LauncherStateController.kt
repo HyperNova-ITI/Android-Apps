@@ -319,7 +319,8 @@ class LauncherStateController(
             else -> applicationContext.getString(R.string.navigation_no_active_route)
         }
         val previewAllowed =
-            runtimeState == NavigationRuntimeState.CALCULATING ||
+            (runtimeState == NavigationRuntimeState.IDLE && !snapshot?.routeId.isNullOrBlank()) ||
+                runtimeState == NavigationRuntimeState.CALCULATING ||
                 runtimeState == NavigationRuntimeState.ACTIVE ||
                 runtimeState == NavigationRuntimeState.ARRIVED
         val routePoints =
@@ -337,8 +338,10 @@ class LauncherStateController(
             routeName = status,
             eta = snapshot?.etaSeconds?.let(::formatNavigationEta)
                 ?: applicationContext.getString(R.string.navigation_eta_unavailable),
-            distance = snapshot?.distanceMeters?.let(::formatNavigationDistance)
-                ?: applicationContext.getString(R.string.navigation_distance_unavailable),
+            distance =
+                (snapshot?.remainingDistanceMeters ?: snapshot?.distanceMeters)
+                    ?.let(::formatNavigationDistance)
+                    ?: applicationContext.getString(R.string.navigation_distance_unavailable),
             arrivalTime = snapshot?.etaSeconds?.let(::formatArrivalTime)
                 ?: applicationContext.getString(R.string.navigation_arrival_unavailable),
             routePoints = routePoints,

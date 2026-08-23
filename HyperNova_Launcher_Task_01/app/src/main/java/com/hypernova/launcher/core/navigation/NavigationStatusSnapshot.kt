@@ -77,6 +77,18 @@ object NavigationStatusMapper {
                     AppConnectionState.READY
                 },
             runtimeState = runtimeState,
+            // NavigationResult predates the additive versioned route observer and therefore has
+            // no dedicated route-id field. For the read-only current-state operation, the
+            // selected destination token is a stable, truthful route identity fallback. This
+            // keeps a preview visible if Android drops an observer callback or the client binds
+            // after route preparation.
+            routeId =
+                destination?.id
+                    ?.takeIf {
+                        result.operation == NavigationContract.OP_GET_CURRENT_STATE &&
+                            it.isNotBlank()
+                    }
+                    .orEmpty(),
             destinationTitle = destination?.title?.takeIf(String::isNotBlank),
             destinationSubtitle = destination?.subtitle?.takeIf(String::isNotBlank),
             etaSeconds = result.etaSeconds.takeIf { it >= 0L },
@@ -254,6 +266,8 @@ object NavigationStatusMapper {
             point.longitude in -180.0..180.0
 
     private val PREVIEW_STATES = setOf(
+        // A prepared route is intentionally public as IDLE until START is confirmed.
+        NavigationRuntimeState.IDLE,
         NavigationRuntimeState.CALCULATING,
         NavigationRuntimeState.ACTIVE,
         NavigationRuntimeState.ARRIVED,

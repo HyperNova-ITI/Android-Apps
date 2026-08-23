@@ -24,6 +24,12 @@ interface INavigationCommandService {
         INavigationCommandCallback callback
     );
 
+    /** Starts the already prepared route; it never selects or changes a destination. */
+    void startNavigation(
+        String requestId,
+        INavigationCommandCallback callback
+    );
+
     void cancelNavigation(
         String requestId,
         INavigationCommandCallback callback

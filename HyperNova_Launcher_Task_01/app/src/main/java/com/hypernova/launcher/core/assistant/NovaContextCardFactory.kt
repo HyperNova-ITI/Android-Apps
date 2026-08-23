@@ -21,8 +21,15 @@ object NovaContextCardFactory {
         "climate" -> climate(state)
         "vehicle" -> NovaContextCard(
             domain = "vehicle",
-            label = "VEHICLE",
-            title = if (state.assistant.blocked) "Action unavailable" else "Vehicle insight",
+            label = if (state.assistant.blocked) "VEHICLE ALERT" else "VEHICLE",
+            title = if (state.assistant.blocked) {
+                state.assistant.actionName
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { "Fault $it active" }
+                    ?: "Vehicle alert active"
+            } else {
+                "Vehicle update"
+            },
             detail = state.assistant.primaryMessage,
         )
         else -> null

@@ -1,5 +1,6 @@
 package com.hypernova.visuals;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.ColorStateList;
@@ -103,9 +104,14 @@ public final class CockpitNavigationController {
                     .setPackage(destination.packageName)
                     .addCategory(Intent.CATEGORY_DEFAULT);
         }
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
-                | Intent.FLAG_ACTIVITY_CLEAR_TOP
-                | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        /*
+         * A cockpit bar lives in an Activity. Keep cross-app transitions in that cockpit task;
+         * NEW_TASK/CLEAR_TOP used to resurrect a stale Navigation task whose detached WebView
+         * rendered an empty map. Only non-Activity callers need NEW_TASK.
+         */
+        if (!(context instanceof Activity)) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        }
         try {
             context.startActivity(intent);
         } catch (Exception exception) {

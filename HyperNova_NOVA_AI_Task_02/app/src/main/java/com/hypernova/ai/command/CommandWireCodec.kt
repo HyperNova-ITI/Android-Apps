@@ -76,6 +76,7 @@ object CommandWireCodec {
                 CommandArguments.Search(args.requiredText("query"))
 
             NavigationContract.OP_GET_SAVED_DESTINATIONS,
+            NavigationContract.OP_START_NAVIGATION,
             NavigationContract.OP_CANCEL_NAVIGATION,
             -> CommandArguments.None
 

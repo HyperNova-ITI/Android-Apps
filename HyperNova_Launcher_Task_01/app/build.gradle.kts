@@ -1,6 +1,19 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
 }
+
+val mapsSecrets = Properties()
+val mapsSecretsFile =
+    listOf(
+        rootProject.file("secrets.properties"),
+        rootProject.file("../HyperNova_Google_Navigation_Task_11/HyperNovaGoogleNavigation/secrets.properties"),
+    ).firstOrNull { it.isFile }
+mapsSecretsFile?.inputStream()?.use(mapsSecrets::load)
+val launcherMapsApiKey = mapsSecrets.getProperty("MAPS_API_KEY").orEmpty()
+val escapedLauncherMapsApiKey =
+    launcherMapsApiKey.replace("\\", "\\\\").replace("\"", "\\\"")
 
 android {
     namespace = "com.hypernova.launcher"
@@ -19,6 +32,7 @@ android {
 
         versionCode = 1
         versionName = "1.0"
+        buildConfigField("String", "MAPS_API_KEY", "\"$escapedLauncherMapsApiKey\"")
 
         testInstrumentationRunner =
             "androidx.test.runner.AndroidJUnitRunner"
@@ -52,6 +66,15 @@ android {
             versionNameSuffix = "-dev"
         }
 
+        create("demo") {
+            // Replace the production launcher over ADB while retaining debug signing
+            // and diagnostics. This avoids mutating the build file in deployment scripts.
+            initWith(getByName("debug"))
+            applicationIdSuffix = ""
+            versionNameSuffix = "-demo"
+            matchingFallbacks += listOf("debug")
+        }
+
         release {
             optimization {
                 enable = false
@@ -61,6 +84,7 @@ android {
 
     buildFeatures {
         aidl = true
+        buildConfig = true
         // Generate binding classes for XML layout files.
         viewBinding = true
     }

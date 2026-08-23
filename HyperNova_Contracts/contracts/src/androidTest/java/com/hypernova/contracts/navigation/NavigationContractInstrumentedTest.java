@@ -30,6 +30,14 @@ public final class NavigationContractInstrumentedTest {
                         INavigationCommandCallback.class
                 )
         );
+        assertEquals("start_navigation", NavigationContract.OP_START_NAVIGATION);
+        assertNotNull(
+                INavigationCommandService.class.getMethod(
+                        "startNavigation",
+                        String.class,
+                        INavigationCommandCallback.class
+                )
+        );
         assertEquals("get_route_preview", NavigationContract.OP_GET_ROUTE_PREVIEW);
         assertNotNull(
                 INavigationCommandService.class.getMethod(

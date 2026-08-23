@@ -54,6 +54,16 @@ class NavigationCommandService : Service() {
                 )
             }
 
+            override fun startNavigation(
+                requestId: String?,
+                callback: INavigationCommandCallback?
+            ) {
+                controller.startNavigation(
+                    requestId,
+                    callback
+                )
+            }
+
             override fun cancelNavigation(
                 requestId: String?,
                 callback: INavigationCommandCallback?

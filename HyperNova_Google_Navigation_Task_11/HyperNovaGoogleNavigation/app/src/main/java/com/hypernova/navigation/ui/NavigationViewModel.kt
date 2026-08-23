@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.hypernova.contracts.navigation.NavigationContract
 import com.hypernova.navigation.HyperNovaNavigationApplication
 import com.hypernova.navigation.model.NavigationSessionState
+import com.hypernova.navigation.model.RoutePreparationResult
 import com.hypernova.navigation.persistence.DestinationTokenEntry
 import com.hypernova.navigation.simulation.SimulationControllerFactory
 import kotlinx.coroutines.CancellationException
@@ -33,6 +34,12 @@ class NavigationViewModel(application: Application) : AndroidViewModel(applicati
         get() = simulation.available
     val guidanceAvailable: Boolean
         get() = runtime.supportsGuidance
+
+    init {
+        viewModelScope.launch {
+            runtime.mapDestinationRequests.collect(::prepareSelection)
+        }
+    }
 
     fun attach(activity: android.app.Activity) = runtime.attachActivity(activity)
 
@@ -68,17 +75,44 @@ class NavigationViewModel(application: Application) : AndroidViewModel(applicati
 
     fun select(entry: DestinationTokenEntry) {
         if (mutableBusy.value) return
+        viewModelScope.launch { prepareSelection(entry) }
+    }
+
+    /** Resolve a Google Maps evidence-card title and prepare it inside HyperNova Navigation. */
+    fun openPlace(query: String) {
+        if (query.isBlank() || mutableBusy.value) return
         viewModelScope.launch {
             mutableBusy.value = true
             mutableResults.value = emptyList()
             mutableMessage.value = null
             try {
-                withTimeout(NavigationContract.ROUTE_TIMEOUT_MILLIS) {
-                    runtime.prepareDestination(entry)
+                val candidates =
+                    withTimeout(NavigationContract.SEARCH_TIMEOUT_MILLIS) {
+                        runtime.search(query.trim())
+                    }
+                val match = DestinationIntentMatcher.select(query, candidates)
+                if (match == null) {
+                    mutableResults.value = candidates
+                    mutableMessage.value =
+                        if (candidates.isEmpty()) "No destinations found."
+                        else "Choose the matching destination."
+                    return@launch
+                }
+
+                when (
+                    val result = withTimeout(NavigationContract.ROUTE_TIMEOUT_MILLIS) {
+                        runtime.prepareDestination(match)
+                    }
+                ) {
+                    is RoutePreparationResult.Ready -> Unit
+                    is RoutePreparationResult.Failed -> mutableMessage.value = result.message
                 }
             } catch (_: TimeoutCancellationException) {
-                runtime.cancelNavigation()
-                mutableMessage.value = "Google route calculation timed out."
+                mutableMessage.value = "Google Maps request timed out."
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (_: Exception) {
+                mutableMessage.value = "Google Maps is unavailable."
             } finally {
                 mutableBusy.value = false
             }
@@ -102,5 +136,29 @@ class NavigationViewModel(application: Application) : AndroidViewModel(applicati
     fun clearResults() {
         mutableResults.value = emptyList()
         mutableMessage.value = null
+    }
+
+    private suspend fun prepareSelection(entry: DestinationTokenEntry) {
+        if (mutableBusy.value) return
+        mutableBusy.value = true
+        mutableResults.value = emptyList()
+        mutableMessage.value = null
+        try {
+            val result = withTimeout(NavigationContract.ROUTE_TIMEOUT_MILLIS) {
+                runtime.prepareDestination(entry)
+            }
+            if (result is RoutePreparationResult.Failed) {
+                mutableMessage.value = result.message
+            }
+        } catch (_: TimeoutCancellationException) {
+            runtime.cancelNavigation()
+            mutableMessage.value = "Google route calculation timed out."
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (_: Exception) {
+            mutableMessage.value = "Google route calculation is unavailable."
+        } finally {
+            mutableBusy.value = false
+        }
     }
 }

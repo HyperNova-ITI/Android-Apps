@@ -6,7 +6,17 @@ import java.util.Locale
 /** Converts real runtime data into concise, driver-facing state cards. */
 object NovaUiStateFactory {
     fun create(snapshot: NovaRuntimeSnapshot): NovaUiState = (when (snapshot.visibleState) {
-        NovaVisibleState.IDLE -> if (!snapshot.spokenText.isNullOrBlank()) {
+        NovaVisibleState.IDLE -> if (snapshot.isVehicleAlert()) {
+            NovaUiState(
+                visibleState = snapshot.visibleState,
+                eyebrow = "SAFETY ALERT",
+                primaryMessage = snapshot.errorMessage
+                    ?: snapshot.actionResult
+                    ?: snapshot.spokenText
+                    ?: "A vehicle alert is active",
+                secondaryMessage = "Vehicle alert remains active",
+            )
+        } else if (!snapshot.spokenText.isNullOrBlank()) {
             NovaUiState(
                 visibleState = snapshot.visibleState,
                 eyebrow = "LAST RESPONSE",
@@ -84,20 +94,44 @@ object NovaUiStateFactory {
         )
         NovaVisibleState.ERROR -> NovaUiState(
             visibleState = snapshot.visibleState,
-            eyebrow = "UNABLE TO COMPLETE",
+            eyebrow = if (snapshot.isVehicleAlert()) "SAFETY ALERT" else "UNABLE TO COMPLETE",
             transcript = snapshot.transcript,
             primaryMessage = snapshot.errorMessage ?: "Unable to complete the command",
-            secondaryMessage = "No changes were made",
+            secondaryMessage = if (snapshot.isVehicleAlert()) {
+                "Vehicle alert remains active"
+            } else {
+                "No changes were made"
+            },
         )
         NovaVisibleState.SPEAKING -> NovaUiState(
             visibleState = snapshot.visibleState,
-            eyebrow = "NOVA RESPONSE",
+            eyebrow = when {
+                snapshot.isVehicleAlert() -> "SAFETY ALERT"
+                snapshot.blocked -> "UNABLE TO COMPLETE"
+                else -> "NOVA RESPONSE"
+            },
             transcript = snapshot.transcript,
-            primaryMessage = snapshot.spokenText
-                ?: snapshot.progressText
-                ?: snapshot.actionResult
-                ?: "NOVA is responding…",
-            secondaryMessage = "NOVA is speaking",
+            // A proactive fault first arrives as ERROR and then becomes SPEAKING while Android
+            // plays its warning. Keep the authoritative fault detail on screen across that
+            // transition; swapping it for the shorter spoken sentence made the launcher restart
+            // its typewriter and look like duplicated/corrupted fault events.
+            primaryMessage = if (snapshot.blocked) {
+                snapshot.errorMessage
+                    ?: snapshot.spokenText
+                    ?: snapshot.progressText
+                    ?: snapshot.actionResult
+                    ?: "A vehicle alert is active"
+            } else {
+                snapshot.spokenText
+                    ?: snapshot.progressText
+                    ?: snapshot.actionResult
+                    ?: "NOVA is responding…"
+            },
+            secondaryMessage = when {
+                snapshot.isVehicleAlert() -> "Vehicle alert remains active"
+                snapshot.blocked -> "No changes were made"
+                else -> "NOVA is speaking"
+            },
             isSpeaking = true,
             canCancel = true,
         )
@@ -111,4 +145,7 @@ object NovaUiStateFactory {
             .replace('_', ' ')
             .uppercase(Locale.ROOT)
     }
+
+    private fun NovaRuntimeSnapshot.isVehicleAlert(): Boolean =
+        blocked && actionDomain == "vehicle"
 }

@@ -117,6 +117,27 @@ class NovaUiStateFactoryTest {
     }
 
     @Test
+    fun `blocked speech keeps one stable authoritative fault message`() {
+        val ui = NovaUiStateFactory.create(
+            NovaRuntimeSnapshot(
+                visibleState = NovaVisibleState.SPEAKING,
+                spokenText = "Warning: engine overheating is active.",
+                errorMessage = "Engine coolant temperature is above the safe operating range.",
+                actionDomain = "vehicle",
+                blocked = true,
+            ),
+        )
+
+        assertEquals("SAFETY ALERT", ui.eyebrow)
+        assertEquals(
+            "Engine coolant temperature is above the safe operating range.",
+            ui.primaryMessage,
+        )
+        assertEquals("Vehicle alert remains active", ui.secondaryMessage)
+        assertTrue(ui.isSpeaking)
+    }
+
+    @Test
     fun `error card reports the real safe failure`() {
         val ui = NovaUiStateFactory.create(
             NovaRuntimeSnapshot(
@@ -128,5 +149,40 @@ class NovaUiStateFactoryTest {
 
         assertEquals("Opening the trunk is unavailable while driving", ui.primaryMessage)
         assertEquals("No changes were made", ui.secondaryMessage)
+    }
+
+    @Test
+    fun `vehicle fault keeps its safety presentation before playback starts`() {
+        val ui = NovaUiStateFactory.create(
+            NovaRuntimeSnapshot(
+                visibleState = NovaVisibleState.ERROR,
+                actionDomain = "vehicle",
+                errorMessage = "Engine coolant temperature is above the safe operating range.",
+                blocked = true,
+            ),
+        )
+
+        assertEquals("SAFETY ALERT", ui.eyebrow)
+        assertEquals("Vehicle alert remains active", ui.secondaryMessage)
+    }
+
+    @Test
+    fun `vehicle fault remains authoritative after playback returns to idle`() {
+        val ui = NovaUiStateFactory.create(
+            NovaRuntimeSnapshot(
+                visibleState = NovaVisibleState.IDLE,
+                actionDomain = "vehicle",
+                spokenText = "Warning: the engine is overheating.",
+                errorMessage = "Engine coolant temperature is above the safe operating range.",
+                blocked = true,
+            ),
+        )
+
+        assertEquals("SAFETY ALERT", ui.eyebrow)
+        assertEquals(
+            "Engine coolant temperature is above the safe operating range.",
+            ui.primaryMessage,
+        )
+        assertEquals("Vehicle alert remains active", ui.secondaryMessage)
     }
 }

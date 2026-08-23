@@ -50,6 +50,7 @@ class NovaFaceView @JvmOverloads constructor(
     private var warning = Color.rgb(245, 166, 35)
     private var error = Color.rgb(255, 94, 104)
     private var animator: ValueAnimator? = null
+    private var lastMotionFrame = -1
 
     init {
         isClickable = false
@@ -63,6 +64,7 @@ class NovaFaceView @JvmOverloads constructor(
         }.getOrDefault(FaceState.UNAVAILABLE)
         if (state == next) return
         state = next
+        lastMotionFrame = -1
         invalidate()
     }
 
@@ -89,6 +91,7 @@ class NovaFaceView @JvmOverloads constructor(
     override fun onDetachedFromWindow() {
         animator?.cancel()
         animator = null
+        lastMotionFrame = -1
         super.onDetachedFromWindow()
     }
 
@@ -379,8 +382,23 @@ class NovaFaceView @JvmOverloads constructor(
             interpolator = LinearInterpolator()
             repeatCount = ValueAnimator.INFINITE
             addUpdateListener {
-                motion = it.animatedValue as Float
-                postInvalidateOnAnimation()
+                val nextMotion = it.animatedValue as Float
+                val frameIntervalMs =
+                    when (state) {
+                        FaceState.LISTENING,
+                        FaceState.PROCESSING,
+                        FaceState.EXECUTING,
+                        FaceState.SPEAKING,
+                        -> ACTIVE_FRAME_INTERVAL_MS
+                        FaceState.IDLE -> IDLE_FRAME_INTERVAL_MS
+                        else -> QUIET_FRAME_INTERVAL_MS
+                    }
+                val frame = (nextMotion * CYCLE_MS / frameIntervalMs).toInt()
+                if (frame != lastMotionFrame) {
+                    lastMotionFrame = frame
+                    motion = nextMotion
+                    postInvalidateOnAnimation()
+                }
             }
             start()
         }
@@ -388,5 +406,8 @@ class NovaFaceView @JvmOverloads constructor(
 
     private companion object {
         const val CYCLE_MS = 6000f
+        const val ACTIVE_FRAME_INTERVAL_MS = 33f
+        const val IDLE_FRAME_INTERVAL_MS = 50f
+        const val QUIET_FRAME_INTERVAL_MS = 100f
     }
 }
