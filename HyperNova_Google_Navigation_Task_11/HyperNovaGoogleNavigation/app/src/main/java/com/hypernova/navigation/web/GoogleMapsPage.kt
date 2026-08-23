@@ -529,13 +529,20 @@ internal object GoogleMapsPage {
                   const mapElement = document.getElementById('map');
                   const width = mapElement.clientWidth;
                   const height = mapElement.clientHeight;
-                  if (width === lastSurfaceWidth && height === lastSurfaceHeight) return;
+                  const sizeChanged = width !== lastSurfaceWidth || height !== lastSurfaceHeight;
                   lastSurfaceWidth = width;
                   lastSurfaceHeight = height;
                   requestAnimationFrame(() => {
                     google.maps.event.trigger(map, 'resize');
-                    if (lastRoutePath.length >= 2) fitRoute();
-                    else recenterOnVehicle();
+                    if (sizeChanged) {
+                      if (lastRoutePath.length >= 2) fitRoute();
+                      else recenterOnVehicle();
+                    } else {
+                      // Re-apply the same center to force a tile-frame commit after the Android
+                      // surface was recreated. This preserves the driver's zoom and selection.
+                      const center = map.getCenter();
+                      if (center) map.setCenter(center);
+                    }
                   });
                 };
               </script>

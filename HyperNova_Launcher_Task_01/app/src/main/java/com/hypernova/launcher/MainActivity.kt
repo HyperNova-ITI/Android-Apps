@@ -1175,17 +1175,15 @@ class MainActivity : AppCompatActivity() {
      * Request a fresh state and render the complete launcher.
      */
     private fun refreshAndRenderState() {
-        latestUiState =
-            stateController.refresh()
+        val refreshedState = stateController.refresh()
+        if (::latestUiState.isInitialized && refreshedState == latestUiState) return
+        latestUiState = refreshedState
 
         renderLauncherState(
             latestUiState
         )
 
-        Log.d(
-            TAG,
-            "Launcher state refreshed: $latestUiState"
-        )
+        Log.d(TAG, "Launcher state changed")
     }
 
     /**
@@ -1259,10 +1257,6 @@ class MainActivity : AppCompatActivity() {
         }.orEmpty()
         binding.textNovaTranscript.visibility =
             if (state.assistant.transcript.isNullOrBlank()) View.GONE else View.VISIBLE
-
-        binding.textNovaSecondary.text = state.assistant.secondaryMessage.orEmpty()
-        binding.textNovaSecondary.visibility =
-            if (state.assistant.secondaryMessage.isNullOrBlank()) View.GONE else View.VISIBLE
 
         binding.novaActivityProgress.visibility =
             if (state.assistant.showActivityProgress) View.VISIBLE else View.GONE

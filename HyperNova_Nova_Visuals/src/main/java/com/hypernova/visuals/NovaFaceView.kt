@@ -85,14 +85,22 @@ class NovaFaceView @JvmOverloads constructor(
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        startMotion()
+        updateMotionLifecycle()
     }
 
     override fun onDetachedFromWindow() {
-        animator?.cancel()
-        animator = null
-        lastMotionFrame = -1
+        stopMotion()
         super.onDetachedFromWindow()
+    }
+
+    override fun onWindowVisibilityChanged(visibility: Int) {
+        super.onWindowVisibilityChanged(visibility)
+        updateMotionLifecycle()
+    }
+
+    override fun onVisibilityChanged(changedView: View, visibility: Int) {
+        super.onVisibilityChanged(changedView, visibility)
+        updateMotionLifecycle()
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -402,6 +410,25 @@ class NovaFaceView @JvmOverloads constructor(
             }
             start()
         }
+    }
+
+    /**
+     * A HOME Activity remains attached while another cockpit task covers it. Continuing this
+     * animator then invalidates an invisible software-rendered window and consumed a measurable
+     * CPU core on the NXP guest. Animate only when this face can actually contribute a frame.
+     */
+    private fun updateMotionLifecycle() {
+        if (isAttachedToWindow && isShown && windowVisibility == VISIBLE) {
+            startMotion()
+        } else {
+            stopMotion()
+        }
+    }
+
+    private fun stopMotion() {
+        animator?.cancel()
+        animator = null
+        lastMotionFrame = -1
     }
 
     private companion object {

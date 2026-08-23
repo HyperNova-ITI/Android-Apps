@@ -354,6 +354,13 @@ class GoogleMapsWebGateway internal constructor(
         val now = android.os.SystemClock.uptimeMillis()
         if (now - lastSurfaceNotificationAtMillis < SURFACE_NOTIFICATION_DEBOUNCE_MILLIS) return
         lastSurfaceNotificationAtMillis = now
+        // The NXP compositor can discard Chromium's buffer while this Activity is covered even
+        // though the WebView and its JavaScript document stay alive. Make the Android surface
+        // drawable again before asking Maps to repaint it; waiting for a driver gesture to cause
+        // this invalidation is what produced an apparently gray map after task switches.
+        mapWebView.visibility = android.view.View.VISIBLE
+        mapWebView.requestLayout()
+        mapWebView.invalidate()
         mapWebView.post {
             if (isReady && mapWebView.parent != null) {
                 mapWebView.evaluateJavascript("window.hypernovaSurfaceAttached();", null)
