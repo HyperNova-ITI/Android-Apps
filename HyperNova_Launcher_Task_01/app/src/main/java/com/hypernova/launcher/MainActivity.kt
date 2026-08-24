@@ -1063,14 +1063,8 @@ class MainActivity : AppCompatActivity() {
     private fun renderSystemState(
         state: LauncherUiState
     ) {
-        binding.textSystemState.text =
-            state.system.statusText
-
         binding.textOutsideTemperature.text =
             state.system.outsideTemperature
-
-        binding.textNetworkType.text =
-            state.system.networkText
     }
 
     /**

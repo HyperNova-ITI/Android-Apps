@@ -36,6 +36,10 @@
     <string name="ui_separator" translatable="false">|</string>
 
     <!-- Status bar -->
+    <string name="hypernova_brand_prefix">HYPER</string>
+    <string name="hypernova_brand_suffix">NOVA</string>
+    <string name="cabin_temperature_label">CABIN</string>
+    <string name="cabin_temperature_description">Cabin temperature</string>
     <string name="system_status_unavailable">SYSTEM</string>
     <string name="temperature_value_unavailable">--°C</string>
     <!-- Live cabin temperature from the TC397 DHT11, via the QNX gateway. -->

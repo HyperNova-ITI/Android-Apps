@@ -8,7 +8,7 @@
     <dimen name="card_padding">9dp</dimen>
 
     <!-- Status bar -->
-    <dimen name="status_bar_height">28dp</dimen>
+    <dimen name="status_bar_height">34dp</dimen>
     <dimen name="status_icon_size">14dp</dimen>
 
     <!-- NOVA hero -->
