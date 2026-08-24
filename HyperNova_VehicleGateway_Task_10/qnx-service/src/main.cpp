@@ -102,23 +102,26 @@ struct Config {
 };
 
 // Write one bare number, the format the cluster's providers parse with
-// `ifstream >> value`. Temp file + rename so a reader polling at 20 Hz can
-// never catch a partially written file. Both are local-filesystem calls, so
-// this is unaffected by the board's SFTP server lacking rename support.
+// `ifstream >> value`.
+//
+// This used to write a ".tmp" file and rename() it into place for atomicity.
+// On this guest's /tmp filesystem, rename() itself fails (same ENOSYS-class
+// limitation as mkdir() -- see publish_cluster_files() above and the /var
+// symlink/hardlink issue elsewhere in this project): the .tmp file was
+// written successfully every cycle, then immediately deleted by the
+// rename-failure cleanup path, so fuel.txt/env_temp.txt never landed even
+// though telemetry was flowing correctly the whole time.
+//
+// Write directly to the destination instead. The payload is a handful of
+// bytes ("23.5\n"), so the torn-read window is negligible, and the reader
+// (`ifstream >> value`) already tolerates a bad parse by just keeping its
+// last good value -- an occasional skipped update is fine; a permanently
+// missing file is not.
 bool write_scalar_file(const std::string& path, double value) {
-    const std::string tmp = path + ".tmp";
-    std::FILE* handle = std::fopen(tmp.c_str(), "w");
+    std::FILE* handle = std::fopen(path.c_str(), "w");
     if (handle == nullptr) return false;
     const int written = std::fprintf(handle, "%.1f\n", value);
-    if (std::fclose(handle) != 0 || written < 0) {
-        (void)std::remove(tmp.c_str());
-        return false;
-    }
-    if (std::rename(tmp.c_str(), path.c_str()) != 0) {
-        (void)std::remove(tmp.c_str());
-        return false;
-    }
-    return true;
+    return std::fclose(handle) == 0 && written >= 0;
 }
 
 Config parse_args(int argc, char** argv) {
@@ -271,6 +274,11 @@ struct VehicleState {
     std::uint8_t dtc_mask{0};
     std::uint8_t last_tc_event_sequence{0};
     bool has_telemetry{false};
+    // Separate from has_telemetry: fault frames (kTcFaultEvent) and sensor
+    // frames (kTcSensorData) are independent, so a fault can arrive before
+    // any sensor reading. Without this, dtc.txt would never be published on
+    // a bench that is only injecting faults.
+    bool has_dtc_state{false};
     Clock::time_point telemetry_at{};
 };
 
@@ -644,6 +652,7 @@ private:
             if (bit != 0) {
                 if (active) state_.dtc_mask |= bit;
                 else state_.dtc_mask &= static_cast<std::uint8_t>(~bit);
+                state_.has_dtc_state = true;
             }
             if (android_ready_) {
                 android_out_.push(hypernova::encode_gateway(
@@ -704,15 +713,28 @@ private:
     // which is precisely when a driver still needs to see fuel.
     void publish_cluster_files(Clock::time_point now) {
         if (!config_.cluster_files) return;
-        if (!state_.has_telemetry) return;   // nothing real to publish yet
+        // Either kind of real news is enough to justify a write. Faults and
+        // sensor readings arrive on independent frames, so gating everything
+        // on has_telemetry would suppress dtc.txt on a fault-only bench.
+        if (!state_.has_telemetry && !state_.has_dtc_state) return;
         if (now - last_cluster_write_ < kClusterThrottle) return;
         last_cluster_write_ = now;
 
         if (!cluster_dir_ready_) {
-            // 0755; EEXIST is success. If the directory cannot be created there
-            // is no point retrying every 100 ms forever, so report once and
-            // disable — a broken bottom bar must not become a log flood.
-            if (::mkdir(config_.cluster_dir.c_str(), 0755) != 0 && errno != EEXIST) {
+            // 0755; EEXIST is success. If the directory already exists, skip the
+            // mkdir() call entirely: this guest's filesystem returns ENOSYS
+            // ("Function not implemented") for mkdir() even when the target is
+            // fine, which previously made this branch disable cluster files on
+            // every boot despite --cluster-dir pointing at a directory (/tmp)
+            // that already exists and is writable. If the directory cannot be
+            // created there is no point retrying every 100 ms forever, so
+            // report once and disable — a broken bottom bar must not become a
+            // log flood.
+            struct stat st{};
+            const bool exists_as_dir =
+                ::stat(config_.cluster_dir.c_str(), &st) == 0 && S_ISDIR(st.st_mode);
+            if (!exists_as_dir && ::mkdir(config_.cluster_dir.c_str(), 0755) != 0 &&
+                errno != EEXIST) {
                 std::cerr << "cluster files disabled: cannot create "
                           << config_.cluster_dir << ": " << std::strerror(errno) << "\n";
                 config_.cluster_files = false;
@@ -723,14 +745,38 @@ private:
 
         // Write only on change: the cluster re-reads these at 20 Hz and TC397
         // emits at ~12 Hz, so rewriting unchanged values is pure churn.
-        if (state_.fuel != last_published_fuel_) {
-            if (write_scalar_file(config_.cluster_dir + "/fuel.txt", state_.fuel)) {
-                last_published_fuel_ = state_.fuel;
+        if (state_.has_telemetry) {
+            if (state_.fuel != last_published_fuel_) {
+                if (write_scalar_file(config_.cluster_dir + "/fuel.txt", state_.fuel)) {
+                    last_published_fuel_ = state_.fuel;
+                }
+            }
+            if (state_.temperature != last_published_temperature_) {
+                if (write_scalar_file(config_.cluster_dir + "/env_temp.txt", state_.temperature)) {
+                    last_published_temperature_ = state_.temperature;
+                }
             }
         }
-        if (state_.temperature != last_published_temperature_) {
-            if (write_scalar_file(config_.cluster_dir + "/env_temp.txt", state_.temperature)) {
-                last_published_temperature_ = state_.temperature;
+
+        // dtc.txt -- the active-fault bitmask, same "one bare number per file"
+        // contract as fuel.txt/env_temp.txt so the cluster reads it with the
+        // identical `ifstream >> value` provider. Bit order is dtc_bit():
+        //
+        //   bit 0  P0217  engine coolant over temperature
+        //   bit 1  P0118  coolant temp sensor 1 circuit high
+        //   bit 2  P0300  random/multiple cylinder misfire
+        //   bit 3  P0442  EVAP system small leak
+        //   bit 4  P0562  system voltage low
+        //
+        // 0 means "no active faults" and is a real value worth publishing --
+        // it is how the cluster learns a fault cleared and dismisses its
+        // popup. It is only ever written once has_dtc_state is set, so an
+        // absent file still means "TC397 has told us nothing yet", never
+        // "all clear".
+        if (state_.has_dtc_state &&
+            static_cast<int>(state_.dtc_mask) != last_published_dtc_mask_) {
+            if (write_scalar_file(config_.cluster_dir + "/dtc.txt", state_.dtc_mask)) {
+                last_published_dtc_mask_ = static_cast<int>(state_.dtc_mask);
             }
         }
     }
@@ -796,6 +842,7 @@ private:
     bool cluster_dir_ready_{false};
     int last_published_fuel_{-1};
     int last_published_temperature_{-1000};
+    int last_published_dtc_mask_{-1};
     Clock::time_point tc_connected_at_{};
     Clock::time_point next_tc_connect_{};
     Clock::time_point last_state_sent_{};
