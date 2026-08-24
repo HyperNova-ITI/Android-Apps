@@ -102,23 +102,26 @@ struct Config {
 };
 
 // Write one bare number, the format the cluster's providers parse with
-// `ifstream >> value`. Temp file + rename so a reader polling at 20 Hz can
-// never catch a partially written file. Both are local-filesystem calls, so
-// this is unaffected by the board's SFTP server lacking rename support.
+// `ifstream >> value`.
+//
+// This used to write a ".tmp" file and rename() it into place for atomicity.
+// On this guest's /tmp filesystem, rename() itself fails (same ENOSYS-class
+// limitation as mkdir() -- see publish_cluster_files() above and the /var
+// symlink/hardlink issue elsewhere in this project): the .tmp file was
+// written successfully every cycle, then immediately deleted by the
+// rename-failure cleanup path, so fuel.txt/env_temp.txt never landed even
+// though telemetry was flowing correctly the whole time.
+//
+// Write directly to the destination instead. The payload is a handful of
+// bytes ("23.5\n"), so the torn-read window is negligible, and the reader
+// (`ifstream >> value`) already tolerates a bad parse by just keeping its
+// last good value -- an occasional skipped update is fine; a permanently
+// missing file is not.
 bool write_scalar_file(const std::string& path, double value) {
-    const std::string tmp = path + ".tmp";
-    std::FILE* handle = std::fopen(tmp.c_str(), "w");
+    std::FILE* handle = std::fopen(path.c_str(), "w");
     if (handle == nullptr) return false;
     const int written = std::fprintf(handle, "%.1f\n", value);
-    if (std::fclose(handle) != 0 || written < 0) {
-        (void)std::remove(tmp.c_str());
-        return false;
-    }
-    if (std::rename(tmp.c_str(), path.c_str()) != 0) {
-        (void)std::remove(tmp.c_str());
-        return false;
-    }
-    return true;
+    return std::fclose(handle) == 0 && written >= 0;
 }
 
 Config parse_args(int argc, char** argv) {
@@ -709,10 +712,20 @@ private:
         last_cluster_write_ = now;
 
         if (!cluster_dir_ready_) {
-            // 0755; EEXIST is success. If the directory cannot be created there
-            // is no point retrying every 100 ms forever, so report once and
-            // disable — a broken bottom bar must not become a log flood.
-            if (::mkdir(config_.cluster_dir.c_str(), 0755) != 0 && errno != EEXIST) {
+            // 0755; EEXIST is success. If the directory already exists, skip the
+            // mkdir() call entirely: this guest's filesystem returns ENOSYS
+            // ("Function not implemented") for mkdir() even when the target is
+            // fine, which previously made this branch disable cluster files on
+            // every boot despite --cluster-dir pointing at a directory (/tmp)
+            // that already exists and is writable. If the directory cannot be
+            // created there is no point retrying every 100 ms forever, so
+            // report once and disable — a broken bottom bar must not become a
+            // log flood.
+            struct stat st{};
+            const bool exists_as_dir =
+                ::stat(config_.cluster_dir.c_str(), &st) == 0 && S_ISDIR(st.st_mode);
+            if (!exists_as_dir && ::mkdir(config_.cluster_dir.c_str(), 0755) != 0 &&
+                errno != EEXIST) {
                 std::cerr << "cluster files disabled: cannot create "
                           << config_.cluster_dir << ": " << std::strerror(errno) << "\n";
                 config_.cluster_files = false;
