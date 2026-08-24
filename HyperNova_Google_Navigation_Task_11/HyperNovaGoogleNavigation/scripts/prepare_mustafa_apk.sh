@@ -106,10 +106,11 @@ chmod +x "$PROJECT/gradlew"
     || fail "secrets.properties not found"
 
 if grep -Eq '^MAPS_API_KEY=AIza[0-9A-Za-z_-]{30,}$' "$PROJECT/secrets.properties"; then
-    log "MAPS_API_KEY: CONFIGURED"
+    log "MAPS_API_KEY: CONFIGURED (value hidden)"
 else
     fail "MAPS_API_KEY is missing or is not a Google API key"
 fi
+unset MAPS_API_KEY
 
 if git -C "$PROJECT" check-ignore secrets.properties >/dev/null 2>&1; then
     log "secrets.properties: GIT-IGNORED"

@@ -47,6 +47,11 @@ class GoogleApiKeyPolicyTest {
         assertFalse(GoogleApiKeyPolicy.isConfigured("configured-key-value"))
         assertFalse(GoogleApiKeyPolicy.isConfigured("20d0a8fe56e67ae4e0d3323d"))
         assertFalse(GoogleApiKeyPolicy.isConfigured("not-an-api-key-even-when-it-is-long-enough"))
+        assertFalse(
+            GoogleApiKeyPolicy.isConfigured(
+                "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+            ),
+        )
     }
 
     @Test

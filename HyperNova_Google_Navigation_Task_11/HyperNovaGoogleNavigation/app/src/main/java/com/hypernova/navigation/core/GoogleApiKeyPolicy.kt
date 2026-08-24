@@ -5,7 +5,7 @@ object GoogleApiKeyPolicy {
     // Reject arbitrary non-placeholder strings so a copied Map ID, client ID,
     // or stale handoff value cannot make a release build look configured.
     private val googleApiKey = Regex("^AIza[0-9A-Za-z_-]{30,}$")
-
+    private val hexToken = Regex("^[0-9a-fA-F]{64}$")
     private val placeholders =
         setOf(
             "DEFAULT_API_KEY",
@@ -16,6 +16,7 @@ object GoogleApiKeyPolicy {
     fun isConfigured(value: String?): Boolean {
         val candidate = value?.trim().orEmpty()
         return candidate.isNotEmpty() &&
+            !hexToken.matches(candidate) &&
             candidate !in placeholders &&
             !candidate.startsWith("YOUR", ignoreCase = true) &&
             !candidate.contains("PLACEHOLDER", ignoreCase = true) &&

@@ -126,6 +126,23 @@ object NovaRuntimeState {
         syncConversation()
     }
 
+    /** Publish a proactive fault without inheriting stale fields from the preceding driver turn. */
+    fun publishVehicleAlert(code: String?, text: String, active: Boolean) = dispatch {
+        latestSession = NovaRuntimeSnapshot(
+            visibleState = latestSession.visibleState,
+            actionDomain = "vehicle",
+            actionName = code ?: "fault",
+            actionResult = text,
+            // Once cleared, preserve the confirmation as the last response. While active, the
+            // detailed error remains authoritative even after its shorter TTS warning finishes.
+            spokenText = text.takeUnless { active },
+            errorMessage = text.takeIf { active },
+            blocked = active,
+        )
+        mutableSession.value = latestSession
+        syncConversation()
+    }
+
     fun publishError(turnId: String?, message: String) = dispatch {
         latestSession = latestSession.copy(
             turnId = turnId ?: latestSession.turnId,
@@ -177,12 +194,19 @@ object NovaRuntimeState {
             ) || changed
         }
 
-        // Most specific first: the spoken reply is what the driver actually heard, and progress
-        // text is only a placeholder until something better arrives.
-        val reply = session.spokenText
-            ?: session.errorMessage
-            ?: session.actionResult
-            ?: session.progressText
+        // Keep a blocked/fault entry authoritative and visually stable while its shorter spoken
+        // warning is playing. Normal successful turns still prefer exactly what the driver heard.
+        val reply = if (session.blocked) {
+            session.errorMessage
+                ?: session.spokenText
+                ?: session.actionResult
+                ?: session.progressText
+        } else {
+            session.spokenText
+                ?: session.errorMessage
+                ?: session.actionResult
+                ?: session.progressText
+        }
         if (!reply.isNullOrBlank()) {
             val tone = when {
                 session.blocked || session.visibleState == NovaVisibleState.ERROR ->

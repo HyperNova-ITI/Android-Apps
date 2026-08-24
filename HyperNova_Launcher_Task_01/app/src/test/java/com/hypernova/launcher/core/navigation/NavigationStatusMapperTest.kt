@@ -12,11 +12,42 @@ import com.hypernova.contracts.navigation.NavigationRouteSnapshot
 import com.hypernova.contracts.navigation.NavigationResult
 import com.hypernova.launcher.core.state.AppConnectionState
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class NavigationStatusMapperTest {
+    @Test
+    fun `idle destination with route identity is a preview not active guidance`() {
+        val preview =
+            NavigationStatusMapper.withRouteSnapshot(
+                NavigationStatusSnapshot(AppConnectionState.CONNECTING),
+                NavigationRouteSnapshot(
+                    "route-preview",
+                    3L,
+                    NavigationContract.STATE_IDLE,
+                    NavigationDestination(
+                        "preview-token",
+                        NavigationContract.SOURCE_SEARCH,
+                        "Maintenance Center",
+                        "Smart Village",
+                        "vehicle service",
+                        -1L,
+                    ),
+                    600L,
+                    2_000L,
+                    NavigationRoutePreview.empty(),
+                ),
+            )
+
+        assertTrue(preview.hasRoutePreview)
+        assertEquals(NavigationRuntimeState.IDLE, preview.runtimeState)
+        assertFalse(preview.copy(routeId = "").hasRoutePreview)
+        assertFalse(preview.copy(runtimeState = NavigationRuntimeState.ACTIVE).hasRoutePreview)
+    }
+
     @Test
     fun `maps every frozen navigation state`() {
         assertEquals(
@@ -123,6 +154,61 @@ class NavigationStatusMapperTest {
         assertNull(snapshot.distanceMeters)
         assertEquals(emptyList<Any>(), snapshot.routePoints)
         assertNull(snapshot.currentPosition)
+    }
+
+    @Test
+    fun `current-state destination token is a route preview identity fallback`() {
+        val result = NavigationResult(
+            "launcher-request",
+            NavigationContract.OP_GET_CURRENT_STATE,
+            HyperNovaContract.STATUS_CONFIRMED,
+            "Route preview ready",
+            HyperNovaContract.ERROR_NONE,
+            emptyList(),
+            NavigationDestination(
+                "google-place-token",
+                NavigationContract.SOURCE_SEARCH,
+                "TyrePro Continental Egypt",
+                "Smart Village",
+                "vehicle service",
+                -1L,
+            ),
+            NavigationContract.STATE_IDLE,
+            300L,
+            2_500L,
+        )
+
+        val snapshot = NavigationStatusMapper.fromResult(result)
+
+        assertEquals("google-place-token", snapshot.routeId)
+        assertTrue(snapshot.hasRoutePreview)
+        assertEquals(300L, snapshot.etaSeconds)
+        assertEquals(2_500L, snapshot.distanceMeters)
+    }
+
+    @Test
+    fun `non-current command destination is not treated as route identity`() {
+        val result = NavigationResult(
+            "search-request",
+            NavigationContract.OP_SEARCH_DESTINATIONS,
+            HyperNovaContract.STATUS_CONFIRMED,
+            "Search complete",
+            HyperNovaContract.ERROR_NONE,
+            emptyList(),
+            NavigationDestination(
+                "search-token",
+                NavigationContract.SOURCE_SEARCH,
+                "A place",
+                "Cairo",
+                "place",
+                -1L,
+            ),
+            NavigationContract.STATE_IDLE,
+            -1L,
+            -1L,
+        )
+
+        assertEquals("", NavigationStatusMapper.fromResult(result).routeId)
     }
 
     @Test

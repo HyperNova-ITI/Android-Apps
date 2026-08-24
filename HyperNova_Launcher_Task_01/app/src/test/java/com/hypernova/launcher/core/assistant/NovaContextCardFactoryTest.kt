@@ -38,6 +38,24 @@ class NovaContextCardFactoryTest {
         assertEquals(null, NovaContextCardFactory.create(state))
     }
 
+    @Test
+    fun `active vehicle fault is presented as an alert rather than a failed action`() {
+        val state = fixture().copy(
+            assistant = fixture().assistant.copy(
+                actionDomain = "vehicle",
+                actionName = "P0217",
+                primaryMessage = "Engine coolant temperature is too high.",
+                blocked = true,
+            ),
+        )
+
+        val card = NovaContextCardFactory.create(state)!!
+
+        assertEquals("VEHICLE ALERT", card.label)
+        assertEquals("Fault P0217 active", card.title)
+        assertEquals("Engine coolant temperature is too high.", card.detail)
+    }
+
     private fun fixture(): LauncherUiState {
         val integrated = IntegratedAppState(
             availability = AppAvailability.AVAILABLE,

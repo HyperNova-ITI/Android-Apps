@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="hn_navigation_edge_margin">24dp</dimen>
-    <dimen name="hn_navigation_panel_padding">20dp</dimen>
-    <dimen name="hn_navigation_touch_target">64dp</dimen>
-    <dimen name="hn_navigation_status_size">18sp</dimen>
+    <dimen name="hn_navigation_edge_margin">18dp</dimen>
+    <dimen name="hn_navigation_panel_padding">18dp</dimen>
+    <dimen name="hn_navigation_touch_target">56dp</dimen>
+    <dimen name="hn_navigation_status_size">13sp</dimen>
+
+    <!-- Navigation app override: the shared bar uses the same compact sheet geometry. -->
+    <dimen name="hn_cockpit_nav_height">82dp</dimen>
+    <dimen name="hn_cockpit_nav_bottom_margin">18dp</dimen>
+    <dimen name="hn_cockpit_nav_reserved_height">100dp</dimen>
 </resources>

@@ -1,5 +1,8 @@
 # Test and Runtime Validation Plan
 
+> Superseded on 2026-08-20 because the live Android 16 guest has no GMS.
+> Use the live acceptance sequence in `README.md` for the WebView build.
+
 Date: 2026-08-19
 Status: Pre-key automated verification complete; post-key runtime validation
 remains pending. **No Google runtime PASS is claimed.**

@@ -28,6 +28,7 @@ class NavigationCommandService : Service() {
     private val cache = ConcurrentHashMap<String, Cached>()
     private val knownDestinations = ConcurrentHashMap<String, NavigationDestination>()
     @Volatile private var selectedDestination: NavigationDestination? = null
+    @Volatile private var navigationActive = false
 
     private val home = NavigationDestination(
         "saved:home",
@@ -141,6 +142,7 @@ class NavigationCommandService : Service() {
             MockMode.status(this@NavigationCommandService, "Calculating route to ${destination.title}")
             handler.postDelayed({
                 selectedDestination = destination
+                navigationActive = false
                 finish(callback, NavigationResult(
                     requestId,
                     NavigationContract.OP_SET_DESTINATION,
@@ -157,6 +159,38 @@ class NavigationCommandService : Service() {
             }, ROUTE_DELAY_MILLIS)
         }
 
+        override fun startNavigation(
+            requestId: String,
+            callback: INavigationCommandCallback,
+        ) {
+            if (replay(requestId, callback)) return
+            if (applyFailureMode(requestId, NavigationContract.OP_START_NAVIGATION, callback)) return
+            val destination = selectedDestination
+            if (destination == null) {
+                finish(callback, rejected(
+                    requestId,
+                    NavigationContract.OP_START_NAVIGATION,
+                    "Set a destination and wait for the route preview first.",
+                    NavigationContract.ERROR_ROUTE_NOT_FOUND,
+                ))
+                return
+            }
+            navigationActive = true
+            finish(callback, NavigationResult(
+                requestId,
+                NavigationContract.OP_START_NAVIGATION,
+                HyperNovaContract.STATUS_CONFIRMED,
+                "Navigation started.",
+                HyperNovaContract.ERROR_NONE,
+                emptyList(),
+                destination,
+                NavigationContract.STATE_ACTIVE,
+                900,
+                destination.distanceMeters,
+            ))
+            MockMode.status(this@NavigationCommandService, "Navigation active: ${destination.title}")
+        }
+
         override fun cancelNavigation(
             requestId: String,
             callback: INavigationCommandCallback,
@@ -164,6 +198,7 @@ class NavigationCommandService : Service() {
             if (replay(requestId, callback)) return
             if (applyFailureMode(requestId, NavigationContract.OP_CANCEL_NAVIGATION, callback)) return
             selectedDestination = null
+            navigationActive = false
             finish(callback, NavigationResult(
                 requestId,
                 NavigationContract.OP_CANCEL_NAVIGATION,
@@ -188,11 +223,15 @@ class NavigationCommandService : Service() {
                 requestId,
                 NavigationContract.OP_GET_CURRENT_STATE,
                 HyperNovaContract.STATUS_CONFIRMED,
-                if (destination == null) "Navigation is idle" else "A route is ready to start",
+                when {
+                    destination == null -> "Navigation is idle"
+                    navigationActive -> "Navigation is active"
+                    else -> "A route is ready to start"
+                },
                 HyperNovaContract.ERROR_NONE,
                 emptyList(),
                 destination,
-                NavigationContract.STATE_IDLE,
+                if (navigationActive) NavigationContract.STATE_ACTIVE else NavigationContract.STATE_IDLE,
                 if (destination == null) -1 else 900,
                 destination?.distanceMeters ?: -1,
             ))

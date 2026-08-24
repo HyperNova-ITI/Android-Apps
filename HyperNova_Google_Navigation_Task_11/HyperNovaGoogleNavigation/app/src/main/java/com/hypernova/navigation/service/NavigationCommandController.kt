@@ -166,6 +166,51 @@ internal class NavigationCommandController(
         }
     }
 
+    fun startNavigation(requestId: String?, callback: INavigationCommandCallback?) {
+        val receiver = callback ?: return
+        val id = requestId?.trim().orEmpty()
+        val operation = NavigationContract.OP_START_NAVIGATION
+        if (id.isBlank()) {
+            deliverAsync(receiver, invalid(id, operation, "requestId must not be blank."))
+            return
+        }
+        executeDeduplicated(
+            key = RequestKey(id, operation),
+            fingerprint = operation,
+            callback = receiver,
+            acceptedMessage = "Navigation start accepted.",
+        ) {
+            val before = runtime.state.value
+            if (before.phase != NavigationPhase.PREVIEW_READY) {
+                result(
+                    id,
+                    operation,
+                    HyperNovaContract.STATUS_REJECTED,
+                    "Set a destination and wait for the route preview first.",
+                    NavigationContract.ERROR_ROUTE_NOT_FOUND,
+                )
+            } else if (runtime.startGuidance()) {
+                val active = runtime.state.value
+                result(
+                    id,
+                    operation,
+                    HyperNovaContract.STATUS_CONFIRMED,
+                    "Navigation started.",
+                    selected = ContractProjection.selectedDestination(active),
+                    navigationState = NavigationContract.STATE_ACTIVE,
+                    etaSeconds = active.etaSeconds,
+                    distanceMeters = active.distanceMeters,
+                )
+            } else {
+                unavailable(
+                    id,
+                    operation,
+                    "Navigation could not start the prepared route.",
+                )
+            }
+        }
+    }
+
     fun cancelNavigation(requestId: String?, callback: INavigationCommandCallback?) {
         val receiver = callback ?: return
         val id = requestId?.trim().orEmpty()
@@ -201,7 +246,12 @@ internal class NavigationCommandController(
         }
         scope.launch {
             val state = runtime.state.value
-            val metricsAvailable = state.phase in setOf(NavigationPhase.GUIDING, NavigationPhase.REROUTING, NavigationPhase.ARRIVED)
+            val metricsAvailable = state.phase in setOf(
+                NavigationPhase.PREVIEW_READY,
+                NavigationPhase.GUIDING,
+                NavigationPhase.REROUTING,
+                NavigationPhase.ARRIVED,
+            )
             safeDeliver(
                 receiver,
                 result(
@@ -226,6 +276,7 @@ internal class NavigationCommandController(
         val id = requestId?.trim().orEmpty()
         scope.launch {
             val state = runtime.state.value
+            val preview = ContractProjection.preview(state)
             val response =
                 if (id.isBlank()) {
                     NavigationRoutePreviewResult(
@@ -234,16 +285,20 @@ internal class NavigationCommandController(
                         "requestId must not be blank.",
                         HyperNovaContract.ERROR_INVALID_ARGUMENT,
                         ContractProjection.state(state),
-                        ContractProjection.preview(state),
+                        preview,
                     )
                 } else {
                     NavigationRoutePreviewResult(
                         id,
                         HyperNovaContract.STATUS_CONFIRMED,
-                        if (state.routePoints.isEmpty()) "Route preview is unavailable." else "Route preview is available.",
+                        if (preview.routePoints.isEmpty()) {
+                            "Route geometry is available only on the Google Maps surface."
+                        } else {
+                            "Route preview is available."
+                        },
                         HyperNovaContract.ERROR_NONE,
                         ContractProjection.state(state),
-                        ContractProjection.preview(state),
+                        preview,
                     )
                 }
             safeDeliver(receiver, response)

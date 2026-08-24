@@ -151,7 +151,11 @@ class NavigationCommandClient(context: Context) {
                 }
                 if (
                     mapped.status == CommandStatus.ACCEPTED &&
-                    request.operation == NavigationContract.OP_SET_DESTINATION
+                    request.operation in
+                        setOf(
+                            NavigationContract.OP_SET_DESTINATION,
+                            NavigationContract.OP_START_NAVIGATION,
+                        )
                 ) {
                     openNavigation()
                 }
@@ -175,6 +179,10 @@ class NavigationCommandClient(context: Context) {
                 NavigationContract.OP_SET_DESTINATION -> target.setDestination(
                     request.requestId,
                     (request.arguments as CommandArguments.Destination).destinationId,
+                    callback,
+                )
+                NavigationContract.OP_START_NAVIGATION -> target.startNavigation(
+                    request.requestId,
                     callback,
                 )
                 NavigationContract.OP_CANCEL_NAVIGATION -> target.cancelNavigation(

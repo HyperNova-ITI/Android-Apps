@@ -1,7 +1,7 @@
 package com.hypernova.navigation
 
 import android.app.Application
-import com.google.android.libraries.navigation.NavigationApi
+import androidx.appcompat.app.AppCompatDelegate
 import com.hypernova.navigation.core.GoogleApiKeyPolicy
 
 class HyperNovaNavigationApplication : Application() {
@@ -10,9 +10,9 @@ class HyperNovaNavigationApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
         val apiKey = BuildConfig.MAPS_API_KEY
         val configured = GoogleApiKeyPolicy.isConfigured(apiKey)
-        if (configured) NavigationApi.setApiKey(apiKey)
         navigationRuntime = NavigationRuntime.create(this, apiKey, configured)
     }
 }

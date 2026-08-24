@@ -50,6 +50,7 @@ class NovaFaceView @JvmOverloads constructor(
     private var warning = Color.rgb(245, 166, 35)
     private var error = Color.rgb(255, 94, 104)
     private var animator: ValueAnimator? = null
+    private var lastMotionFrame = -1
 
     init {
         isClickable = false
@@ -63,6 +64,7 @@ class NovaFaceView @JvmOverloads constructor(
         }.getOrDefault(FaceState.UNAVAILABLE)
         if (state == next) return
         state = next
+        lastMotionFrame = -1
         invalidate()
     }
 
@@ -83,13 +85,22 @@ class NovaFaceView @JvmOverloads constructor(
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        startMotion()
+        updateMotionLifecycle()
     }
 
     override fun onDetachedFromWindow() {
-        animator?.cancel()
-        animator = null
+        stopMotion()
         super.onDetachedFromWindow()
+    }
+
+    override fun onWindowVisibilityChanged(visibility: Int) {
+        super.onWindowVisibilityChanged(visibility)
+        updateMotionLifecycle()
+    }
+
+    override fun onVisibilityChanged(changedView: View, visibility: Int) {
+        super.onVisibilityChanged(changedView, visibility)
+        updateMotionLifecycle()
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -379,14 +390,51 @@ class NovaFaceView @JvmOverloads constructor(
             interpolator = LinearInterpolator()
             repeatCount = ValueAnimator.INFINITE
             addUpdateListener {
-                motion = it.animatedValue as Float
-                postInvalidateOnAnimation()
+                val nextMotion = it.animatedValue as Float
+                val frameIntervalMs =
+                    when (state) {
+                        FaceState.LISTENING,
+                        FaceState.PROCESSING,
+                        FaceState.EXECUTING,
+                        FaceState.SPEAKING,
+                        -> ACTIVE_FRAME_INTERVAL_MS
+                        FaceState.IDLE -> IDLE_FRAME_INTERVAL_MS
+                        else -> QUIET_FRAME_INTERVAL_MS
+                    }
+                val frame = (nextMotion * CYCLE_MS / frameIntervalMs).toInt()
+                if (frame != lastMotionFrame) {
+                    lastMotionFrame = frame
+                    motion = nextMotion
+                    postInvalidateOnAnimation()
+                }
             }
             start()
         }
     }
 
+    /**
+     * A HOME Activity remains attached while another cockpit task covers it. Continuing this
+     * animator then invalidates an invisible software-rendered window and consumed a measurable
+     * CPU core on the NXP guest. Animate only when this face can actually contribute a frame.
+     */
+    private fun updateMotionLifecycle() {
+        if (isAttachedToWindow && isShown && windowVisibility == VISIBLE) {
+            startMotion()
+        } else {
+            stopMotion()
+        }
+    }
+
+    private fun stopMotion() {
+        animator?.cancel()
+        animator = null
+        lastMotionFrame = -1
+    }
+
     private companion object {
         const val CYCLE_MS = 6000f
+        const val ACTIVE_FRAME_INTERVAL_MS = 33f
+        const val IDLE_FRAME_INTERVAL_MS = 50f
+        const val QUIET_FRAME_INTERVAL_MS = 100f
     }
 }

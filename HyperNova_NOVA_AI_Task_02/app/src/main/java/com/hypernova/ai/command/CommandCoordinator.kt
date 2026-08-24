@@ -158,6 +158,7 @@ class CommandCoordinator(
         -> ClimateContract.COMMAND_TIMEOUT_MILLIS
 
         NavigationContract.OP_SET_DESTINATION,
+        NavigationContract.OP_START_NAVIGATION,
         NavigationContract.OP_CANCEL_NAVIGATION,
         -> NavigationContract.ROUTE_TIMEOUT_MILLIS
 

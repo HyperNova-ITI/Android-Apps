@@ -1,9 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="hn_navigation_surface">#020A13</color>
-    <color name="hn_navigation_status_surface">#0C2532</color>
-    <color name="hn_navigation_status_stroke">#257F8B</color>
-    <color name="hn_navigation_text_primary">#F4FBFD</color>
-    <color name="hn_navigation_text_secondary">#B6CCD3</color>
+    <color name="hn_navigation_status_surface">#F505141F</color>
+    <color name="hn_navigation_status_stroke">#474BE7F3</color>
+    <color name="hn_navigation_text_primary">#F2FBFD</color>
+    <color name="hn_navigation_text_secondary">#A9C3CC</color>
     <color name="hn_navigation_error">#FFB4AB</color>
+    <color name="hn_navigation_soft_surface">#0FFFFFFF</color>
+    <color name="hn_navigation_action">#19D3C5</color>
+    <color name="hn_navigation_action_text">#021116</color>
+
+    <color name="hn_cockpit_bottom_nav_start">#F505141F</color>
+    <color name="hn_cockpit_bottom_nav_center">#F505141F</color>
+    <color name="hn_cockpit_bottom_nav_end">#F505141F</color>
+    <color name="hn_cockpit_border">#474BE7F3</color>
+    <color name="hn_cockpit_icon_primary">#F2FBFD</color>
 </resources>

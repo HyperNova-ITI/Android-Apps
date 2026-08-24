@@ -250,6 +250,7 @@ class LauncherStateController(
         val snapshot = latestNavigationSnapshot
         val runtimeState = snapshot?.runtimeState ?: NavigationRuntimeState.UNAVAILABLE
         val isActive = runtimeState == NavigationRuntimeState.ACTIVE
+        val hasRoutePreview = snapshot?.hasRoutePreview == true
         val appState = createIntegratedAppState(
             availability = availability,
             reportedConnection = snapshot?.connectionState,
@@ -260,6 +261,9 @@ class LauncherStateController(
         val unavailableStatus = createAvailabilityStatus(availability, getAppName(destination))
         val status = when {
             unavailableStatus != null -> unavailableStatus
+
+            hasRoutePreview ->
+                applicationContext.getString(R.string.navigation_route_preview_google)
 
             /*
              * HOME has a deterministic fixed ITI demo location even while
@@ -305,6 +309,8 @@ class LauncherStateController(
         val destinationText = when {
             isActive -> snapshot?.destinationTitle
                 ?: applicationContext.getString(R.string.navigation_route_active)
+            hasRoutePreview -> snapshot?.destinationTitle
+                ?: applicationContext.getString(R.string.navigation_no_active_route)
             runtimeState == NavigationRuntimeState.CALCULATING ->
                 applicationContext.getString(R.string.navigation_calculating)
             runtimeState == NavigationRuntimeState.ARRIVED ->
@@ -313,7 +319,8 @@ class LauncherStateController(
             else -> applicationContext.getString(R.string.navigation_no_active_route)
         }
         val previewAllowed =
-            runtimeState == NavigationRuntimeState.CALCULATING ||
+            (runtimeState == NavigationRuntimeState.IDLE && !snapshot?.routeId.isNullOrBlank()) ||
+                runtimeState == NavigationRuntimeState.CALCULATING ||
                 runtimeState == NavigationRuntimeState.ACTIVE ||
                 runtimeState == NavigationRuntimeState.ARRIVED
         val routePoints =
@@ -331,8 +338,10 @@ class LauncherStateController(
             routeName = status,
             eta = snapshot?.etaSeconds?.let(::formatNavigationEta)
                 ?: applicationContext.getString(R.string.navigation_eta_unavailable),
-            distance = snapshot?.distanceMeters?.let(::formatNavigationDistance)
-                ?: applicationContext.getString(R.string.navigation_distance_unavailable),
+            distance =
+                (snapshot?.remainingDistanceMeters ?: snapshot?.distanceMeters)
+                    ?.let(::formatNavigationDistance)
+                    ?: applicationContext.getString(R.string.navigation_distance_unavailable),
             arrivalTime = snapshot?.etaSeconds?.let(::formatArrivalTime)
                 ?: applicationContext.getString(R.string.navigation_arrival_unavailable),
             routePoints = routePoints,

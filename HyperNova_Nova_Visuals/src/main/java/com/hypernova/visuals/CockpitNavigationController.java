@@ -103,9 +103,15 @@ public final class CockpitNavigationController {
                     .setPackage(destination.packageName)
                     .addCategory(Intent.CATEGORY_DEFAULT);
         }
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
-                | Intent.FLAG_ACTIVITY_CLEAR_TOP
-                | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        /*
+         * Never place another app inside Launcher's special HOME task. Every cockpit entry point
+         * uses the same bounded policy, so Android brings the one destination task forward and
+         * delivers onNewIntent instead of creating divergent/stale activities.
+         */
+        intent.addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK
+                        | Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         try {
             context.startActivity(intent);
         } catch (Exception exception) {

@@ -42,6 +42,20 @@ class ContractProjectionTest {
     }
 
     @Test
+    fun googleRouteGeometryIsBoundedForTheAttributedLauncherCanvas() {
+        val projected =
+            ContractProjection.preview(
+                state(
+                    phase = NavigationPhase.PREVIEW_READY,
+                    routePoints = listOf(GeoPoint(30.0, 31.0), GeoPoint(30.1, 31.1)),
+                ),
+            )
+
+        assertEquals(2, projected.routePoints.size)
+        assertNull(projected.currentPosition)
+    }
+
+    @Test
     fun progressRejectsInvalidCoordinatesAndNormalizesSdkMeasurements() {
         val invalid =
             state(
@@ -71,6 +85,7 @@ class ContractProjectionTest {
         initialization: NavigationInitializationState = NavigationInitializationState.READY_IDLE,
         phase: NavigationPhase,
         position: VehiclePosition? = null,
+        routePoints: List<GeoPoint> = emptyList(),
     ): NavigationSessionState =
         NavigationSessionState(
             initialization = initialization,
@@ -78,6 +93,7 @@ class ContractProjectionTest {
             statusMessage = "test",
             routeId = if (phase == NavigationPhase.IDLE) "" else "route-test",
             vehiclePosition = position,
+            routePoints = routePoints,
         )
 
     private fun vehicle(

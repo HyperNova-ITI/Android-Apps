@@ -1,6 +1,7 @@
 package com.hypernova.launcher
 
 import android.animation.ValueAnimator
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
@@ -48,7 +49,9 @@ import com.hypernova.launcher.core.theme.LauncherThemeController
 import com.hypernova.launcher.core.vehicle.VehicleStatusClient
 import com.hypernova.launcher.databinding.ActivityMainBinding
 import com.hypernova.launcher.ui.LauncherNavigationMapController
+import com.hypernova.launcher.ui.LauncherGoogleMapController
 import com.hypernova.launcher.ui.LauncherSoftwareRouteOverlay
+import com.hypernova.contracts.navigation.NavigationContract
 import com.hypernova.visuals.CockpitAppearance
 import org.maplibre.android.MapLibre
 import org.maplibre.android.maps.MapView
@@ -60,6 +63,9 @@ class MainActivity : AppCompatActivity() {
         private const val TAG = "HyperNovaLauncher"
         private const val FEEDBACK_DURATION_MS = 4000L
         private const val OPTIONAL_INTEGRATION_DELAY_MS = 250L
+        private const val INTEGRATION_STAGGER_MS = 120L
+        private const val NAVIGATION_PLACE_QUERY_EXTRA =
+            "com.hypernova.navigation.extra.PLACE_QUERY"
     }
 
     private lateinit var binding: ActivityMainBinding
@@ -78,6 +84,7 @@ class MainActivity : AppCompatActivity() {
     private var previousAssistantRuntimeState: AssistantRuntimeState? = null
     private var navigationMapView: MapView? = null
     private var navigationMapController: LauncherNavigationMapController? = null
+    private var googleNavigationMapController: LauncherGoogleMapController? = null
 
     /*
      * Shown only when the real MapLibre renderer is unavailable.
@@ -91,6 +98,7 @@ class MainActivity : AppCompatActivity() {
     private var novaTextTarget = ""
     private var visibleNovaContextDomain: String? = null
     private var activeNovaContextDestination: AppDestination? = null
+    private val pendingIntegrationConnections = mutableListOf<Runnable>()
 
     private val resetFeedbackRunnable = Runnable {
         if (
@@ -262,6 +270,7 @@ class MainActivity : AppCompatActivity() {
             navigationMapView?.post {
                 navigationMapController?.refreshScene()
             }
+            googleNavigationMapController?.resumeSurface()
         }
 
         if (::themeController.isInitialized) {
@@ -292,6 +301,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStop() {
         activityStarted = false
+        cancelPendingIntegrationConnections()
         if (::availabilityMonitor.isInitialized) {
             runOptionalIntegration("stop package monitor") { availabilityMonitor.stop() }
         }
@@ -336,7 +346,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPause() {
         activityResumed = false
-        runOptionalIntegration("pause Navigation map") { navigationMapView?.onPause() }
+        runOptionalIntegration("pause Navigation map") {
+            navigationMapView?.onPause()
+            googleNavigationMapController?.pauseSurface()
+        }
         super.onPause()
     }
 
@@ -353,6 +366,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        cancelPendingIntegrationConnections()
         novaTypingAnimator?.cancel()
         if (::binding.isInitialized) {
             binding.textNovaQuestion.removeCallbacks(
@@ -367,6 +381,10 @@ class MainActivity : AppCompatActivity() {
         navigationMapController = null
         runOptionalIntegration("destroy Navigation map") { navigationMapView?.onDestroy() }
         navigationMapView = null
+        runOptionalIntegration("destroy Launcher Google map") {
+            googleNavigationMapController?.destroy()
+        }
+        googleNavigationMapController = null
 
         super.onDestroy()
     }
@@ -434,6 +452,30 @@ class MainActivity : AppCompatActivity() {
         }
 
     private fun initializeNavigationMap(savedInstanceState: Bundle?) {
+        if (!shouldCreateHomeMapSurface()) {
+            /*
+             * HOME is the always-on cockpit surface. Keep it renderer-free so
+             * Navigation and Media are the only apps allowed to own Chromium.
+             * NavigationRoutePreviewView below remains clickable and renders
+             * the authoritative destination/status summary without another
+             * WebView or MapLibre engine competing with SurfaceFlinger.
+             */
+            Log.i(TAG, "Using lightweight HOME navigation preview")
+            binding.navigationRoutePreview.visibility = View.VISIBLE
+            return
+        }
+
+        /*
+         * Do not stack Chromium and MapLibre hardware surfaces in one HOME card. The NXP guest's
+         * compositor can promote the older MapLibre SurfaceView above the complete Launcher
+         * window, producing a black frame. With a configured Google key, Google is the only map
+         * renderer; the existing Canvas view remains the no-network fallback underneath it.
+         */
+        if (BuildConfig.MAPS_API_KEY.isNotBlank()) {
+            initializeGoogleNavigationMap()
+            return
+        }
+
         /*
          * RPi5:
          *
@@ -542,19 +584,109 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** Connect each optional integration independently so one failure cannot take down HOME. */
+    /**
+     * HOME owns a small raster-only Google map when the browser key is configured. It mirrors
+     * Navigation's route geometry and performs no Places/Routes requests, so it stays useful
+     * without recreating the expensive Navigation engine inside Launcher.
+     */
+    private fun shouldCreateHomeMapSurface(): Boolean = BuildConfig.MAPS_API_KEY.isNotBlank()
+
+    /** Overlay the local fallback with a Google-owned, read-only destination preview. */
+    private fun initializeGoogleNavigationMap() {
+        if (BuildConfig.MAPS_API_KEY.isBlank() || googleNavigationMapController != null) return
+        runCatching {
+            LauncherGoogleMapController(
+                context = this,
+                apiKey = BuildConfig.MAPS_API_KEY,
+                isNightMode = themeController.isNightModeActive(),
+                onOpenNavigation = { openNavigationFromHomeWidget() },
+                onAvailabilityChanged = { available ->
+                    runOnUiThread {
+                        stateController.updateNavigationMapAvailability(
+                            available || navigationMapView != null,
+                        )
+                        if (::latestUiState.isInitialized) refreshAndRenderState()
+                    }
+                },
+            ).also { controller ->
+                googleNavigationMapController = controller
+                binding.navigationMapContainer.addView(
+                    controller.view,
+                    FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                    ),
+                )
+                binding.navigationMapContainer
+                    .findViewWithTag<View>("hypernova_google_navigation_map_click_overlay")
+                    ?.let(binding.navigationMapContainer::removeView)
+                binding.navigationMapContainer.addView(
+                    View(this).apply {
+                        tag = "hypernova_google_navigation_map_click_overlay"
+                        isClickable = true
+                        isFocusable = true
+                        setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                        setOnClickListener { openNavigationFromHomeWidget() }
+                    },
+                    FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                    ),
+                )
+                if (::latestUiState.isInitialized) {
+                    controller.setRoute(
+                        latestUiState.navigation.routeId,
+                        latestUiState.navigation.routeVersion,
+                        latestUiState.navigation.routePoints,
+                    )
+                }
+            }
+        }.onFailure { failure ->
+            Log.w(TAG, "Launcher Google map unavailable; keeping local map", failure)
+        }
+    }
+
+    /**
+     * Connect each optional integration independently and in small stages.
+     *
+     * Starting seven remote services in the same main-loop turn caused brief Launcher ANRs on the
+     * four-vCPU guest. NOVA remains first so wake/status availability is never traded for polish;
+     * the remaining read-only cards join over the next sub-second.
+     */
     private fun connectCockpitIntegrations() {
+        cancelPendingIntegrationConnections()
         runOptionalIntegration("start package monitor") { availabilityMonitor.start() }
-        runOptionalIntegration("connect Navigation") { navigationStatusClient.connect() }
-        runOptionalIntegration("connect Climate") { climateStatusClient.connect() }
-        runOptionalIntegration("connect Phone") { phoneStatusClient.connect() }
-        runOptionalIntegration("connect Settings") { systemSettingsClient.connect() }
-        runOptionalIntegration("connect Vehicle Gateway") { vehicleStatusClient.start() }
-        runOptionalIntegration("connect Media") {
+        scheduleIntegrationConnection(0, "connect NOVA") { novaStatusClient.connect() }
+        scheduleIntegrationConnection(1, "connect Vehicle Gateway") { vehicleStatusClient.start() }
+        scheduleIntegrationConnection(2, "connect Climate") { climateStatusClient.connect() }
+        scheduleIntegrationConnection(3, "connect Media") {
             Log.d(TAG, "Connecting to HyperNova MediaSession")
             mediaSessionClient.connect()
         }
-        runOptionalIntegration("connect NOVA") { novaStatusClient.connect() }
+        scheduleIntegrationConnection(4, "connect Navigation") { navigationStatusClient.connect() }
+        scheduleIntegrationConnection(5, "connect Phone") { phoneStatusClient.connect() }
+        scheduleIntegrationConnection(6, "connect Settings") { systemSettingsClient.connect() }
+    }
+
+    private fun scheduleIntegrationConnection(
+        stage: Int,
+        operation: String,
+        action: () -> Unit,
+    ) {
+        lateinit var task: Runnable
+        task = Runnable {
+            pendingIntegrationConnections.remove(task)
+            if (!activityStarted || isFinishing || isDestroyed) return@Runnable
+            runOptionalIntegration(operation, action)
+        }
+        pendingIntegrationConnections += task
+        binding.root.postDelayed(task, stage * INTEGRATION_STAGGER_MS)
+    }
+
+    private fun cancelPendingIntegrationConnections() {
+        if (!::binding.isInitialized) return
+        pendingIntegrationConnections.forEach(binding.root::removeCallbacks)
+        pendingIntegrationConnections.clear()
     }
 
     /** Catch runtime and optional native renderer failures at the integration boundary. */
@@ -694,10 +826,9 @@ class MainActivity : AppCompatActivity() {
             openNavigationFromHomeWidget()
         }
 
-        configureDestinationClick(
-            view = binding.navigationCard,
-            destination = AppDestination.NAVIGATION
-        )
+        binding.navigationCard.setOnClickListener {
+            openNavigationFromHomeWidget()
+        }
 
         navigationMapView?.setOnClickListener {
             openHyperNovaApp(AppDestination.NAVIGATION)
@@ -771,11 +902,20 @@ class MainActivity : AppCompatActivity() {
      * Open HyperNova Navigation directly from the HOME Navigation widget.
      */
     private fun openNavigationFromHomeWidget() {
+        // The i.MX8QM guest compositor can gray the display when the launcher Google WebView and
+        // Navigation's Google WebView overlap during the task transition. Hide HOME's Chromium
+        // surface synchronously; onResume restores it when the driver returns.
+        googleNavigationMapController?.pauseSurface()
         val openIntent =
             android.content.Intent(
                 "com.hypernova.navigation.action.OPEN"
             ).apply {
                 setPackage("com.hypernova.navigation")
+                addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP,
+                )
             }
 
         runCatching {
@@ -793,6 +933,11 @@ class MainActivity : AppCompatActivity() {
                 )
 
             if (fallbackIntent != null) {
+                fallbackIntent.addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP,
+                )
                 runCatching {
                     startActivity(fallbackIntent)
                 }.onFailure { fallbackFailure ->
@@ -801,12 +946,14 @@ class MainActivity : AppCompatActivity() {
                         "Could not open HyperNova Navigation",
                         fallbackFailure,
                     )
+                    googleNavigationMapController?.resumeSurface()
                 }
             } else {
                 Log.e(
                     TAG,
                     "HyperNova Navigation has no launch intent",
                 )
+                googleNavigationMapController?.resumeSurface()
             }
         }
     }
@@ -905,10 +1052,9 @@ class MainActivity : AppCompatActivity() {
             showLauncherHome()
         }
 
-        configureDestinationClick(
-            view = binding.navNavigation,
-            destination = AppDestination.NAVIGATION
-        )
+        binding.navNavigation.setOnClickListener {
+            openNavigationFromHomeWidget()
+        }
 
         configureDestinationClick(
             view = binding.navMedia,
@@ -1029,17 +1175,15 @@ class MainActivity : AppCompatActivity() {
      * Request a fresh state and render the complete launcher.
      */
     private fun refreshAndRenderState() {
-        latestUiState =
-            stateController.refresh()
+        val refreshedState = stateController.refresh()
+        if (::latestUiState.isInitialized && refreshedState == latestUiState) return
+        latestUiState = refreshedState
 
         renderLauncherState(
             latestUiState
         )
 
-        Log.d(
-            TAG,
-            "Launcher state refreshed: $latestUiState"
-        )
+        Log.d(TAG, "Launcher state changed")
     }
 
     /**
@@ -1073,9 +1217,16 @@ class MainActivity : AppCompatActivity() {
     private fun renderAssistantState(
         state: LauncherUiState
     ) {
+        // Playback temporarily reports SPEAKING, but a safety alert must remain ATTENTION rather
+        // than visually bouncing ERROR -> SPEAKING -> ERROR around the same warning.
+        val presentationState = if (state.assistant.blocked) {
+            AssistantRuntimeState.ERROR
+        } else {
+            state.assistant.runtimeState
+        }
         // The status chip is the single state indicator for this card. The all-caps eyebrow that
         // used to sit under the face said the same thing in different words.
-        binding.textNovaStatusChip.text = when (state.assistant.runtimeState) {
+        binding.textNovaStatusChip.text = when (presentationState) {
             AssistantRuntimeState.IDLE -> "READY"
             AssistantRuntimeState.LISTENING -> "LISTENING"
             AssistantRuntimeState.PROCESSING -> "THINKING"
@@ -1088,8 +1239,11 @@ class MainActivity : AppCompatActivity() {
 
         renderNovaPrimaryMessage(
             text = state.assistant.primaryMessage,
-            animate = state.assistant.speaking ||
-                state.assistant.runtimeState == AssistantRuntimeState.SUCCESS,
+            // Faults are already visually urgent. Rendering their text atomically prevents the
+            // ERROR -> SPEAKING -> ERROR transition from repeatedly restarting the typewriter.
+            animate = !state.assistant.blocked &&
+                (state.assistant.speaking ||
+                    state.assistant.runtimeState == AssistantRuntimeState.SUCCESS),
         )
 
         binding.textNovaTranscript.text = state.assistant.transcript?.let {
@@ -1097,10 +1251,6 @@ class MainActivity : AppCompatActivity() {
         }.orEmpty()
         binding.textNovaTranscript.visibility =
             if (state.assistant.transcript.isNullOrBlank()) View.GONE else View.VISIBLE
-
-        binding.textNovaSecondary.text = state.assistant.secondaryMessage.orEmpty()
-        binding.textNovaSecondary.visibility =
-            if (state.assistant.secondaryMessage.isNullOrBlank()) View.GONE else View.VISIBLE
 
         binding.novaActivityProgress.visibility =
             if (state.assistant.showActivityProgress) View.VISIBLE else View.GONE
@@ -1132,7 +1282,7 @@ class MainActivity : AppCompatActivity() {
             warning = ContextCompat.getColor(this, R.color.hypernova_warning),
             error = ContextCompat.getColor(this, R.color.hypernova_error),
         )
-        binding.novaFace.setStateName(state.assistant.runtimeState.name)
+        binding.novaFace.setStateName(presentationState.name)
         renderNovaContext(state)
     }
 
@@ -1156,13 +1306,33 @@ class MainActivity : AppCompatActivity() {
                 view.isClickable = true
                 view.isFocusable = true
                 view.setOnClickListener {
-                    runCatching {
-                        startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(uri)))
-                    }
+                    openNovaEvidence(card, uri)
                 }
             }
             novaEvidenceContainer.addView(view)
         }
+    }
+
+    /** Google Maps evidence stays inside the cockpit instead of opening the system WebView. */
+    private fun openNovaEvidence(card: NovaEvidenceCard, sourceUri: String) {
+        val uri = runCatching { Uri.parse(sourceUri) }.getOrNull() ?: return
+        val host = uri.host.orEmpty().lowercase()
+        val isGoogleMaps =
+            host == "maps.google.com" ||
+                ((host == "google.com" || host == "www.google.com") &&
+                    uri.path.orEmpty().startsWith("/maps"))
+
+        if (isGoogleMaps) {
+            val navigationIntent = Intent(NavigationContract.OPEN_ACTION).apply {
+                setPackage(NavigationContract.PACKAGE_NAME)
+                putExtra(NAVIGATION_PLACE_QUERY_EXTRA, card.title)
+            }
+            runCatching { startActivity(navigationIntent) }
+                .onFailure { openHyperNovaApp(AppDestination.NAVIGATION) }
+            return
+        }
+
+        runCatching { startActivity(Intent(Intent.ACTION_VIEW, uri)) }
     }
 
     private fun renderNovaPrimaryMessage(text: String, animate: Boolean) {
@@ -1282,20 +1452,36 @@ class MainActivity : AppCompatActivity() {
         if (navigation.routePoints.size >= 2) {
             binding.navigationRoutePreview.setRoute(
                 navigation.routePoints,
-                null,
-                null,
+                navigation.currentPosition,
+                navigation.currentBearingDegrees,
             )
             navigationMapController?.setNavigation(
                 navigation.routeId,
                 navigation.routeVersion,
                 navigation.routePoints,
-                null,
-                null,
+                navigation.currentPosition,
+                navigation.currentBearingDegrees,
             )
         } else {
             binding.navigationRoutePreview.clearRoute()
             navigationMapController?.clearNavigation()
         }
+
+        googleNavigationMapController?.setRoute(
+            navigation.routeId,
+            navigation.routeVersion,
+            navigation.routePoints,
+        )
+
+        binding.textNavigationAttribution.visibility =
+            if (
+                navigation.routePoints.size >= 2 ||
+                    (googleNavigationMapController != null && navigation.mapAvailable)
+            ) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
 
 
         val showMap = navigation.mapAvailable && navigation.routePoints.size >= 2
@@ -1318,7 +1504,10 @@ class MainActivity : AppCompatActivity() {
          */
         navigationIdleFallbackOverlay?.visibility = View.GONE
         binding.navigationRoutePreview.visibility =
-            if (navigationMapView != null) {
+            if (
+                navigationMapView != null ||
+                    (googleNavigationMapController != null && navigation.mapAvailable)
+            ) {
                 View.INVISIBLE
             } else {
                 View.VISIBLE
@@ -1656,6 +1845,10 @@ class MainActivity : AppCompatActivity() {
     private fun openHyperNovaApp(
         destination: AppDestination
     ) {
+        if (destination == AppDestination.NAVIGATION) {
+            openNavigationFromHomeWidget()
+            return
+        }
         Log.d(
             TAG,
             "Opening destination: $destination"
@@ -1685,6 +1878,10 @@ class MainActivity : AppCompatActivity() {
                     isError = true
                 )
 
+                if (destination == AppDestination.NAVIGATION) {
+                    googleNavigationMapController?.resumeSurface()
+                }
+
                 return
             }
 
@@ -1697,6 +1894,9 @@ class MainActivity : AppCompatActivity() {
             }
 
             is AppLaunchResult.NotInstalled -> {
+                if (destination == AppDestination.NAVIGATION) {
+                    googleNavigationMapController?.resumeSurface()
+                }
                 showFeedback(
                     message = getString(
                         R.string.app_not_installed_message,
@@ -1707,6 +1907,9 @@ class MainActivity : AppCompatActivity() {
             }
 
             is AppLaunchResult.NoLaunchableActivity -> {
+                if (destination == AppDestination.NAVIGATION) {
+                    googleNavigationMapController?.resumeSurface()
+                }
                 showFeedback(
                     message = getString(
                         R.string.app_no_launch_activity_message,
@@ -1717,6 +1920,9 @@ class MainActivity : AppCompatActivity() {
             }
 
             is AppLaunchResult.Failed -> {
+                if (destination == AppDestination.NAVIGATION) {
+                    googleNavigationMapController?.resumeSurface()
+                }
                 Log.e(
                     TAG,
                     "Could not open $appName",
