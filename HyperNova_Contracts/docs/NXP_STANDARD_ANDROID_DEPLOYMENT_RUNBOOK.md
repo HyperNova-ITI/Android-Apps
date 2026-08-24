@@ -84,7 +84,7 @@ Build NOVA with the frozen Pi address:
 cd HyperNova_NOVA_AI_Task_02
 ./gradlew -PnovaHost=192.168.0.20 \
   -PnovaLinkToken="$NOVA_LINK_TOKEN" \
-  :app:assembleRelease
+  :app:assembleDebug
 cd ..
 ```
 
@@ -105,14 +105,30 @@ cd ../..
 The preparation script rejects placeholders, Map IDs, and arbitrary strings; it runs the
 Navigation build, unit tests, lint, package check, signature verification, and checksum generation.
 
+Build the isolated-demo Gateway and the production-package Launcher explicitly:
+
+```bash
+cd HyperNova_VehicleGateway_Task_10
+./gradlew -PgatewayHost=192.168.0.51 \
+  -PgatewayAllowPlaintext=true \
+  -PclusterHost=192.168.0.51 \
+  -PmediaClusterHost=192.168.0.51 \
+  :app:assembleDebug
+cd ../HyperNova_Launcher_Task_01
+./build_launcher_for_nxp.sh
+cd ..
+```
+
+Do not enable `gatewayAllowPlaintext` outside the isolated demo network.
+
 Do not treat the older `release-apks/20260813/` bundle as the current rollout. Build from the synced
 `main` tree so the Google Navigation, phone overlay, media status transport, launcher/NOVA UI, and
 QNX gateway fixes are included. The Gateway defaults to `192.168.0.51:6100`; plaintext remains an
 explicit isolated-demo exception.
 
-For the first isolated demo, use the same local Android debug key for every APK. Sign every
-APK—including the locally built NOVA APK—with Android SDK `apksigner`, then verify each result with
-`apksigner verify --verbose --print-certs APK`. This is a non-production identity.
+For the first isolated demo, the debug variants use the same laptop Android debug key. Verify every
+candidate with `apksigner verify --verbose --print-certs APK` and confirm their certificate digests
+match before installation. This is a non-production identity.
 
 ## 5. Install order
 
