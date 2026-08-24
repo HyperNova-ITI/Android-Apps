@@ -147,6 +147,14 @@
             <category android:name="android.intent.category.DEFAULT" />
         </intent>
 
+        <!-- HyperNova System Control -->
+        <package android:name="com.hypernova.wdt" />
+
+        <intent>
+            <action android:name="com.hypernova.wdt.action.OPEN" />
+            <category android:name="android.intent.category.DEFAULT" />
+        </intent>
+
         <!-- HyperNova Settings -->
         <package android:name="com.hypernova.settings" />
 

@@ -205,4 +205,7 @@
     <string name="bottom_nav_phone">Phone</string>
     <string name="bottom_nav_settings">Settings</string>
 
+
+    <string name="bottom_nav_power">System control</string>
+    <string name="system_control_unavailable">System Control is not installed</string>
 </resources>
