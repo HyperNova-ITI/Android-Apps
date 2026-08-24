@@ -274,6 +274,11 @@ struct VehicleState {
     std::uint8_t dtc_mask{0};
     std::uint8_t last_tc_event_sequence{0};
     bool has_telemetry{false};
+    // Separate from has_telemetry: fault frames (kTcFaultEvent) and sensor
+    // frames (kTcSensorData) are independent, so a fault can arrive before
+    // any sensor reading. Without this, dtc.txt would never be published on
+    // a bench that is only injecting faults.
+    bool has_dtc_state{false};
     Clock::time_point telemetry_at{};
 };
 
@@ -647,6 +652,7 @@ private:
             if (bit != 0) {
                 if (active) state_.dtc_mask |= bit;
                 else state_.dtc_mask &= static_cast<std::uint8_t>(~bit);
+                state_.has_dtc_state = true;
             }
             if (android_ready_) {
                 android_out_.push(hypernova::encode_gateway(
@@ -707,7 +713,10 @@ private:
     // which is precisely when a driver still needs to see fuel.
     void publish_cluster_files(Clock::time_point now) {
         if (!config_.cluster_files) return;
-        if (!state_.has_telemetry) return;   // nothing real to publish yet
+        // Either kind of real news is enough to justify a write. Faults and
+        // sensor readings arrive on independent frames, so gating everything
+        // on has_telemetry would suppress dtc.txt on a fault-only bench.
+        if (!state_.has_telemetry && !state_.has_dtc_state) return;
         if (now - last_cluster_write_ < kClusterThrottle) return;
         last_cluster_write_ = now;
 
@@ -736,14 +745,38 @@ private:
 
         // Write only on change: the cluster re-reads these at 20 Hz and TC397
         // emits at ~12 Hz, so rewriting unchanged values is pure churn.
-        if (state_.fuel != last_published_fuel_) {
-            if (write_scalar_file(config_.cluster_dir + "/fuel.txt", state_.fuel)) {
-                last_published_fuel_ = state_.fuel;
+        if (state_.has_telemetry) {
+            if (state_.fuel != last_published_fuel_) {
+                if (write_scalar_file(config_.cluster_dir + "/fuel.txt", state_.fuel)) {
+                    last_published_fuel_ = state_.fuel;
+                }
+            }
+            if (state_.temperature != last_published_temperature_) {
+                if (write_scalar_file(config_.cluster_dir + "/env_temp.txt", state_.temperature)) {
+                    last_published_temperature_ = state_.temperature;
+                }
             }
         }
-        if (state_.temperature != last_published_temperature_) {
-            if (write_scalar_file(config_.cluster_dir + "/env_temp.txt", state_.temperature)) {
-                last_published_temperature_ = state_.temperature;
+
+        // dtc.txt -- the active-fault bitmask, same "one bare number per file"
+        // contract as fuel.txt/env_temp.txt so the cluster reads it with the
+        // identical `ifstream >> value` provider. Bit order is dtc_bit():
+        //
+        //   bit 0  P0217  engine coolant over temperature
+        //   bit 1  P0118  coolant temp sensor 1 circuit high
+        //   bit 2  P0300  random/multiple cylinder misfire
+        //   bit 3  P0442  EVAP system small leak
+        //   bit 4  P0562  system voltage low
+        //
+        // 0 means "no active faults" and is a real value worth publishing --
+        // it is how the cluster learns a fault cleared and dismisses its
+        // popup. It is only ever written once has_dtc_state is set, so an
+        // absent file still means "TC397 has told us nothing yet", never
+        // "all clear".
+        if (state_.has_dtc_state &&
+            static_cast<int>(state_.dtc_mask) != last_published_dtc_mask_) {
+            if (write_scalar_file(config_.cluster_dir + "/dtc.txt", state_.dtc_mask)) {
+                last_published_dtc_mask_ = static_cast<int>(state_.dtc_mask);
             }
         }
     }
@@ -809,6 +842,7 @@ private:
     bool cluster_dir_ready_{false};
     int last_published_fuel_{-1};
     int last_published_temperature_{-1000};
+    int last_published_dtc_mask_{-1};
     Clock::time_point tc_connected_at_{};
     Clock::time_point next_tc_connect_{};
     Clock::time_point last_state_sent_{};
