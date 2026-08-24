@@ -12,7 +12,7 @@ feature.
 |---|---|
 | Launcher | normal `CATEGORY_HOME` activity; stock Android Settings fallback |
 | NOVA | typed Android AIDL plus TCP/WebSocket to RPi5 `192.168.0.20` |
-| Navigation | normal Android activity/service and MapLibre |
+| Navigation | normal Android activity/service using Google Navigation SDK and Places; no AAOS dependency |
 | Climate | Vehicle Gateway AIDL only; no CarProperty/VHAL backend |
 | Vehicle Gateway | normal headless bound service; HNVG to QNX `192.168.0.51:6100` |
 | Media | Media3, WebView/Internet radio, local media, and optional Bluetooth phone audio |
@@ -36,6 +36,10 @@ The team will not rebuild the Android image. Every HyperNova application is inst
    a compatible service/profile; otherwise Phone must report unavailable honestly.
 5. Phone audio in Media similarly requires A2DP Sink/AVRCP Controller already enabled in the guest.
    Without it Media still supports YouTube, Internet radio, and local playback.
+
+Google Navigation requires a restricted Google Maps Platform API key in its local, ignored
+`secrets.properties`. The Map ID and the API key are different values. Never commit either the
+real Maps key or the NOVA Pi/Android link token.
 
 The Launcher Settings card first opens `com.hypernova.settings` when that optional app exists, then
 falls back to the stock `android.settings.SETTINGS` activity on the NXP guest.

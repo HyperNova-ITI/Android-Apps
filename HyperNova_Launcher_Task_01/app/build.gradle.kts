@@ -2,6 +2,11 @@ plugins {
     alias(libs.plugins.android.application)
 }
 
+val nxpDeployment =
+    providers.gradleProperty("nxpDeployment")
+        .map(String::toBoolean)
+        .orElse(false)
+
 android {
     namespace = "com.hypernova.launcher"
 
@@ -47,9 +52,11 @@ android {
 
     buildTypes {
         debug {
-            // Install the development app beside the system launcher.
-            applicationIdSuffix = ".dev"
-            versionNameSuffix = "-dev"
+            if (!nxpDeployment.get()) {
+                // Install the development app beside the system launcher.
+                applicationIdSuffix = ".dev"
+                versionNameSuffix = "-dev"
+            }
         }
 
         release {

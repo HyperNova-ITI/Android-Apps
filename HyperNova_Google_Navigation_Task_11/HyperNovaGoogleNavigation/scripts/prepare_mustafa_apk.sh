@@ -31,7 +31,7 @@ if [ -n "${ANDROID_SDK_ROOT:-}" ]; then
 elif [ -n "${ANDROID_HOME:-}" ]; then
     SDK_ROOT="$ANDROID_HOME"
 elif [ -f "$PROJECT/local.properties" ]; then
-    SDK_ROOT="$(sed -n 's/^sdk\.dir=//p' "$PROJECT/local.properties" | head -1)"
+    SDK_ROOT="$(sed -n 's/^sdk\.dir=//p' "$PROJECT/local.properties")"
 else
     SDK_ROOT="$HOME/Android/Sdk"
 fi
@@ -163,8 +163,7 @@ log "============================================================"
 } >> "$LOG" 2>&1 || fail "APK inspection failed"
 
 PACKAGE="$("$BT/aapt" dump badging "$DST" \
-    | sed -n "s/package: name='\([^']*\)'.*/\1/p" \
-    | head -1)"
+    | sed -n "s/package: name='\([^']*\)'.*/\1/p")"
 
 if [ "$PACKAGE" != "com.hypernova.navigation" ]; then
     fail "Unexpected package: $PACKAGE"
@@ -182,8 +181,7 @@ log "============================================================"
     || fail "APK signature verification failed"
 
 CERT_SHA1="$("$BT/apksigner" verify --print-certs "$DST" 2>/dev/null \
-    | sed -n 's/.*SHA-1 digest: //p' \
-    | head -1)"
+    | sed -n 's/.*SHA-1 digest: //p')"
 
 log "Certificate SHA-1: $CERT_SHA1"
 

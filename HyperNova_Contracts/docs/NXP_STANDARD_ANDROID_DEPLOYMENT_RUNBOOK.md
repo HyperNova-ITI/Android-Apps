@@ -88,10 +88,27 @@ cd HyperNova_NOVA_AI_Task_02
 cd ..
 ```
 
-The curated bundle in `release-apks/20260813/` contains unsigned Launcher, Navigation, Media, Phone,
-Climate, and isolated-demo Vehicle Gateway APKs. The Gateway artifact is built for
-`192.168.0.51:6100` with plaintext explicitly enabled. NOVA is deliberately excluded because its
-private token must be injected locally.
+This embeds the demo link token in the APK, where it can be extracted by anyone who obtains the
+file. Use only the isolated-demo token, keep the APK private, and rotate the token after the demo.
+For a production design, provision a per-device credential instead of compiling it into the APK.
+
+Prepare Google Navigation with a restricted Maps Platform API key in the local ignored file:
+
+```bash
+cd HyperNova_Google_Navigation_Task_11/HyperNovaGoogleNavigation
+cp -n secrets.properties.example secrets.properties
+# Edit secrets.properties locally: MAPS_API_KEY=<restricted API key>
+./scripts/prepare_mustafa_apk.sh
+cd ../..
+```
+
+The preparation script rejects placeholders, Map IDs, and arbitrary strings; it runs the
+Navigation build, unit tests, lint, package check, signature verification, and checksum generation.
+
+Do not treat the older `release-apks/20260813/` bundle as the current rollout. Build from the synced
+`main` tree so the Google Navigation, phone overlay, media status transport, launcher/NOVA UI, and
+QNX gateway fixes are included. The Gateway defaults to `192.168.0.51:6100`; plaintext remains an
+explicit isolated-demo exception.
 
 For the first isolated demo, use the same local Android debug key for every APK. Sign every
 APK—including the locally built NOVA APK—with Android SDK `apksigner`, then verify each result with
@@ -104,7 +121,7 @@ whose certificate changed. Then install in this order:
 
 1. Vehicle Gateway
 2. Climate
-3. Navigation
+3. Google Navigation (`com.hypernova.navigation`)
 4. Media
 5. Phone
 6. NOVA
@@ -172,5 +189,6 @@ adb logcat -v time \
 
 - the QNX image team's working cross-toolchain/package/startup mechanism;
 - the actual bridge/tap configuration that exposes the inter-guest network on Ethernet;
-- the shared local demo signer (the current laptop debug key is prepared for the first test);
+- the restricted Google Maps Platform API key in local `secrets.properties`;
+- explicit approval to build NOVA with the isolated-demo token embedded in the private APK;
 - HFP Client and A2DP Sink/AVRCP Controller support if Phone/phone-audio are in demo scope.
