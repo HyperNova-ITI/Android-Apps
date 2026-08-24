@@ -629,9 +629,11 @@ class HyperNovaInCallService : InCallService() {
                         CallStatus.INCOMING -> {
 
                             /*
-                             * HyperNova owns the selected car-mode InCall UX.
-                             * Remove the stock HUN and show the HyperNova call
-                             * surface instead.
+                             * Show the compact HyperNova incoming-call bar in
+                             * its own standalone task.
+                             *
+                             * The currently visible cockpit application stays
+                             * visible underneath the transparent top window.
                              */
                             incomingCallNotifier
                                 .cancelIncomingCall()
