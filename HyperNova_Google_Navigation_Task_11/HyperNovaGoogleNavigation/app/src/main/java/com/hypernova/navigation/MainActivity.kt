@@ -68,7 +68,14 @@ class MainActivity : AppCompatActivity() {
         setIntent(intent)
         viewModel.attachMapSurface(binding.navigationFragmentContainer)
         viewModel.attach(this)
-        handleOpenPlaceIntent(intent)
+        // The process-owned WebView survives behind Launcher, but Chromium needs one foreground
+        // compositor turn before a Places JavaScript request is reliable on the i.MX8QM guest.
+        // Dispatching the evidence-card query immediately can lose the bridge invocation and hit
+        // the 10-second contract timeout even though the visible map is healthy.
+        binding.root.postDelayed(
+            { handleOpenPlaceIntent(intent) },
+            OPEN_PLACE_SURFACE_SETTLE_MILLIS,
+        )
     }
 
     override fun onDestroy() {
@@ -292,5 +299,6 @@ class MainActivity : AppCompatActivity() {
 
     private companion object {
         const val EXTRA_PLACE_QUERY = "com.hypernova.navigation.extra.PLACE_QUERY"
+        const val OPEN_PLACE_SURFACE_SETTLE_MILLIS = 500L
     }
 }
