@@ -1,0 +1,1002 @@
+============================================================
+HYPERNOVA GOOGLE NAVIGATION — PRE-KEY VERIFICATION
+============================================================
+Wed Aug 19 01:59:27 PM EEST 2026
+/home/ayman/ITI/Android-Apps/HyperNova_Google_Navigation_Task_11/HyperNovaGoogleNavigation
+
+============================================================
+1. GIT STATE
+============================================================
+?? ../
+?? ../../HyperNova_Settings_Task_09/HyperNova_Settings/
+main
+/home/ayman/ITI/Android-Apps
+
+============================================================
+2. PROJECT TREE
+============================================================
+app/src/main/AndroidManifest.xml
+app/src/main/java/com/hypernova/navigation/HyperNovaNavigationApplication.kt
+app/src/main/java/com/hypernova/navigation/MainActivity.kt
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt
+app/src/main/res/drawable/hn_bg_navigation_phase_status.xml
+app/src/main/res/layout/activity_main.xml
+app/src/main/res/values/colors.xml
+app/src/main/res/values/dimens.xml
+app/src/main/res/values-night/colors.xml
+app/src/main/res/values-night/themes.xml
+app/src/main/res/values/strings.xml
+app/src/main/res/values/themes.xml
+app/src/main/res/xml/data_extraction_rules.xml
+app/src/test/java/com/hypernova/navigation/FrozenNavigationIdentityTest.kt
+
+============================================================
+3. IMPORTANT GRADLE CONFIG
+============================================================
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.name = "HyperNovaGoogleNavigation"
+
+include(":app")
+
+include(":hypernova-contracts")
+project(":hypernova-contracts").projectDir =
+    file("../../HyperNova_Contracts/contracts")
+
+include(":nova-visuals")
+project(":nova-visuals").projectDir =
+    file("../../HyperNova_Nova_Visuals")
+
+
+plugins {
+    id("com.android.application") version "8.13.2" apply false
+    id("org.jetbrains.kotlin.android") version "2.2.21" apply false
+    id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin") version "2.0.1" apply false
+}
+
+
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
+}
+
+// Navigation SDK already bundles the Maps surface. Google requires excluding
+// the normal Maps SDK from every transitive dependency (Places includes it).
+configurations.configureEach {
+    exclude(group = "com.google.android.gms", module = "play-services-maps")
+}
+
+android {
+    namespace = "com.hypernova.navigation"
+
+    compileSdk {
+        version = release(36) {
+            minorApiLevel = 1
+        }
+    }
+
+    defaultConfig {
+        applicationId = "com.hypernova.navigation"
+        minSdk = 35
+        targetSdk = 36
+        versionCode = 1
+        versionName = "1.0.0"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildFeatures {
+        buildConfig = true
+        viewBinding = true
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix = ""
+        }
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+        }
+    }
+
+    compileOptions {
+        isCoreLibraryDesugaringEnabled = true
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    packaging {
+        resources {
+            excludes += setOf(
+                "META-INF/AL2.0",
+                "META-INF/LGPL2.1",
+            )
+        }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_11
+    }
+}
+
+secrets {
+    defaultPropertiesFileName = "secrets.properties.example"
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs_nio:2.1.5")
+
+    implementation(project(":hypernova-contracts"))
+    implementation(project(":nova-visuals"))
+
+    implementation("androidx.activity:activity-ktx:1.13.0")
+    implementation("androidx.appcompat:appcompat:1.8.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.2.2")
+    // 1.19.0 requires compileSdk 37 / AGP 9.1; the Navigation SDK baseline is 36.1.
+    //noinspection GradleDependency
+    implementation("androidx.core:core-ktx:1.18.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.11.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.11.0")
+    implementation("com.google.android.material:material:1.14.0")
+    implementation("com.google.android.libraries.navigation:navigation:7.9.0")
+    implementation("com.google.android.libraries.places:places:5.3.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.11.0")
+
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
+    androidTestImplementation("androidx.test.ext:junit:1.3.0")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
+}
+
+============================================================
+4. MANIFEST
+============================================================
+<?xml version="1.0" encoding="utf-8"?>
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="com.hypernova.permission.CONTROL_COCKPIT_APPS" />
+    <!-- Navigation SDK declares this only for pre-KitKat caching; minSdk is 35. -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        tools:node="remove" />
+
+    <application
+        android:name=".HyperNovaNavigationApplication"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="false"
+        android:enableOnBackInvokedCallback="true"
+        android:hardwareAccelerated="true"
+        android:usesCleartextTraffic="false"
+        android:icon="@drawable/hn_ic_nav_navigation"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.HyperNovaGoogleNavigation">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:resizeableActivity="true"
+            android:windowSoftInputMode="adjustResize">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="com.hypernova.navigation.action.OPEN" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".service.NavigationCommandService"
+            android:exported="true"
+            android:permission="com.hypernova.permission.CONTROL_COCKPIT_APPS">
+            <intent-filter>
+                <action android:name="com.hypernova.navigation.action.BIND_COMMAND" />
+            </intent-filter>
+        </service>
+    </application>
+
+</manifest>
+
+============================================================
+5. GOOGLE SDK REFERENCES
+============================================================
+app/src/main/java/com/hypernova/navigation/core/GoogleApiKeyPolicy.kt:3:object GoogleApiKeyPolicy {
+app/src/main/java/com/hypernova/navigation/core/GoogleApiKeyPolicy.kt:8:            "YOUR_GOOGLE_MAPS_API_KEY",
+app/src/main/java/com/hypernova/navigation/MainActivity.kt:22:import com.google.android.libraries.navigation.SupportNavigationFragment
+app/src/main/java/com/hypernova/navigation/MainActivity.kt:38:    private var navigationFragment: SupportNavigationFragment? = null
+app/src/main/java/com/hypernova/navigation/MainActivity.kt:80:                as? SupportNavigationFragment
+app/src/main/java/com/hypernova/navigation/MainActivity.kt:82:            navigationFragment = SupportNavigationFragment.newInstance()
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:11:import com.hypernova.navigation.NavigationRuntime
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:17:import com.hypernova.navigation.places.GooglePlacesException
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:26:    private val runtime: NavigationRuntime,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:74:            } catch (_: GooglePlacesException.ConfigurationRequired) {
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:76:            } catch (failure: GooglePlacesException.RequestFailed) {
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:80:                    "Google Places search is unavailable.",
+app/src/main/java/com/hypernova/navigation/service/NavigationStatusPublisher.kt:11:import com.hypernova.navigation.NavigationRuntime
+app/src/main/java/com/hypernova/navigation/service/NavigationStatusPublisher.kt:19:    runtime: NavigationRuntime,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandService.kt:70:            (application as HyperNovaNavigationApplication).navigationRuntime
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:14:import com.google.android.libraries.navigation.NavigationApi
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:15:import com.google.android.libraries.navigation.Navigator
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:19:import com.google.android.libraries.navigation.Waypoint
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:29:class GoogleNavigationGateway(
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:35:    private var navigator: Navigator? = null
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:43:        get() = navigator != null
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:46:        if (navigator != null) {
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:47:            listener.onNavigatorReady()
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:51:            if (initializing || navigator != null) return
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:56:            object : NavigationApi.NavigatorListener {
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:57:                override fun onNavigatorReady(readyNavigator: Navigator) {
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:58:                    synchronized(this@GoogleNavigationGateway) {
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:60:                        if (navigator == null) {
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:61:                            navigator = readyNavigator
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:62:                            installListeners(readyNavigator)
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:65:                    listener.onNavigatorReady()
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:70:                    listener.onNavigatorInitializationFailed(errorCode.toFailure())
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:75:            NavigationApi.getNavigator(activity, callback)
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:77:            NavigationApi.getNavigator(application, callback)
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:83:            val activeNavigator = navigator ?: return@withContext GoogleRouteResult.InternalError("Navigator is not ready.")
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:86:            activeNavigator.stopGuidance()
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:87:            val waypoint =
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:89:                    Waypoint.builder()
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:94:                    return@withContext GoogleRouteResult.InternalError("Google rejected the destination waypoint.")
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:96:            val routeStatus = activeNavigator.setDestination(waypoint).awaitResult()
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:98:                Navigator.RouteStatus.OK ->
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:99:                    currentRouteData(activeNavigator)?.let(GoogleRouteResult::Ready)
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:101:                Navigator.RouteStatus.NO_ROUTE_FOUND,
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:102:                Navigator.RouteStatus.WAYPOINT_ERROR,
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:103:                Navigator.RouteStatus.DUPLICATE_WAYPOINTS_ERROR,
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:105:                Navigator.RouteStatus.NETWORK_ERROR -> GoogleRouteResult.NetworkError
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:106:                Navigator.RouteStatus.LOCATION_DISABLED,
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:107:                Navigator.RouteStatus.LOCATION_UNKNOWN,
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:109:                Navigator.RouteStatus.ROUTE_CANCELED -> GoogleRouteResult.Cancelled
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:110:                Navigator.RouteStatus.QUOTA_CHECK_FAILED -> GoogleRouteResult.AuthorizationError
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:115:        val activeNavigator = navigator ?: return false
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:116:        activeNavigator.setAudioGuidance(Navigator.AudioGuidance.VOICE_ALERTS_AND_GUIDANCE)
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:117:        activeNavigator.startGuidance()
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:118:        return activeNavigator.isGuidanceRunning
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:123:            navigator?.apply {
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:131:    internal fun navigatorForDebug(): Navigator? = navigator
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:133:    private fun installListeners(activeNavigator: Navigator) {
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:134:        activeNavigator.setTaskRemovedBehavior(Navigator.TaskRemovedBehavior.CONTINUE_SERVICE)
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:135:        activeNavigator.addArrivalListener { event: ArrivalEvent ->
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:138:        activeNavigator.addReroutingListener {
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:141:        activeNavigator.addRouteChangedListener {
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:142:            currentRouteData(activeNavigator)?.let(listener::onRouteChanged)
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:144:        activeNavigator.addRemainingTimeOrDistanceChangedListener(1, 10) {
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:145:            activeNavigator.currentTimeAndDistance?.let { metrics ->
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:150:            requireNotNull(NavigationApi.getRoadSnappedLocationProvider(application)).also { provider ->
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:193:        navigator?.let(::currentRouteData)
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:195:    private fun currentRouteData(activeNavigator: Navigator): RouteData? {
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:196:        val segments: List<RouteSegment> = activeNavigator.routeSegments.orEmpty()
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:201:        val metrics: TimeAndDistance? = activeNavigator.currentTimeAndDistance
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:218:    private fun Int.toFailure(): NavigatorInitializationFailure =
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:220:            NavigationApi.ErrorCode.TERMS_NOT_ACCEPTED -> NavigatorInitializationFailure.TERMS_NOT_ACCEPTED
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:221:            NavigationApi.ErrorCode.NOT_AUTHORIZED -> NavigatorInitializationFailure.NOT_AUTHORIZED
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:222:            NavigationApi.ErrorCode.NETWORK_ERROR -> NavigatorInitializationFailure.NETWORK
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:223:            NavigationApi.ErrorCode.LOCATION_PERMISSION_MISSING -> NavigatorInitializationFailure.LOCATION_PERMISSION_MISSING
+app/src/main/java/com/hypernova/navigation/navigation/GoogleNavigationGateway.kt:224:            else -> NavigatorInitializationFailure.INTERNAL
+app/src/main/java/com/hypernova/navigation/navigation/NavigatorReadinessGate.kt:6:class NavigatorReadinessGate(initial: State = State.Waiting) {
+app/src/main/java/com/hypernova/navigation/navigation/NavigatorReadinessGate.kt:10:        data class TerminalFailure(val failure: NavigatorInitializationFailure) : State
+app/src/main/java/com/hypernova/navigation/navigation/NavigatorReadinessGate.kt:23:    fun terminal(failure: NavigatorInitializationFailure) {
+app/src/main/java/com/hypernova/navigation/navigation/NavigationGateway.kt:8:enum class NavigatorInitializationFailure {
+app/src/main/java/com/hypernova/navigation/navigation/NavigationGateway.kt:27:    fun onNavigatorReady()
+app/src/main/java/com/hypernova/navigation/navigation/NavigationGateway.kt:28:    fun onNavigatorInitializationFailed(failure: NavigatorInitializationFailure)
+app/src/main/java/com/hypernova/navigation/ui/NavigationViewModel.kt:21:        (application as HyperNovaNavigationApplication).navigationRuntime
+app/src/main/java/com/hypernova/navigation/ui/NavigationViewModel.kt:51:                mutableMessage.value = "Google Places search timed out."
+app/src/main/java/com/hypernova/navigation/ui/NavigationViewModel.kt:55:                mutableMessage.value = "Google Places search is unavailable."
+app/src/main/java/com/hypernova/navigation/places/GooglePlacesSearchGateway.kt:1:package com.hypernova.navigation.places
+app/src/main/java/com/hypernova/navigation/places/GooglePlacesSearchGateway.kt:4:import com.google.android.libraries.places.api.Places
+app/src/main/java/com/hypernova/navigation/places/GooglePlacesSearchGateway.kt:5:import com.google.android.libraries.places.api.model.Place
+app/src/main/java/com/hypernova/navigation/places/GooglePlacesSearchGateway.kt:6:import com.google.android.libraries.places.api.net.SearchByTextRequest
+app/src/main/java/com/hypernova/navigation/places/GooglePlacesSearchGateway.kt:13:class GooglePlacesSearchGateway(
+app/src/main/java/com/hypernova/navigation/places/GooglePlacesSearchGateway.kt:17:    private val placesClient =
+app/src/main/java/com/hypernova/navigation/places/GooglePlacesSearchGateway.kt:19:            if (!Places.isInitialized()) {
+app/src/main/java/com/hypernova/navigation/places/GooglePlacesSearchGateway.kt:20:                Places.initializeWithNewPlacesApiEnabled(context.applicationContext, apiKey)
+app/src/main/java/com/hypernova/navigation/places/GooglePlacesSearchGateway.kt:22:            Places.createClient(context.applicationContext)
+app/src/main/java/com/hypernova/navigation/places/GooglePlacesSearchGateway.kt:41:            placesClient.searchByText(request).await().places.mapNotNull { place ->
+app/src/main/java/com/hypernova/navigation/places/GooglePlacesSearchGateway.kt:57:            throw GooglePlacesException.RequestFailed(failure)
+app/src/main/java/com/hypernova/navigation/places/DestinationSearchGateway.kt:1:package com.hypernova.navigation.places
+app/src/main/java/com/hypernova/navigation/places/DestinationSearchGateway.kt:11:        throw GooglePlacesException.ConfigurationRequired
+app/src/main/java/com/hypernova/navigation/places/DestinationSearchGateway.kt:15:sealed class GooglePlacesException(message: String, cause: Throwable? = null) : Exception(message, cause) {
+app/src/main/java/com/hypernova/navigation/places/DestinationSearchGateway.kt:16:    data object ConfigurationRequired : GooglePlacesException("Google Maps configuration is required.")
+app/src/main/java/com/hypernova/navigation/places/DestinationSearchGateway.kt:17:    class RequestFailed(cause: Throwable) : GooglePlacesException("Google Places search failed.", cause)
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:17:import com.hypernova.navigation.navigation.GoogleNavigationGateway
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:20:import com.hypernova.navigation.navigation.NavigatorReadinessGate
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:21:import com.hypernova.navigation.navigation.NavigatorInitializationFailure
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:26:import com.hypernova.navigation.places.ConfigurationRequiredSearchGateway
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:27:import com.hypernova.navigation.places.DestinationSearchGateway
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:28:import com.hypernova.navigation.places.GooglePlacesSearchGateway
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:35:class NavigationRuntime private constructor(
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:45:        NavigatorReadinessGate(
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:46:            if (isGoogleConfigured) NavigatorReadinessGate.State.Waiting
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:47:            else NavigatorReadinessGate.State.TerminalFailure(
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:48:                NavigatorInitializationFailure.NOT_AUTHORIZED,
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:51:    private val navigationGateway: GoogleNavigationGateway? =
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:52:        if (isGoogleConfigured) GoogleNavigationGateway(application, this) else null
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:119:                    NavigatorReadinessGate.State.Ready -> Unit
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:120:                    NavigatorReadinessGate.State.Waiting -> error("Readiness gate returned a waiting state")
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:121:                    is NavigatorReadinessGate.State.TerminalFailure -> {
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:123:                            NavigatorInitializationFailure.NETWORK ->
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:125:                            NavigatorInitializationFailure.LOCATION_PERMISSION_MISSING ->
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:127:                            NavigatorInitializationFailure.TERMS_NOT_ACCEPTED ->
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:164:    internal fun googleGatewayForDebug(): GoogleNavigationGateway? = navigationGateway
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:184:    override fun onNavigatorReady() {
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:192:    override fun onNavigatorInitializationFailed(failure: NavigatorInitializationFailure) {
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:196:                NavigatorInitializationFailure.NOT_AUTHORIZED,
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:197:                NavigatorInitializationFailure.NETWORK,
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:198:                NavigatorInitializationFailure.INTERNAL,
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:206:            NavigatorInitializationFailure.TERMS_NOT_ACCEPTED ->
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:212:            NavigatorInitializationFailure.LOCATION_PERMISSION_MISSING -> markLocationUnavailable()
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:213:            NavigatorInitializationFailure.NETWORK ->
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:219:            NavigatorInitializationFailure.NOT_AUTHORIZED ->
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:225:            NavigatorInitializationFailure.INTERNAL ->
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:247:            onNavigatorInitializationFailed(NavigatorInitializationFailure.NETWORK)
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:275:        fun create(application: Application, apiKey: String, configured: Boolean): NavigationRuntime {
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:288:                if (configured) GooglePlacesSearchGateway(application, apiKey)
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:290:            return NavigationRuntime(
+app/src/main/java/com/hypernova/navigation/HyperNovaNavigationApplication.kt:4:import com.google.android.libraries.navigation.NavigationApi
+app/src/main/java/com/hypernova/navigation/HyperNovaNavigationApplication.kt:5:import com.hypernova.navigation.core.GoogleApiKeyPolicy
+app/src/main/java/com/hypernova/navigation/HyperNovaNavigationApplication.kt:8:    lateinit var navigationRuntime: NavigationRuntime
+app/src/main/java/com/hypernova/navigation/HyperNovaNavigationApplication.kt:13:        val apiKey = BuildConfig.MAPS_API_KEY
+app/src/main/java/com/hypernova/navigation/HyperNovaNavigationApplication.kt:14:        val configured = GoogleApiKeyPolicy.isConfigured(apiKey)
+app/src/main/java/com/hypernova/navigation/HyperNovaNavigationApplication.kt:15:        if (configured) NavigationApi.setApiKey(apiKey)
+app/src/main/java/com/hypernova/navigation/HyperNovaNavigationApplication.kt:16:        navigationRuntime = NavigationRuntime.create(this, apiKey, configured)
+app/src/main/java/com/hypernova/navigation/session/NavigationSessionStore.kt:44:                statusMessage = if (active) "Searching Google Places…" else "Ready",
+app/src/main/res/values/strings.xml:12:    <string name="search_button_content_description">Search Google Places</string>
+app/src/release/java/com/hypernova/navigation/simulation/SimulationControllerFactory.kt:3:import com.hypernova.navigation.NavigationRuntime
+app/src/release/java/com/hypernova/navigation/simulation/SimulationControllerFactory.kt:6:    fun create(runtime: NavigationRuntime): SimulationController =
+app/src/test/java/com/hypernova/navigation/core/GoogleApiKeyPolicyTest.kt:7:class GoogleApiKeyPolicyTest {
+app/src/test/java/com/hypernova/navigation/core/GoogleApiKeyPolicyTest.kt:10:        assertFalse(GoogleApiKeyPolicy.isConfigured(null))
+app/src/test/java/com/hypernova/navigation/core/GoogleApiKeyPolicyTest.kt:11:        assertFalse(GoogleApiKeyPolicy.isConfigured(""))
+app/src/test/java/com/hypernova/navigation/core/GoogleApiKeyPolicyTest.kt:12:        assertFalse(GoogleApiKeyPolicy.isConfigured("   "))
+app/src/test/java/com/hypernova/navigation/core/GoogleApiKeyPolicyTest.kt:13:        assertFalse(GoogleApiKeyPolicy.isConfigured("\t\n"))
+app/src/test/java/com/hypernova/navigation/core/GoogleApiKeyPolicyTest.kt:18:        assertFalse(GoogleApiKeyPolicy.isConfigured("DEFAULT_API_KEY"))
+app/src/test/java/com/hypernova/navigation/core/GoogleApiKeyPolicyTest.kt:19:        assertFalse(GoogleApiKeyPolicy.isConfigured("YOUR_API_KEY"))
+app/src/test/java/com/hypernova/navigation/core/GoogleApiKeyPolicyTest.kt:20:        assertFalse(GoogleApiKeyPolicy.isConfigured("YOUR_GOOGLE_MAPS_API_KEY"))
+app/src/test/java/com/hypernova/navigation/core/GoogleApiKeyPolicyTest.kt:25:        assertFalse(GoogleApiKeyPolicy.isConfigured("  DEFAULT_API_KEY  "))
+app/src/test/java/com/hypernova/navigation/core/GoogleApiKeyPolicyTest.kt:26:        assertFalse(GoogleApiKeyPolicy.isConfigured(" YOUR_GOOGLE_MAPS_API_KEY\n"))
+app/src/test/java/com/hypernova/navigation/core/GoogleApiKeyPolicyTest.kt:31:        assertFalse(GoogleApiKeyPolicy.isConfigured("YOUR_ANYTHING"))
+app/src/test/java/com/hypernova/navigation/core/GoogleApiKeyPolicyTest.kt:32:        assertFalse(GoogleApiKeyPolicy.isConfigured("your_api_key_123"))
+app/src/test/java/com/hypernova/navigation/core/GoogleApiKeyPolicyTest.kt:33:        assertFalse(GoogleApiKeyPolicy.isConfigured("Your_Google_Maps_API_Key_Here"))
+app/src/test/java/com/hypernova/navigation/core/GoogleApiKeyPolicyTest.kt:34:        assertFalse(GoogleApiKeyPolicy.isConfigured("YOUR "))
+app/src/test/java/com/hypernova/navigation/core/GoogleApiKeyPolicyTest.kt:39:        assertFalse(GoogleApiKeyPolicy.isConfigured("PLACEHOLDER_IN_KEY"))
+app/src/test/java/com/hypernova/navigation/core/GoogleApiKeyPolicyTest.kt:40:        assertFalse(GoogleApiKeyPolicy.isConfigured("ai-xyz-placeholder-abc"))
+app/src/test/java/com/hypernova/navigation/core/GoogleApiKeyPolicyTest.kt:41:        assertFalse(GoogleApiKeyPolicy.isConfigured("AIzaSyREPLACEME"))
+app/src/test/java/com/hypernova/navigation/core/GoogleApiKeyPolicyTest.kt:42:        assertFalse(GoogleApiKeyPolicy.isConfigured("A placeholder key"))
+app/src/test/java/com/hypernova/navigation/core/GoogleApiKeyPolicyTest.kt:47:        assertTrue(GoogleApiKeyPolicy.isConfigured("configured-key-value"))
+app/src/test/java/com/hypernova/navigation/core/GoogleApiKeyPolicyTest.kt:48:        assertTrue(GoogleApiKeyPolicy.isConfigured("a-real-key-value"))
+app/src/test/java/com/hypernova/navigation/core/GoogleApiKeyPolicyTest.kt:49:        assertTrue(GoogleApiKeyPolicy.isConfigured("  configured-key-with-spaces  "))
+app/src/test/java/com/hypernova/navigation/navigation/NavigatorReadinessGateTest.kt:12:class NavigatorReadinessGateTest {
+app/src/test/java/com/hypernova/navigation/navigation/NavigatorReadinessGateTest.kt:13:    private val failure = NavigatorInitializationFailure.NETWORK
+app/src/test/java/com/hypernova/navigation/navigation/NavigatorReadinessGateTest.kt:17:        val gate = NavigatorReadinessGate()
+app/src/test/java/com/hypernova/navigation/navigation/NavigatorReadinessGateTest.kt:18:        var resolved: NavigatorReadinessGate.State? = null
+app/src/test/java/com/hypernova/navigation/navigation/NavigatorReadinessGateTest.kt:26:        assertEquals(NavigatorReadinessGate.State.Ready, resolved)
+app/src/test/java/com/hypernova/navigation/navigation/NavigatorReadinessGateTest.kt:31:        val gate = NavigatorReadinessGate(NavigatorReadinessGate.State.Ready)
+app/src/test/java/com/hypernova/navigation/navigation/NavigatorReadinessGateTest.kt:33:        assertEquals(NavigatorReadinessGate.State.Ready, gate.await())
+app/src/test/java/com/hypernova/navigation/navigation/NavigatorReadinessGateTest.kt:38:        val gate = NavigatorReadinessGate(NavigatorReadinessGate.State.TerminalFailure(failure))
+app/src/test/java/com/hypernova/navigation/navigation/NavigatorReadinessGateTest.kt:40:        assertEquals(NavigatorReadinessGate.State.TerminalFailure(failure), gate.await())
+app/src/test/java/com/hypernova/navigation/navigation/NavigatorReadinessGateTest.kt:45:        val gate = NavigatorReadinessGate()
+app/src/test/java/com/hypernova/navigation/navigation/NavigatorReadinessGateTest.kt:46:        var resolved: NavigatorReadinessGate.State? = null
+app/src/test/java/com/hypernova/navigation/navigation/NavigatorReadinessGateTest.kt:53:        assertEquals(NavigatorReadinessGate.State.TerminalFailure(failure), resolved)
+app/src/test/java/com/hypernova/navigation/navigation/NavigatorReadinessGateTest.kt:58:        val gate = NavigatorReadinessGate(NavigatorReadinessGate.State.TerminalFailure(failure))
+app/src/test/java/com/hypernova/navigation/navigation/NavigatorReadinessGateTest.kt:62:        var resolved: NavigatorReadinessGate.State? = null
+app/src/test/java/com/hypernova/navigation/navigation/NavigatorReadinessGateTest.kt:69:        assertEquals(NavigatorReadinessGate.State.Ready, resolved)
+app/src/test/java/com/hypernova/navigation/navigation/NavigatorReadinessGateTest.kt:74:        val gate = NavigatorReadinessGate()
+app/src/test/java/com/hypernova/navigation/navigation/NavigatorReadinessGateTest.kt:80:        assertEquals(NavigatorReadinessGate.State.Ready, gate.await())
+app/src/test/java/com/hypernova/navigation/navigation/NavigatorReadinessGateTest.kt:85:        val gate = NavigatorReadinessGate(NavigatorReadinessGate.State.TerminalFailure(failure))
+app/src/test/java/com/hypernova/navigation/navigation/NavigatorReadinessGateTest.kt:89:        assertEquals(NavigatorReadinessGate.State.Ready, gate.await())
+app/src/test/java/com/hypernova/navigation/session/NavigationSessionStoreTest.kt:173:        assertEquals("Searching Google Places…", store.current().statusMessage)
+app/src/debug/java/com/hypernova/navigation/simulation/SimulationControllerFactory.kt:4:import com.google.android.libraries.navigation.Navigator
+app/src/debug/java/com/hypernova/navigation/simulation/SimulationControllerFactory.kt:6:import com.google.android.libraries.navigation.Waypoint
+app/src/debug/java/com/hypernova/navigation/simulation/SimulationControllerFactory.kt:7:import com.hypernova.navigation.NavigationRuntime
+app/src/debug/java/com/hypernova/navigation/simulation/SimulationControllerFactory.kt:11:    fun create(runtime: NavigationRuntime): SimulationController =
+app/src/debug/java/com/hypernova/navigation/simulation/SimulationControllerFactory.kt:14:                get() = runtime.googleGatewayForDebug()?.navigatorForDebug() != null
+app/src/debug/java/com/hypernova/navigation/simulation/SimulationControllerFactory.kt:18:                val navigator = gateway.navigatorForDebug() ?: return false
+app/src/debug/java/com/hypernova/navigation/simulation/SimulationControllerFactory.kt:19:                val simulator = navigator.simulator ?: return false
+app/src/debug/java/com/hypernova/navigation/simulation/SimulationControllerFactory.kt:31:                val waypoint =
+app/src/debug/java/com/hypernova/navigation/simulation/SimulationControllerFactory.kt:32:                    Waypoint.builder()
+app/src/debug/java/com/hypernova/navigation/simulation/SimulationControllerFactory.kt:36:                navigator.stopGuidance()
+app/src/debug/java/com/hypernova/navigation/simulation/SimulationControllerFactory.kt:39:                navigator.setDestination(waypoint).setOnResultListener { status ->
+app/src/debug/java/com/hypernova/navigation/simulation/SimulationControllerFactory.kt:40:                    if (status == Navigator.RouteStatus.OK) {
+app/build.gradle.kts:10:// the normal Maps SDK from every transitive dependency (Places includes it).
+app/build.gradle.kts:94:    implementation("com.google.android.libraries.places:places:5.3.0")
+
+============================================================
+6. AIDL / CONTRACT REFERENCES
+============================================================
+app/src/main/AndroidManifest.xml:49:            android:name=".service.NavigationCommandService"
+app/src/main/java/com/hypernova/navigation/persistence/DestinationTokenStore.kt:3:import com.hypernova.contracts.navigation.NavigationContract
+app/src/main/java/com/hypernova/navigation/persistence/DestinationTokenStore.kt:33:    private val searchTtlMillis: Long = NavigationContract.SEARCH_RESULT_TTL_MILLIS,
+app/src/main/java/com/hypernova/navigation/persistence/DestinationTokenStore.kt:46:            records.take(NavigationContract.MAX_DESTINATION_RESULTS).map { record ->
+app/src/main/java/com/hypernova/navigation/persistence/DestinationTokenStore.kt:49:                    source = NavigationContract.SOURCE_SEARCH,
+app/src/main/java/com/hypernova/navigation/persistence/DestinationTokenStore.kt:64:                    NavigationContract.SOURCE_SAVED_HOME,
+app/src/main/java/com/hypernova/navigation/persistence/DestinationTokenStore.kt:65:                    NavigationContract.SOURCE_SAVED_WORK,
+app/src/main/java/com/hypernova/navigation/persistence/DestinationTokenStore.kt:66:                    NavigationContract.SOURCE_SAVED_FAVORITE,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:5:import com.hypernova.contracts.HyperNovaContract
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:8:import com.hypernova.contracts.navigation.NavigationContract
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:29:        RequestRegistry(HyperNovaContract.REQUEST_DEDUP_TTL_MILLIS),
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:39:        val operation = NavigationContract.OP_SEARCH_DESTINATIONS
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:52:                    withTimeout(NavigationContract.SEARCH_TIMEOUT_MILLIS) {
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:59:                        HyperNovaContract.STATUS_REJECTED,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:61:                        NavigationContract.ERROR_NO_RESULTS,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:67:                        HyperNovaContract.STATUS_CONFIRMED,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:81:                    NavigationContract.ERROR_OFFLINE_DATA_UNAVAILABLE,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:95:        val operation = NavigationContract.OP_GET_SAVED_DESTINATIONS
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:111:                    HyperNovaContract.STATUS_REJECTED,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:113:                    NavigationContract.ERROR_NO_SAVED_DESTINATIONS,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:119:                    HyperNovaContract.STATUS_CONFIRMED,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:135:        val operation = NavigationContract.OP_SET_DESTINATION
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:145:            acceptedState = NavigationContract.STATE_CALCULATING,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:152:                        HyperNovaContract.STATUS_REJECTED,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:154:                        NavigationContract.ERROR_DESTINATION_EXPIRED,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:160:                        HyperNovaContract.STATUS_REJECTED,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:162:                        NavigationContract.ERROR_DESTINATION_NOT_FOUND,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:172:        val operation = NavigationContract.OP_CANCEL_NAVIGATION
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:187:                HyperNovaContract.STATUS_CONFIRMED,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:189:                navigationState = NavigationContract.STATE_IDLE,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:197:        val operation = NavigationContract.OP_GET_CURRENT_STATE
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:210:                    HyperNovaContract.STATUS_CONFIRMED,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:233:                        HyperNovaContract.STATUS_REJECTED,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:235:                        HyperNovaContract.ERROR_INVALID_ARGUMENT,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:242:                        HyperNovaContract.STATUS_CONFIRMED,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:244:                        HyperNovaContract.ERROR_NONE,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:265:                HyperNovaContract.STATUS_ACCEPTED,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:319:                    withTimeout(NavigationContract.ROUTE_TIMEOUT_MILLIS) {
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:327:                        HyperNovaContract.STATUS_CONFIRMED,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:330:                        navigationState = NavigationContract.STATE_IDLE,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:348:                FailureKind.NO_ROUTE -> HyperNovaContract.STATUS_REJECTED
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:349:                FailureKind.CANCELLED -> HyperNovaContract.STATUS_CANCELLED
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:350:                else -> HyperNovaContract.STATUS_UNAVAILABLE
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:354:                FailureKind.LOCATION -> NavigationContract.ERROR_LOCATION_UNAVAILABLE
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:355:                FailureKind.NETWORK -> NavigationContract.ERROR_OFFLINE_DATA_UNAVAILABLE
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:356:                FailureKind.NO_ROUTE -> NavigationContract.ERROR_ROUTE_NOT_FOUND
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:357:                FailureKind.CANCELLED -> HyperNovaContract.ERROR_NONE
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:360:                -> HyperNovaContract.ERROR_SERVICE_UNAVAILABLE
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:363:                -> HyperNovaContract.ERROR_INTERNAL
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:372:            HyperNovaContract.STATUS_REJECTED,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:374:            HyperNovaContract.ERROR_INVALID_ARGUMENT,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:381:            HyperNovaContract.STATUS_TIMEOUT,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:383:            HyperNovaContract.ERROR_TIMEOUT,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:390:        errorCode: String = HyperNovaContract.ERROR_SERVICE_UNAVAILABLE,
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:392:        result(requestId, operation, HyperNovaContract.STATUS_UNAVAILABLE, message, errorCode)
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandController.kt:399:        errorCode: String = HyperNovaContract.ERROR_NONE,
+app/src/main/java/com/hypernova/navigation/service/ContractProjection.kt:3:import com.hypernova.contracts.navigation.NavigationContract
+app/src/main/java/com/hypernova/navigation/service/ContractProjection.kt:18:            NavigationPhase.CALCULATING -> NavigationContract.STATE_CALCULATING
+app/src/main/java/com/hypernova/navigation/service/ContractProjection.kt:21:            -> NavigationContract.STATE_ACTIVE
+app/src/main/java/com/hypernova/navigation/service/ContractProjection.kt:22:            NavigationPhase.ARRIVED -> NavigationContract.STATE_ARRIVED
+app/src/main/java/com/hypernova/navigation/service/ContractProjection.kt:23:            NavigationPhase.ERROR -> NavigationContract.STATE_ERROR
+app/src/main/java/com/hypernova/navigation/service/ContractProjection.kt:32:                    -> NavigationContract.STATE_ERROR
+app/src/main/java/com/hypernova/navigation/service/ContractProjection.kt:33:                    else -> NavigationContract.STATE_IDLE
+app/src/main/java/com/hypernova/navigation/service/ContractProjection.kt:52:            state.selectedSource.takeIf { it != 0 } ?: NavigationContract.SOURCE_SEARCH,
+app/src/main/java/com/hypernova/navigation/service/NavigationStatusPublisher.kt:7:import com.hypernova.contracts.navigation.INavigationStatusCallback
+app/src/main/java/com/hypernova/navigation/service/NavigationStatusPublisher.kt:8:import com.hypernova.contracts.navigation.NavigationContract
+app/src/main/java/com/hypernova/navigation/service/NavigationStatusPublisher.kt:18:class NavigationStatusPublisher(
+app/src/main/java/com/hypernova/navigation/service/NavigationStatusPublisher.kt:23:    private val callbacks = RemoteCallbackList<INavigationStatusCallback>()
+app/src/main/java/com/hypernova/navigation/service/NavigationStatusPublisher.kt:34:    fun register(callback: INavigationStatusCallback?) {
+app/src/main/java/com/hypernova/navigation/service/NavigationStatusPublisher.kt:43:    fun unregister(callback: INavigationStatusCallback?) {
+app/src/main/java/com/hypernova/navigation/service/NavigationStatusPublisher.kt:63:            now - lastProgressAt >= NavigationContract.MIN_PROGRESS_UPDATE_INTERVAL_MILLIS
+app/src/main/java/com/hypernova/navigation/service/NavigationStatusPublisher.kt:71:    private fun broadcast(delivery: (INavigationStatusCallback) -> Unit) {
+app/src/main/java/com/hypernova/navigation/service/NavigationStatusPublisher.kt:82:    private fun deliverRoute(callback: INavigationStatusCallback, value: NavigationRouteSnapshot) {
+app/src/main/java/com/hypernova/navigation/service/NavigationStatusPublisher.kt:92:    private fun deliverProgress(callback: INavigationStatusCallback, value: NavigationProgressSnapshot) {
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandService.kt:6:import com.hypernova.contracts.HyperNovaContract
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandService.kt:8:import com.hypernova.contracts.navigation.INavigationCommandService
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandService.kt:10:import com.hypernova.contracts.navigation.INavigationStatusCallback
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandService.kt:11:import com.hypernova.contracts.navigation.NavigationContract
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandService.kt:18:class NavigationCommandService : Service() {
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandService.kt:22:    private lateinit var publisher: NavigationStatusPublisher
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandService.kt:25:        object : INavigationCommandService.Stub() {
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandService.kt:26:            override fun getApiVersion(): Int = HyperNovaContract.API_VERSION
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandService.kt:60:            override fun registerNavigationStatusCallback(callback: INavigationStatusCallback?) =
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandService.kt:63:            override fun unregisterNavigationStatusCallback(callback: INavigationStatusCallback?) =
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandService.kt:72:        publisher = NavigationStatusPublisher(runtime, serviceScope)
+app/src/main/java/com/hypernova/navigation/service/NavigationCommandService.kt:76:        binder.takeIf { intent?.action == NavigationContract.BIND_COMMAND_ACTION }
+app/src/main/java/com/hypernova/navigation/ui/NavigationViewModel.kt:6:import com.hypernova.contracts.navigation.NavigationContract
+app/src/main/java/com/hypernova/navigation/ui/NavigationViewModel.kt:46:                    withTimeout(NavigationContract.SEARCH_TIMEOUT_MILLIS) {
+app/src/main/java/com/hypernova/navigation/ui/NavigationViewModel.kt:69:                withTimeout(NavigationContract.ROUTE_TIMEOUT_MILLIS) {
+app/src/main/java/com/hypernova/navigation/places/GooglePlacesSearchGateway.kt:8:import com.hypernova.contracts.navigation.NavigationContract
+app/src/main/java/com/hypernova/navigation/places/GooglePlacesSearchGateway.kt:37:                .setMaxResultCount(NavigationContract.MAX_DESTINATION_RESULTS)
+app/src/main/java/com/hypernova/navigation/places/GooglePlacesSearchGateway.kt:52:            }.take(NavigationContract.MAX_DESTINATION_RESULTS)
+app/src/main/java/com/hypernova/navigation/NavigationRuntime.kt:170:            com.hypernova.contracts.navigation.NavigationContract.SOURCE_SEARCH,
+app/src/main/java/com/hypernova/navigation/session/NavigationSessionStore.kt:3:import com.hypernova.contracts.navigation.NavigationContract
+app/src/main/java/com/hypernova/navigation/session/NavigationSessionStore.kt:81:                NavigationContract.MAX_ROUTE_PREVIEW_POINTS,
+app/src/main/java/com/hypernova/navigation/session/NavigationSessionStore.kt:141:                        NavigationContract.MAX_ROUTE_PREVIEW_POINTS,
+app/src/test/java/com/hypernova/navigation/persistence/DestinationTokenStoreTest.kt:3:import com.hypernova.contracts.navigation.NavigationContract
+app/src/test/java/com/hypernova/navigation/persistence/DestinationTokenStoreTest.kt:25:            assertEquals(NavigationContract.SOURCE_SEARCH, entry.source)
+app/src/test/java/com/hypernova/navigation/persistence/DestinationTokenStoreTest.kt:27:            assertEquals(1_000L + NavigationContract.SEARCH_RESULT_TTL_MILLIS, entry.expiresAtMillis)
+app/src/test/java/com/hypernova/navigation/persistence/DestinationTokenStoreTest.kt:38:        assertEquals(NavigationContract.MAX_DESTINATION_RESULTS, created.size)
+app/src/test/java/com/hypernova/navigation/persistence/DestinationTokenStoreTest.kt:39:        assertEquals(NavigationContract.MAX_DESTINATION_RESULTS.toLong(), store.allEntriesForTesting().size.toLong())
+app/src/test/java/com/hypernova/navigation/persistence/DestinationTokenStoreTest.kt:53:        clock.now += NavigationContract.SEARCH_RESULT_TTL_MILLIS
+app/src/test/java/com/hypernova/navigation/persistence/DestinationTokenStoreTest.kt:65:        val entry = store.putSaved(record("home_1"), NavigationContract.SOURCE_SAVED_HOME)
+app/src/test/java/com/hypernova/navigation/persistence/DestinationTokenStoreTest.kt:74:        val home = store.putSaved(record("place_A"), NavigationContract.SOURCE_SAVED_HOME)
+app/src/test/java/com/hypernova/navigation/persistence/DestinationTokenStoreTest.kt:75:        val homeAgain = store.putSaved(record("place_A"), NavigationContract.SOURCE_SAVED_HOME)
+app/src/test/java/com/hypernova/navigation/persistence/DestinationTokenStoreTest.kt:76:        val favorite = store.putSaved(record("place_A"), NavigationContract.SOURCE_SAVED_FAVORITE)
+app/src/test/java/com/hypernova/navigation/persistence/DestinationTokenStoreTest.kt:78:            store.putSaved(record("place_B"), NavigationContract.SOURCE_SAVED_HOME).token
+app/src/test/java/com/hypernova/navigation/persistence/DestinationTokenStoreTest.kt:93:            store.putSaved(record("place_A"), NavigationContract.SOURCE_SEARCH)
+app/src/test/java/com/hypernova/navigation/persistence/DestinationTokenStoreTest.kt:104:        val saved = first.putSaved(record("place_A"), NavigationContract.SOURCE_SAVED_WORK)
+app/src/test/java/com/hypernova/navigation/persistence/DestinationTokenStoreTest.kt:118:        assertEquals(NavigationContract.SOURCE_SAVED_WORK, foundSaved.entry.source)
+app/src/test/java/com/hypernova/navigation/persistence/DestinationTokenStoreTest.kt:130:            NavigationContract.SEARCH_RESULT_TTL_MILLIS +
+app/src/test/java/com/hypernova/navigation/persistence/DestinationTokenStoreTest.kt:148:        store.putSaved(record("place_A"), NavigationContract.SOURCE_SAVED_HOME)
+app/src/test/java/com/hypernova/navigation/persistence/DestinationTokenStoreTest.kt:149:        store.putSaved(record("place_B"), NavigationContract.SOURCE_SAVED_FAVORITE)
+app/src/test/java/com/hypernova/navigation/persistence/DestinationTokenStoreTest.kt:150:        store.putSaved(record("place_C"), NavigationContract.SOURCE_SAVED_WORK)
+app/src/test/java/com/hypernova/navigation/persistence/DestinationTokenStoreTest.kt:156:                NavigationContract.SOURCE_SAVED_HOME,
+app/src/test/java/com/hypernova/navigation/persistence/DestinationTokenStoreTest.kt:157:                NavigationContract.SOURCE_SAVED_WORK,
+app/src/test/java/com/hypernova/navigation/persistence/DestinationTokenStoreTest.kt:158:                NavigationContract.SOURCE_SAVED_FAVORITE,
+app/src/test/java/com/hypernova/navigation/service/ContractProjectionTest.kt:3:import com.hypernova.contracts.navigation.NavigationContract
+app/src/test/java/com/hypernova/navigation/service/ContractProjectionTest.kt:18:            NavigationContract.STATE_IDLE,
+app/src/test/java/com/hypernova/navigation/service/ContractProjectionTest.kt:22:            NavigationContract.STATE_ACTIVE,
+app/src/test/java/com/hypernova/navigation/service/ContractProjectionTest.kt:26:            NavigationContract.STATE_ACTIVE,
+app/src/test/java/com/hypernova/navigation/service/ContractProjectionTest.kt:34:            NavigationContract.STATE_ERROR,
+app/src/test/java/com/hypernova/navigation/FrozenNavigationIdentityTest.kt:3:import com.hypernova.contracts.HyperNovaContract
+app/src/test/java/com/hypernova/navigation/FrozenNavigationIdentityTest.kt:4:import com.hypernova.contracts.navigation.NavigationContract
+app/src/test/java/com/hypernova/navigation/FrozenNavigationIdentityTest.kt:11:        assertEquals(1, HyperNovaContract.API_VERSION)
+app/src/test/java/com/hypernova/navigation/FrozenNavigationIdentityTest.kt:12:        assertEquals("com.hypernova.navigation", NavigationContract.PACKAGE_NAME)
+app/src/test/java/com/hypernova/navigation/FrozenNavigationIdentityTest.kt:14:            "com.hypernova.navigation.service.NavigationCommandService",
+app/src/test/java/com/hypernova/navigation/FrozenNavigationIdentityTest.kt:15:            NavigationContract.COMMAND_SERVICE,
+app/src/test/java/com/hypernova/navigation/FrozenNavigationIdentityTest.kt:19:            NavigationContract.BIND_COMMAND_ACTION,
+app/src/test/java/com/hypernova/navigation/FrozenNavigationIdentityTest.kt:23:            NavigationContract.OPEN_ACTION,
+app/src/test/java/com/hypernova/navigation/session/RouteGeometryTest.kt:3:import com.hypernova.contracts.navigation.NavigationContract
+app/src/test/java/com/hypernova/navigation/session/RouteGeometryTest.kt:83:        val result = RouteGeometry.sanitizeAndBound(points, NavigationContract.MAX_ROUTE_PREVIEW_POINTS)
+app/src/test/java/com/hypernova/navigation/session/RouteGeometryTest.kt:85:        assertEquals(NavigationContract.MAX_ROUTE_PREVIEW_POINTS, result.size)
+app/src/test/java/com/hypernova/navigation/session/NavigationSessionStoreTest.kt:3:import com.hypernova.contracts.navigation.NavigationContract
+app/src/test/java/com/hypernova/navigation/session/NavigationSessionStoreTest.kt:39:        store.calculating("token-search", destination, NavigationContract.SOURCE_SEARCH)
+app/src/test/java/com/hypernova/navigation/session/NavigationSessionStoreTest.kt:45:        assertEquals(NavigationContract.SOURCE_SEARCH, calculating.selectedSource)
+app/src/test/java/com/hypernova/navigation/session/NavigationSessionStoreTest.kt:140:        store.calculating("token", destination, NavigationContract.SOURCE_SEARCH)
+app/src/test/java/com/hypernova/navigation/session/NavigationSessionStoreTest.kt:155:        store.calculating("token", destination, NavigationContract.SOURCE_SEARCH)
+app/src/test/java/com/hypernova/navigation/session/NavigationSessionStoreTest.kt:179:        store.calculating("token", destination, NavigationContract.SOURCE_SEARCH)
+app/src/test/java/com/hypernova/navigation/session/NavigationSessionStoreTest.kt:187:        store.calculating("token", destination, NavigationContract.SOURCE_SEARCH)
+app/src/test/java/com/hypernova/navigation/session/NavigationSessionStoreTest.kt:197:        store.calculating("token", destination, NavigationContract.SOURCE_SEARCH)
+app/src/test/java/com/hypernova/navigation/session/NavigationSessionStoreTest.kt:223:        store.calculating("token", destination, NavigationContract.SOURCE_SEARCH)
+app/src/test/java/com/hypernova/navigation/session/NavigationSessionStoreTest.kt:238:        store.calculating("token", destination, NavigationContract.SOURCE_SEARCH)
+app/src/test/java/com/hypernova/navigation/session/NavigationSessionStoreTest.kt:256:        store.calculating("token", destination, NavigationContract.SOURCE_SEARCH)
+app/src/test/java/com/hypernova/navigation/session/NavigationSessionStoreTest.kt:288:        store.calculating("token", destination, NavigationContract.SOURCE_SEARCH)
+
+============================================================
+7. LEGACY PROVIDER SCAN
+============================================================
+
+============================================================
+8. SECRET SAFETY
+============================================================
+--- .gitignore ---
+*.iml
+.gradle/
+.idea/
+build/
+**/build/
+local.properties
+secrets.properties
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+captures/
+.externalNativeBuild/
+.cxx/
+
+
+--- secrets template exists? ---
+-rw-rw-r-- 1 ayman ayman 188 Aug 19 04:06 secrets.properties.example
+
+--- real secrets file exists? (DO NOT PRINT CONTENT) ---
+secrets.properties NOT PRESENT
+
+--- tracked secret files? ---
+
+============================================================
+9. JAVA / GRADLE
+============================================================
+openjdk version "25.0.3" 2026-04-21
+OpenJDK Runtime Environment (build 25.0.3+9-2-24.04.2-Ubuntu)
+OpenJDK 64-Bit Server VM (build 25.0.3+9-2-24.04.2-Ubuntu, mixed mode, sharing)
+
+------------------------------------------------------------
+Gradle 8.14.5
+------------------------------------------------------------
+
+Build time:    2026-05-07 11:03:29 UTC
+Revision:      62345becae08b13e793521816d585102fea66398
+
+Kotlin:        2.0.21
+Groovy:        3.0.25
+Ant:           Apache Ant(TM) version 1.10.15 compiled on August 25 2024
+Launcher JVM:  21.0.11 (Ubuntu 21.0.11+10-1-24.04.2-Ubuntu)
+Daemon JVM:    /usr/lib/jvm/java-21-openjdk-amd64 (no JDK specified, using current Java home)
+OS:            Linux 6.8.0-87-generic amd64
+
+
+============================================================
+10. ASSEMBLE DEBUG
+============================================================
+Warning: SDK processing. This version only understands SDK XML versions up to 3 but an SDK XML file of version 4 was encountered. This can happen if you use versions of Android Studio and the command-line tools that were released at different times.
+> Task :nova-visuals:preBuild UP-TO-DATE
+> Task :hypernova-contracts:preBuild UP-TO-DATE
+> Task :hypernova-contracts:preDebugBuild UP-TO-DATE
+> Task :nova-visuals:preDebugBuild UP-TO-DATE
+> Task :hypernova-contracts:generateDebugResValues UP-TO-DATE
+> Task :nova-visuals:generateDebugResValues UP-TO-DATE
+> Task :hypernova-contracts:generateDebugResources UP-TO-DATE
+> Task :nova-visuals:generateDebugResources UP-TO-DATE
+> Task :nova-visuals:packageDebugResources UP-TO-DATE
+> Task :hypernova-contracts:packageDebugResources UP-TO-DATE
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :nova-visuals:processDebugNavigationResources UP-TO-DATE
+> Task :hypernova-contracts:processDebugNavigationResources UP-TO-DATE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :hypernova-contracts:parseDebugLocalResources UP-TO-DATE
+> Task :nova-visuals:parseDebugLocalResources UP-TO-DATE
+> Task :nova-visuals:generateDebugRFile UP-TO-DATE
+> Task :hypernova-contracts:generateDebugRFile UP-TO-DATE
+> Task :nova-visuals:writeDebugAarMetadata UP-TO-DATE
+> Task :hypernova-contracts:writeDebugAarMetadata UP-TO-DATE
+> Task :hypernova-contracts:extractDeepLinksDebug UP-TO-DATE
+> Task :nova-visuals:extractDeepLinksDebug UP-TO-DATE
+> Task :nova-visuals:processDebugManifest UP-TO-DATE
+> Task :hypernova-contracts:processDebugManifest UP-TO-DATE
+> Task :hypernova-contracts:compileDebugLibraryResources UP-TO-DATE
+> Task :nova-visuals:compileDebugLibraryResources UP-TO-DATE
+> Task :nova-visuals:javaPreCompileDebug UP-TO-DATE
+> Task :hypernova-contracts:compileDebugAidl UP-TO-DATE
+> Task :hypernova-contracts:javaPreCompileDebug UP-TO-DATE
+> Task :nova-visuals:compileDebugJavaWithJavac UP-TO-DATE
+> Task :nova-visuals:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :hypernova-contracts:compileDebugJavaWithJavac UP-TO-DATE
+> Task :hypernova-contracts:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :nova-visuals:mergeDebugShaders UP-TO-DATE
+> Task :nova-visuals:compileDebugShaders NO-SOURCE
+> Task :nova-visuals:generateDebugAssets UP-TO-DATE
+> Task :hypernova-contracts:mergeDebugShaders UP-TO-DATE
+> Task :hypernova-contracts:compileDebugShaders NO-SOURCE
+> Task :hypernova-contracts:generateDebugAssets UP-TO-DATE
+> Task :nova-visuals:mergeDebugAssets UP-TO-DATE
+> Task :hypernova-contracts:mergeDebugAssets UP-TO-DATE
+> Task :nova-visuals:processDebugJavaRes NO-SOURCE
+> Task :hypernova-contracts:processDebugJavaRes NO-SOURCE
+> Task :nova-visuals:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :nova-visuals:mergeDebugJniLibFolders UP-TO-DATE
+> Task :hypernova-contracts:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :nova-visuals:mergeDebugNativeLibs NO-SOURCE
+> Task :hypernova-contracts:mergeDebugJniLibFolders UP-TO-DATE
+> Task :nova-visuals:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :hypernova-contracts:mergeDebugNativeLibs NO-SOURCE
+> Task :hypernova-contracts:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :app:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:dataBindingGenBaseClassesDebug UP-TO-DATE
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:compileDebugKotlin UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :app:mergeDebugShaders UP-TO-DATE
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:compressDebugAssets UP-TO-DATE
+> Task :app:l8DexDesugarLibDebug UP-TO-DATE
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:mergeDebugJavaResource UP-TO-DATE
+> Task :app:checkDebugDuplicateClasses UP-TO-DATE
+> Task :app:desugarDebugFileDependencies UP-TO-DATE
+> Task :app:mergeExtDexDebug UP-TO-DATE
+> Task :app:mergeLibDexDebug UP-TO-DATE
+> Task :app:dexBuilderDebug UP-TO-DATE
+> Task :app:mergeProjectDexDebug UP-TO-DATE
+> Task :app:mergeDebugJniLibFolders UP-TO-DATE
+> Task :app:mergeDebugNativeLibs UP-TO-DATE
+> Task :app:stripDebugDebugSymbols UP-TO-DATE
+> Task :app:validateSigningDebug UP-TO-DATE
+> Task :app:writeDebugAppMetadata UP-TO-DATE
+> Task :app:writeDebugSigningConfigVersions UP-TO-DATE
+> Task :app:packageDebug UP-TO-DATE
+> Task :app:createDebugApkListingFileRedirect UP-TO-DATE
+> Task :app:assembleDebug UP-TO-DATE
+
+BUILD SUCCESSFUL in 3s
+78 actionable tasks: 78 up-to-date
+
+============================================================
+11. UNIT TESTS
+============================================================
+> Task :nova-visuals:preBuild UP-TO-DATE
+> Task :hypernova-contracts:preBuild UP-TO-DATE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :nova-visuals:preDebugBuild UP-TO-DATE
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :hypernova-contracts:preDebugBuild UP-TO-DATE
+> Task :nova-visuals:generateDebugResValues UP-TO-DATE
+> Task :hypernova-contracts:generateDebugResValues UP-TO-DATE
+> Task :hypernova-contracts:generateDebugResources UP-TO-DATE
+> Task :nova-visuals:generateDebugResources UP-TO-DATE
+> Task :nova-visuals:packageDebugResources UP-TO-DATE
+> Task :hypernova-contracts:packageDebugResources UP-TO-DATE
+> Task :hypernova-contracts:processDebugNavigationResources UP-TO-DATE
+> Task :nova-visuals:processDebugNavigationResources UP-TO-DATE
+> Task :nova-visuals:parseDebugLocalResources UP-TO-DATE
+> Task :hypernova-contracts:parseDebugLocalResources UP-TO-DATE
+> Task :hypernova-contracts:generateDebugRFile UP-TO-DATE
+> Task :nova-visuals:generateDebugRFile UP-TO-DATE
+> Task :hypernova-contracts:writeDebugAarMetadata UP-TO-DATE
+> Task :nova-visuals:writeDebugAarMetadata UP-TO-DATE
+> Task :nova-visuals:extractDeepLinksDebug UP-TO-DATE
+> Task :hypernova-contracts:extractDeepLinksDebug UP-TO-DATE
+> Task :nova-visuals:processDebugManifest UP-TO-DATE
+> Task :hypernova-contracts:processDebugManifest UP-TO-DATE
+> Task :hypernova-contracts:compileDebugLibraryResources UP-TO-DATE
+> Task :nova-visuals:compileDebugLibraryResources UP-TO-DATE
+> Task :nova-visuals:javaPreCompileDebug UP-TO-DATE
+> Task :hypernova-contracts:compileDebugAidl UP-TO-DATE
+> Task :hypernova-contracts:javaPreCompileDebug UP-TO-DATE
+> Task :nova-visuals:compileDebugJavaWithJavac UP-TO-DATE
+> Task :nova-visuals:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :nova-visuals:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :nova-visuals:processDebugJavaRes NO-SOURCE
+> Task :hypernova-contracts:compileDebugJavaWithJavac UP-TO-DATE
+> Task :hypernova-contracts:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :hypernova-contracts:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :hypernova-contracts:processDebugJavaRes NO-SOURCE
+> Task :app:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:dataBindingGenBaseClassesDebug UP-TO-DATE
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:compileDebugKotlin UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :app:bundleDebugClassesToRuntimeJar UP-TO-DATE
+> Task :app:bundleDebugClassesToCompileJar UP-TO-DATE
+> Task :app:compileDebugUnitTestKotlin UP-TO-DATE
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:processDebugUnitTestJavaRes UP-TO-DATE
+> Task :app:testDebugUnitTest UP-TO-DATE
+
+BUILD SUCCESSFUL in 1s
+57 actionable tasks: 57 up-to-date
+
+============================================================
+12. LINT
+============================================================
+> Task :nova-visuals:preBuild UP-TO-DATE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :hypernova-contracts:preBuild UP-TO-DATE
+> Task :hypernova-contracts:preDebugBuild UP-TO-DATE
+> Task :nova-visuals:preDebugBuild UP-TO-DATE
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :nova-visuals:checkDebugAarMetadata UP-TO-DATE
+> Task :hypernova-contracts:checkDebugAarMetadata UP-TO-DATE
+> Task :nova-visuals:mergeDebugJniLibFolders UP-TO-DATE
+> Task :nova-visuals:mergeDebugNativeLibs NO-SOURCE
+> Task :nova-visuals:stripDebugDebugSymbols NO-SOURCE
+> Task :hypernova-contracts:compileDebugAidl UP-TO-DATE
+> Task :nova-visuals:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :nova-visuals:generateDebugResValues UP-TO-DATE
+> Task :hypernova-contracts:mergeDebugJniLibFolders UP-TO-DATE
+> Task :nova-visuals:generateDebugResources UP-TO-DATE
+> Task :hypernova-contracts:mergeDebugNativeLibs NO-SOURCE
+> Task :hypernova-contracts:stripDebugDebugSymbols NO-SOURCE
+> Task :nova-visuals:packageDebugResources UP-TO-DATE
+> Task :hypernova-contracts:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :nova-visuals:processDebugNavigationResources UP-TO-DATE
+> Task :hypernova-contracts:generateDebugResValues UP-TO-DATE
+> Task :hypernova-contracts:generateDebugResources UP-TO-DATE
+> Task :nova-visuals:parseDebugLocalResources UP-TO-DATE
+> Task :hypernova-contracts:packageDebugResources UP-TO-DATE
+> Task :nova-visuals:generateDebugRFile UP-TO-DATE
+> Task :hypernova-contracts:processDebugNavigationResources UP-TO-DATE
+> Task :hypernova-contracts:parseDebugLocalResources UP-TO-DATE
+> Task :hypernova-contracts:generateDebugRFile UP-TO-DATE
+> Task :hypernova-contracts:extractDebugAnnotations UP-TO-DATE
+> Task :nova-visuals:extractDebugAnnotations UP-TO-DATE
+> Task :hypernova-contracts:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :nova-visuals:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :hypernova-contracts:mergeDebugShaders UP-TO-DATE
+> Task :nova-visuals:mergeDebugShaders UP-TO-DATE
+> Task :hypernova-contracts:compileDebugShaders NO-SOURCE
+> Task :nova-visuals:compileDebugShaders NO-SOURCE
+> Task :hypernova-contracts:generateDebugAssets UP-TO-DATE
+> Task :nova-visuals:generateDebugAssets UP-TO-DATE
+> Task :hypernova-contracts:mergeDebugAssets UP-TO-DATE
+> Task :nova-visuals:mergeDebugAssets UP-TO-DATE
+> Task :nova-visuals:javaPreCompileDebug UP-TO-DATE
+> Task :hypernova-contracts:javaPreCompileDebug UP-TO-DATE
+> Task :hypernova-contracts:compileDebugJavaWithJavac UP-TO-DATE
+> Task :nova-visuals:compileDebugJavaWithJavac UP-TO-DATE
+> Task :nova-visuals:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :hypernova-contracts:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :nova-visuals:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :hypernova-contracts:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :nova-visuals:prepareDebugArtProfile UP-TO-DATE
+> Task :hypernova-contracts:prepareDebugArtProfile UP-TO-DATE
+> Task :hypernova-contracts:prepareLintJarForPublish UP-TO-DATE
+> Task :nova-visuals:prepareLintJarForPublish UP-TO-DATE
+> Task :hypernova-contracts:processDebugManifest UP-TO-DATE
+> Task :nova-visuals:processDebugManifest UP-TO-DATE
+> Task :hypernova-contracts:processDebugJavaRes NO-SOURCE
+> Task :nova-visuals:processDebugJavaRes NO-SOURCE
+> Task :hypernova-contracts:mergeDebugJavaResource UP-TO-DATE
+> Task :nova-visuals:mergeDebugJavaResource UP-TO-DATE
+> Task :hypernova-contracts:syncDebugLibJars UP-TO-DATE
+> Task :nova-visuals:syncDebugLibJars UP-TO-DATE
+> Task :nova-visuals:writeDebugAarMetadata UP-TO-DATE
+> Task :hypernova-contracts:writeDebugAarMetadata UP-TO-DATE
+> Task :hypernova-contracts:bundleDebugLocalLintAar UP-TO-DATE
+> Task :nova-visuals:bundleDebugLocalLintAar UP-TO-DATE
+> Task :nova-visuals:extractDeepLinksDebug UP-TO-DATE
+> Task :hypernova-contracts:extractDeepLinksDebug UP-TO-DATE
+> Task :hypernova-contracts:compileDebugLibraryResources UP-TO-DATE
+> Task :nova-visuals:compileDebugLibraryResources UP-TO-DATE
+> Task :nova-visuals:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :hypernova-contracts:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :hypernova-contracts:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :nova-visuals:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :hypernova-contracts:createFullJarDebug UP-TO-DATE
+> Task :nova-visuals:createFullJarDebug UP-TO-DATE
+> Task :hypernova-contracts:writeDebugLintModelMetadata UP-TO-DATE
+> Task :nova-visuals:writeDebugLintModelMetadata UP-TO-DATE
+> Task :hypernova-contracts:extractProguardFiles UP-TO-DATE
+> Task :nova-visuals:extractProguardFiles UP-TO-DATE
+> Task :hypernova-contracts:generateDebugLintModel UP-TO-DATE
+> Task :nova-visuals:generateDebugLintModel UP-TO-DATE
+> Task :nova-visuals:lintAnalyzeDebug UP-TO-DATE
+> Task :hypernova-contracts:lintAnalyzeDebug UP-TO-DATE
+> Task :nova-visuals:preDebugAndroidTestBuild UP-TO-DATE
+> Task :hypernova-contracts:preDebugAndroidTestBuild UP-TO-DATE
+> Task :nova-visuals:generateDebugAndroidTestResValues UP-TO-DATE
+> Task :hypernova-contracts:generateDebugAndroidTestResValues UP-TO-DATE
+> Task :nova-visuals:generateDebugAndroidTestLintModel UP-TO-DATE
+> Task :nova-visuals:preDebugUnitTestBuild UP-TO-DATE
+> Task :nova-visuals:generateDebugUnitTestLintModel UP-TO-DATE
+> Task :app:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+> Task :nova-visuals:lintAnalyzeDebugAndroidTest UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :hypernova-contracts:generateDebugAndroidTestLintModel UP-TO-DATE
+> Task :hypernova-contracts:preDebugUnitTestBuild UP-TO-DATE
+> Task :nova-visuals:lintAnalyzeDebugUnitTest UP-TO-DATE
+> Task :hypernova-contracts:generateDebugUnitTestLintModel UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :hypernova-contracts:lintAnalyzeDebugAndroidTest UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :hypernova-contracts:lintAnalyzeDebugUnitTest UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:dataBindingGenBaseClassesDebug UP-TO-DATE
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:compileDebugKotlin UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :app:bundleDebugClassesToCompileJar UP-TO-DATE
+> Task :app:preDebugAndroidTestBuild SKIPPED
+> Task :app:generateDebugAndroidTestResValues UP-TO-DATE
+> Task :app:generateDebugAndroidTestLintModel UP-TO-DATE
+> Task :app:extractProguardFiles UP-TO-DATE
+> Task :app:generateDebugLintReportModel UP-TO-DATE
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:generateDebugUnitTestLintModel UP-TO-DATE
+> Task :app:lintAnalyzeDebug UP-TO-DATE
+> Task :app:lintAnalyzeDebugAndroidTest UP-TO-DATE
+> Task :app:lintAnalyzeDebugUnitTest UP-TO-DATE
+> Task :app:lintReportDebug UP-TO-DATE
+> Task :app:lintDebug
+
+BUILD SUCCESSFUL in 1s
+109 actionable tasks: 1 executed, 108 up-to-date
+
+============================================================
+13. APK
+============================================================
+-rw-rw-r-- 1 ayman ayman 84M Aug 19 04:58 app/build/outputs/apk/debug/app-debug.apk
+2cef9f2f76f4f691add76cab22e6ae2a3cfd95d17a41da00906577464cab0cd9  app/build/outputs/apk/debug/app-debug.apk
+
+--- APK signing certificate ---
+
+--- APK badging ---
+
+============================================================
+14. TEST REPORT COUNTS
+============================================================
+<testsuite name="com.hypernova.navigation.session.RouteGeometryTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-08-19T01:59:11.864Z" hostname="ayman-Lat5" time="0.004">
+<testsuite name="com.hypernova.navigation.core.GoogleApiKeyPolicyTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-08-19T01:59:11.717Z" hostname="ayman-Lat5" time="0.027">
+<testsuite name="com.hypernova.navigation.session.NavigationSessionStoreTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-08-19T01:59:11.859Z" hostname="ayman-Lat5" time="0.004">
+<testsuite name="com.hypernova.navigation.persistence.DestinationTokenStoreTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-08-19T01:59:11.833Z" hostname="ayman-Lat5" time="0.015">
+<testsuite name="com.hypernova.navigation.navigation.NavigatorReadinessGateTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-08-19T01:59:11.746Z" hostname="ayman-Lat5" time="0.085">
+<testsuite name="com.hypernova.navigation.service.ContractProjectionTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-08-19T01:59:11.850Z" hostname="ayman-Lat5" time="0.002">
+<testsuite name="com.hypernova.navigation.FrozenNavigationIdentityTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-08-19T01:59:11.712Z" hostname="ayman-Lat5" time="0.003">
+<testsuite name="com.hypernova.navigation.service.RequestRegistryTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-08-19T01:59:11.853Z" hostname="ayman-Lat5" time="0.004">
+<testsuite name="com.hypernova.navigation.session.RouteGeometryTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-08-19T01:59:07.224Z" hostname="ayman-Lat5" time="0.004">
+<testsuite name="com.hypernova.navigation.core.GoogleApiKeyPolicyTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-08-19T01:59:07.029Z" hostname="ayman-Lat5" time="0.038">
+<testsuite name="com.hypernova.navigation.session.NavigationSessionStoreTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-08-19T01:59:07.218Z" hostname="ayman-Lat5" time="0.004">
+<testsuite name="com.hypernova.navigation.persistence.DestinationTokenStoreTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-08-19T01:59:07.189Z" hostname="ayman-Lat5" time="0.017">
+<testsuite name="com.hypernova.navigation.navigation.NavigatorReadinessGateTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-08-19T01:59:07.069Z" hostname="ayman-Lat5" time="0.118">
+<testsuite name="com.hypernova.navigation.service.ContractProjectionTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-08-19T01:59:07.208Z" hostname="ayman-Lat5" time="0.002">
+<testsuite name="com.hypernova.navigation.FrozenNavigationIdentityTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-08-19T01:59:07.024Z" hostname="ayman-Lat5" time="0.003">
+<testsuite name="com.hypernova.navigation.service.RequestRegistryTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-08-19T01:59:07.212Z" hostname="ayman-Lat5" time="0.004">
+
+============================================================
+15. TODO / FIXME SCAN
+============================================================
+app/src/main/java/com/hypernova/navigation/session/RouteGeometry.kt:21:                (index.toDouble() * lastIndex / (maximum - 1))
+app/src/test/java/com/hypernova/navigation/session/RouteGeometryTest.kt:92:        val points = List(20) { point(it.toDouble(), it.toDouble()) }
+
+============================================================
+END
+============================================================

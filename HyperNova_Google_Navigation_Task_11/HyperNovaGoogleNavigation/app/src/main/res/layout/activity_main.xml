@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/navigationFragmentContainer"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@color/hn_navigation_surface"
+        android:contentDescription="@string/navigation_map_content_description"
+        app:layout_constraintBottom_toTopOf="@id/cockpitNavigation"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <LinearLayout
+        android:id="@+id/searchPanel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/hn_navigation_edge_margin"
+        android:layout_marginTop="@dimen/hn_navigation_edge_margin"
+        android:layout_marginEnd="@dimen/hn_navigation_edge_margin"
+        android:background="@drawable/hn_bg_navigation_phase_status"
+        android:elevation="8dp"
+        android:orientation="vertical"
+        android:padding="@dimen/hn_navigation_panel_padding"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/statusText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="2"
+            android:text="@string/navigation_initializing"
+            android:textColor="@color/hn_navigation_text_secondary"
+            android:textSize="@dimen/hn_navigation_status_size"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/searchInput"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/hn_navigation_touch_target"
+                android:layout_weight="1"
+                android:autofillHints="postalAddress"
+                android:hint="@string/search_hint"
+                android:imeOptions="actionSearch"
+                android:inputType="textCapSentences"
+                android:maxLines="1"
+                android:paddingHorizontal="20dp"
+                android:textColor="@color/hn_navigation_text_primary"
+                android:textColorHint="@color/hn_navigation_text_secondary"
+                android:textSize="20sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/searchButton"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/hn_navigation_touch_target"
+                android:layout_marginStart="12dp"
+                android:contentDescription="@string/search_button_content_description"
+                android:minWidth="112dp"
+                android:text="@string/search_action" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/searchResults"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="vertical" />
+
+        <TextView
+            android:id="@+id/searchMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:accessibilityLiveRegion="polite"
+            android:textColor="@color/hn_navigation_error"
+            android:textSize="18sp"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/configurationPanel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="56dp"
+        android:background="@drawable/hn_bg_navigation_phase_status"
+        android:elevation="10dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="32dp"
+        app:layout_constraintBottom_toBottomOf="@id/navigationFragmentContainer"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/navigationFragmentContainer">
+
+        <TextView
+            android:id="@+id/configurationTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/navigation_unavailable_title"
+            android:textColor="@color/hn_navigation_text_primary"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/configurationMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center"
+            android:text="@string/navigation_initializing"
+            android:textColor="@color/hn_navigation_text_secondary"
+            android:textSize="20sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/configurationAction"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/hn_navigation_touch_target"
+            android:layout_marginTop="24dp"
+            android:minWidth="180dp"
+            android:text="@string/retry_action"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/routePanel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/hn_navigation_edge_margin"
+        android:layout_marginEnd="@dimen/hn_navigation_edge_margin"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/hn_bg_navigation_phase_status"
+        android:elevation="9dp"
+        android:orientation="vertical"
+        android:padding="@dimen/hn_navigation_panel_padding"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/cockpitNavigation"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <TextView
+            android:id="@+id/routeTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/hn_navigation_text_primary"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/routeMetrics"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textColor="@color/hn_navigation_text_secondary"
+            android:textSize="20sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:gravity="end"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/simulateButton"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/hn_navigation_touch_target"
+                android:layout_marginEnd="10dp"
+                android:text="@string/simulate_action"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/cancelButton"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/hn_navigation_touch_target"
+                android:layout_marginEnd="10dp"
+                android:text="@string/cancel_action" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/startGuidanceButton"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/hn_navigation_touch_target"
+                android:minWidth="180dp"
+                android:text="@string/start_guidance_action" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <include
+        android:id="@+id/cockpitNavigation"
+        layout="@layout/view_hypernova_cockpit_navigation"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/hn_cockpit_nav_height"
+        android:layout_marginStart="6dp"
+        android:layout_marginEnd="6dp"
+        android:layout_marginBottom="@dimen/hn_cockpit_nav_bottom_margin"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

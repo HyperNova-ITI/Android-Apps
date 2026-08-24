@@ -35,6 +35,7 @@
 .env
 .env.*
 !.env.example
+**/secrets.properties
 *.jks
 *.keystore
 

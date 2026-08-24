@@ -1,0 +1,275 @@
+===== DASHBOARD ORDER =====
+package com.hypernova.launcher.core.dashboard
+
+enum class DashboardCard {
+    CLIMATE,
+    MEDIA,
+    SETTINGS,
+    PHONE,
+    NAVIGATION,
+}
+
+/** Product-approved HOME hierarchy, kept testable outside Android Views. */
+object DashboardLayoutOrder {
+    val firstRow = listOf(DashboardCard.CLIMATE, DashboardCard.MEDIA)
+    val secondRow = listOf(DashboardCard.SETTINGS, DashboardCard.PHONE)
+    val dominantRow = listOf(DashboardCard.NAVIGATION)
+}
+
+===== RESPONSIVE DASHBOARD =====
+            navigationMapController?.destroy()
+        }
+        navigationMapController = null
+        runOptionalIntegration("destroy Navigation map") { navigationMapView?.onDestroy() }
+        navigationMapView = null
+
+        super.onDestroy()
+    }
+
+    /**
+     * Reuse the approved card implementations while placing them in the final
+     * hierarchy. The weighted Navigation row consumes the remaining viewport;
+     * the surrounding NestedScrollView provides controlled overflow only when
+     * a smaller portrait display cannot satisfy the Navigation minimum height.
+     */
+    private fun configureResponsiveDashboardLayout() {
+        val cards = mapOf(
+            DashboardCard.CLIMATE to binding.climateCard,
+            DashboardCard.MEDIA to binding.mediaCard,
+            DashboardCard.SETTINGS to binding.settingsCard,
+            DashboardCard.PHONE to binding.phoneCard,
+            DashboardCard.NAVIGATION to binding.navigationCard,
+        )
+
+        binding.climateMediaRow.removeAllViews()
+        binding.settingsPhoneRow.removeAllViews()
+        binding.navigationDashboardRow.removeAllViews()
+
+        addHalfWidthRow(binding.climateMediaRow, DashboardLayoutOrder.firstRow, cards)
+        addHalfWidthRow(binding.settingsPhoneRow, DashboardLayoutOrder.secondRow, cards)
+        binding.navigationDashboardRow.addView(
+            requireNotNull(cards[DashboardLayoutOrder.dominantRow.single()]),
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT,
+            ),
+        )
+    }
+
+    private fun addHalfWidthRow(
+        row: LinearLayout,
+        order: List<DashboardCard>,
+        cards: Map<DashboardCard, View>,
+    ) {
+        order.forEachIndexed { index, card ->
+            row.addView(
+                requireNotNull(cards[card]),
+                halfWidthCardParams(isLeft = index == 0),
+            )
+        }
+    }
+
+    private fun halfWidthCardParams(isLeft: Boolean): LinearLayout.LayoutParams =
+        LinearLayout.LayoutParams(
+            0,
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            1f,
+        ).apply {
+            if (isLeft) rightMargin = dp(4) else leftMargin = dp(4)
+        }
+
+
+===== PHONE / CLIMATE / SETTINGS ACTIONS =====
+        }
+
+        binding.buttonMediaNext.setOnClickListener {
+            val commandSent =
+                mediaSessionClient.skipToNext()
+
+            if (!commandSent) {
+                openHyperNovaApp(
+                    AppDestination.MEDIA
+                )
+            }
+        }
+    }
+
+    /**
+     * Configure Phone and Climate cards.
+     */
+    private fun configurePhoneAndClimateActions() {
+        configureDestinationClick(
+            view = binding.phoneCard,
+            destination = AppDestination.PHONE
+        )
+
+        configureDestinationClick(
+            view = binding.buttonOpenPhone,
+            destination = AppDestination.PHONE
+        )
+
+        configureDestinationClick(
+            view = binding.buttonPhoneContacts,
+            destination = AppDestination.PHONE
+        )
+
+        configureDestinationClick(
+            view = binding.climateCard,
+            destination = AppDestination.CLIMATE
+        )
+
+        configureDestinationClick(
+            view = binding.buttonOpenClimate,
+            destination = AppDestination.CLIMATE
+        )
+    }
+
+    /** Configure the Settings dashboard card. */
+    private fun configureSettingsCard() {
+        configureDestinationClick(
+            view = binding.settingsCard,
+            destination = AppDestination.SETTINGS
+        )
+    }
+
+    /**
+     * Configure the fixed bottom navigation.
+     */
+    /**
+     * Open HyperNova Navigation directly from the HOME Navigation widget.
+     */
+    private fun openNavigationFromHomeWidget() {
+        val openIntent =
+            android.content.Intent(
+                "com.hypernova.navigation.action.OPEN"
+            ).apply {
+                setPackage("com.hypernova.navigation")
+            }
+
+
+===== BOTTOM BAR =====
+885:    private fun configureBottomNavigation() {
+886-        binding.navHome.isClickable = true
+887-        binding.navHome.isFocusable = true
+888-
+889-        binding.navHome.setOnClickListener {
+890-            showLauncherHome()
+891-        }
+892-
+893-        configureDestinationClick(
+894-            view = binding.navNavigation,
+895-            destination = AppDestination.NAVIGATION
+896-        )
+897-
+898-        configureDestinationClick(
+899-            view = binding.navMedia,
+900-            destination = AppDestination.MEDIA
+901-        )
+902-
+903-        configureDestinationClick(
+904-            view = binding.navClimate,
+905-            destination = AppDestination.CLIMATE
+906-        )
+907-
+908-        configureDestinationClick(
+909-            view = binding.navNovaAi,
+910-            destination = AppDestination.NOVA_AI
+911-        )
+912-
+913-        configureDestinationClick(
+914-            view = binding.navPhone,
+915-            destination = AppDestination.PHONE
+916-        )
+917-
+918-        configureDestinationClick(
+919-            view = binding.navSettings,
+920-            destination = AppDestination.SETTINGS
+921-        )
+922-    }
+923-
+924-    /**
+925-     * Attach one standard application click listener.
+926-     */
+927-    private fun configureDestinationClick(
+928-        view: View,
+929-        destination: AppDestination
+930-    ) {
+931-        view.isClickable = true
+932-        view.isFocusable = true
+933-
+934-        view.setOnClickListener {
+935-            openHyperNovaApp(destination)
+936-        }
+937-    }
+938-
+939-    /**
+940-     * Return the launcher to the top of the Home screen.
+941-     */
+942-    private fun showLauncherHome() {
+943-        binding.textNovaQuestion.removeCallbacks(
+944-            resetFeedbackRunnable
+945-        )
+946-
+947-        refreshAndRenderState()
+948-
+949-        binding.launcherScrollView.post {
+950-            binding.launcherScrollView.smoothScrollTo(
+951-                0,
+952-                0
+953-            )
+954-        }
+955-
+956-        Log.d(
+957-            TAG,
+958-            "Launcher Home selected"
+959-        )
+960-    }
+961-
+962-    /**
+963-     * Receive real MediaSession updates.
+964-     */
+965-    private fun handleMediaSnapshot(
+966-        snapshot: MediaSessionSnapshot
+967-    ) {
+968-        runOnUiThread {
+969-            Log.d(
+970-                TAG,
+971-                "Media snapshot received: $snapshot"
+972-            )
+973-
+974-            stateController.updateMediaSnapshot(
+975-                snapshot
+976-            )
+977-
+978-            refreshAndRenderState()
+979-        }
+980-    }
+981-
+982-    /** Refresh availability immediately after an adb/package-manager change. */
+983-    private fun handlePackageChanged(packageName: String) {
+984-        runOnUiThread {
+985-            val destination = AppRegistry.getAll()
+
+===== DASHBOARD TEST =====
+package com.hypernova.launcher.core.dashboard
+
+import org.junit.Assert.assertEquals
+import org.junit.Test
+
+class DashboardLayoutOrderTest {
+    @Test
+    fun `dashboard uses the approved production card hierarchy`() {
+        assertEquals(
+            listOf(DashboardCard.CLIMATE, DashboardCard.MEDIA),
+            DashboardLayoutOrder.firstRow,
+        )
+        assertEquals(
+            listOf(DashboardCard.SETTINGS, DashboardCard.PHONE),
+            DashboardLayoutOrder.secondRow,
+        )
+        assertEquals(
+            listOf(DashboardCard.NAVIGATION),
+            DashboardLayoutOrder.dominantRow,
+        )
+    }
+}

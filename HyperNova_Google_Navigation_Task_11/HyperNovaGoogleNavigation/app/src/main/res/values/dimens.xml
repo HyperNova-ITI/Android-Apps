@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="hn_navigation_edge_margin">24dp</dimen>
+    <dimen name="hn_navigation_panel_padding">20dp</dimen>
+    <dimen name="hn_navigation_touch_target">64dp</dimen>
+    <dimen name="hn_navigation_status_size">18sp</dimen>
+</resources>

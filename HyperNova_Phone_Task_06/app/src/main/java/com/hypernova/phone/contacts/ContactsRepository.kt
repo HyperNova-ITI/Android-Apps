@@ -4,8 +4,8 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.provider.CallLog
 import android.provider.ContactsContract
-import android.telephony.PhoneNumberUtils
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.hypernova.phone.domain.ContactEntry
@@ -391,17 +391,12 @@ class ContactsRepository(
                                     it.isNotEmpty()
                                 }
 
-                        val matches =
-                            candidateNumber == null ||
-                                candidateNumber ==
-                                    cleanedNumber ||
-                                PhoneNumberUtils.compare(
-                                    candidateNumber,
-                                    cleanedNumber
-                                )
-
                         if (
-                            matches
+                            candidateNumber == null ||
+                            PhoneNumberMatching.sameNumber(
+                                candidateNumber,
+                                cleanedNumber
+                            )
                         ) {
                             return@withContext candidateId
                         }
@@ -489,17 +484,12 @@ class ContactsRepository(
                                     it.isNotEmpty()
                                 }
 
-                        val matches =
-                            candidateNumber == null ||
-                                candidateNumber ==
-                                    cleanedNumber ||
-                                PhoneNumberUtils.compare(
-                                    candidateNumber,
-                                    cleanedNumber
-                                )
-
                         if (
-                            matches
+                            candidateNumber == null ||
+                            PhoneNumberMatching.sameNumber(
+                                candidateNumber,
+                                cleanedNumber
+                            )
                         ) {
                             Log.i(
                                 TAG,
@@ -537,6 +527,294 @@ class ContactsRepository(
             }
         }
 
+    /**
+     * Deterministic caller identity for one real number.
+     *
+     * Fallback order: ContactsProvider (PhoneLookup, then one bounded
+     * scan), then CallLog cached name, then the raw number itself.
+     * photoUri is only ever a real ContactsProvider PHOTO_URI value.
+     */
+    suspend fun resolveCallerIdentity(
+        number: String
+    ): CallerIdentity? =
+        withContext(Dispatchers.IO) {
+
+            val cleanedNumber =
+                PhoneNumberMatching.normalize(number)
+                    ?.takeIf {
+                        PhoneNumberMatching.isUsableNumber(it)
+                    }
+                    ?: return@withContext null
+
+            try {
+                val contactsAllowed =
+                    hasContactsPermission()
+
+                if (!contactsAllowed) {
+                    Log.w(
+                        TAG,
+                        "READ_CONTACTS unavailable; skipping contacts caller lookup"
+                    )
+                }
+
+                val callLogAllowed =
+                    hasCallLogPermission()
+
+                if (!callLogAllowed) {
+                    Log.w(
+                        TAG,
+                        "READ_CALL_LOG unavailable; skipping CallLog caller lookup"
+                    )
+                }
+
+                val contactHit =
+                    if (contactsAllowed) {
+                        try {
+                            queryPhoneLookupIdentity(
+                                cleanedNumber
+                            )
+                                ?: scanContactsIdentity(
+                                    cleanedNumber
+                                )
+                        } catch (exception: Exception) {
+                            Log.w(
+                                TAG,
+                                "Contacts caller lookup failed",
+                                exception
+                            )
+
+                            null
+                        }
+                    } else {
+                        null
+                    }
+
+                val callLogName =
+                    if (callLogAllowed) {
+                        try {
+                            queryCallLogCachedName(
+                                cleanedNumber
+                            )
+                        } catch (exception: Exception) {
+                            Log.w(
+                                TAG,
+                                "CallLog caller lookup failed",
+                                exception
+                            )
+
+                            null
+                        }
+                    } else {
+                        null
+                    }
+
+                CallerIdentityFallbacks.resolveGated(
+                    contactsLookupAllowed = contactsAllowed,
+                    callLogLookupAllowed = callLogAllowed,
+                    contactsProviderName = contactHit?.displayName,
+                    contactsProviderPhotoUri = contactHit?.photoUri,
+                    callLogCachedName = callLogName,
+                    number = cleanedNumber
+                )
+            } catch (security: SecurityException) {
+                Log.w(
+                    TAG,
+                    "Caller identity lookup lost permission mid-query"
+                )
+
+                null
+
+            } catch (exception: Exception) {
+                Log.w(
+                    TAG,
+                    "Caller identity lookup failed",
+                    exception
+                )
+
+                null
+            }
+        }
+
+    private data class ContactIdentityHit(
+        val displayName: String?,
+        val photoUri: String?
+    )
+
+    private fun queryPhoneLookupIdentity(
+        number: String
+    ): ContactIdentityHit? {
+
+        val lookupUri =
+            Uri.withAppendedPath(
+                ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
+                Uri.encode(number)
+            )
+
+        context.contentResolver.query(
+            lookupUri,
+            arrayOf(
+                ContactsContract.PhoneLookup.DISPLAY_NAME,
+                ContactsContract.PhoneLookup.NUMBER,
+                ContactsContract.PhoneLookup.PHOTO_URI
+            ),
+            null,
+            null,
+            null
+        )?.use { cursor ->
+
+            while (cursor.moveToNext()) {
+
+                val candidateName =
+                    cursor.getString(0)
+
+                val candidateNumber =
+                    cursor.getString(1)
+                        ?.trim()
+
+                val nameMatches =
+                    candidateNumber == null ||
+                        PhoneNumberMatching.sameNumber(
+                            candidateNumber,
+                            number
+                        )
+
+                if (!nameMatches) {
+                    continue
+                }
+
+                val meaningful =
+                    CallerIdentityFallbacks.meaningfulName(
+                        candidateName,
+                        number
+                    ) ?: continue
+
+                return ContactIdentityHit(
+                    displayName = meaningful,
+
+                    photoUri = cursor.getString(2)
+                        ?.trim()
+                        ?.takeIf {
+                            it.isNotEmpty()
+                        }
+                )
+            }
+        }
+
+        return null
+    }
+
+    private fun scanContactsIdentity(
+        number: String
+    ): ContactIdentityHit? {
+
+        context.contentResolver.query(
+            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+            arrayOf(
+                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                ContactsContract.CommonDataKinds.Phone.NUMBER,
+                ContactsContract.CommonDataKinds.Phone.PHOTO_URI
+            ),
+            null,
+            null,
+            null
+        )?.use { cursor ->
+
+            var inspected = 0
+
+            while (
+                cursor.moveToNext() &&
+                inspected < MAX_IDENTITY_SCAN_ROWS
+            ) {
+                inspected += 1
+
+                val candidateNumber =
+                    cursor.getString(1)
+                        ?.trim()
+                        ?.takeIf {
+                            PhoneNumberMatching.isUsableNumber(it)
+                        }
+                        ?: continue
+
+                if (
+                    !PhoneNumberMatching.sameNumber(
+                        candidateNumber,
+                        number
+                    )
+                ) {
+                    continue
+                }
+
+                val meaningful =
+                    CallerIdentityFallbacks.meaningfulName(
+                        cursor.getString(0),
+                        number
+                    ) ?: continue
+
+                return ContactIdentityHit(
+                    displayName = meaningful,
+
+                    photoUri = cursor.getString(2)
+                        ?.trim()
+                        ?.takeIf {
+                            it.isNotEmpty()
+                        }
+                )
+            }
+        }
+
+        return null
+    }
+
+    private fun queryCallLogCachedName(
+        number: String
+    ): String? {
+
+        val uri =
+            CallLog.Calls.CONTENT_URI
+                .buildUpon()
+                .appendQueryParameter(
+                    CallLog.Calls.LIMIT_PARAM_KEY,
+                    MAX_CALL_LOG_IDENTITY_ROWS.toString()
+                )
+                .build()
+
+        context.contentResolver.query(
+            uri,
+            arrayOf(
+                CallLog.Calls.NUMBER,
+                CallLog.Calls.CACHED_NAME
+            ),
+            null,
+            null,
+            "${CallLog.Calls.DATE} DESC"
+        )?.use { cursor ->
+
+            while (cursor.moveToNext()) {
+
+                val candidateNumber =
+                    cursor.getString(0)
+                        ?.trim()
+                        ?: continue
+
+                if (
+                    !PhoneNumberMatching.sameNumber(
+                        candidateNumber,
+                        number
+                    )
+                ) {
+                    continue
+                }
+
+                return CallerIdentityFallbacks.meaningfulName(
+                    cursor.getString(1),
+                    number
+                )
+            }
+        }
+
+        return null
+    }
+
     private fun hasContactsPermission():
         Boolean =
         ContextCompat.checkSelfPermission(
@@ -545,9 +823,23 @@ class ContactsRepository(
         ) ==
             PackageManager.PERMISSION_GRANTED
 
+    private fun hasCallLogPermission():
+        Boolean =
+        ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.READ_CALL_LOG
+        ) ==
+            PackageManager.PERMISSION_GRANTED
+
     private companion object {
         const val TAG =
             "HN-Contacts"
+
+        const val MAX_IDENTITY_SCAN_ROWS =
+            5000
+
+        const val MAX_CALL_LOG_IDENTITY_ROWS =
+            250
     }
 }
 

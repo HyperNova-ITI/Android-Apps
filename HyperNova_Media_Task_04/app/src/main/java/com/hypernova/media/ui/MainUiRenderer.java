@@ -636,11 +636,13 @@ public final class MainUiRenderer {
         syncBluetoothProgress(bluetooth);
 
         /*
-         * The AVRCP session exposes position and duration, but the connected
-         * phone does not expose remote seek support. The bar remains a smooth
-         * read-only playback indicator.
+         * Allow the user to request a remote seek whenever AVRCP metadata
+         * provides a real track duration. Phone/player support can vary, so
+         * the backend sends MediaController.TransportControls.seekTo() and
+         * the following AVRCP snapshot remains the source of truth.
          */
-        seekBar.setEnabled(false);
+        seekBar.setEnabled(
+                bluetooth.remoteDurationMs > 0L);
 
         playerView.setVisibility(View.GONE);
         fullscreen.setVisibility(View.GONE);

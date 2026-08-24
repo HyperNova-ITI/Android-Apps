@@ -33,6 +33,7 @@ import androidx.transition.AutoTransition;
 import androidx.transition.TransitionManager;
 
 import com.hypernova.media.bluetooth.BluetoothAudioBackend;
+import com.hypernova.media.audio.MediaVolumeController;
 import com.hypernova.media.debug.DemoModeController;
 import com.hypernova.media.model.BluetoothUiState;
 import com.hypernova.media.model.LibraryUiState;
@@ -79,6 +80,23 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
     private MediaSourceType selectedSource = MediaSourceType.HOME;
     private RadioBrowserController radioBrowser;
     private TextView headerTime;
+    private View volumePanel;
+    private SeekBar volumeSeekBar;
+    private TextView volumeValue;
+    private boolean userAdjustingVolume;
+
+    private final Handler volumeHandler =
+            new Handler(Looper.getMainLooper());
+
+    private final Runnable volumeTicker =
+            new Runnable() {
+                @Override
+                public void run() {
+                    refreshVolumeUi();
+                    volumeHandler.postDelayed(this, 1000L);
+                }
+            };
+
     private NestedScrollView contentScroll;
     private ViewGroup contentStack;
     private FrameLayout videoRenderHost;
@@ -148,6 +166,9 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
 
     private void bindViews() {
         headerTime = findViewById(R.id.header_time);
+        volumePanel = findViewById(R.id.volume_panel);
+        volumeSeekBar = findViewById(R.id.volume_seek_bar);
+        volumeValue = findViewById(R.id.volume_value);
         contentScroll = findViewById(R.id.content_scroll);
         contentStack = findViewById(R.id.content_stack);
         videoRenderHost = findViewById(R.id.video_render_host);
@@ -214,10 +235,100 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
         findViewById(R.id.button_youtube_back).setOnClickListener(v -> application.youtubeWeb().goBackOrHome());
         findViewById(R.id.button_youtube_home).setOnClickListener(v -> application.youtubeWeb().goHome());
         findViewById(R.id.button_video_web_fullscreen).setOnClickListener(v -> enterFullscreen());
+        bindVolumeControl();
         bindSeekBar();
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override public void handleOnBackPressed() { handleBack(); }
         });
+    }
+
+    private void bindVolumeControl() {
+        volumeSeekBar.setMax(100);
+
+        volumeSeekBar.setOnSeekBarChangeListener(
+                new SeekBar.OnSeekBarChangeListener() {
+                    @Override
+                    public void onProgressChanged(
+                            SeekBar seekBar,
+                            int progress,
+                            boolean fromUser) {
+
+                        if (!fromUser) {
+                            return;
+                        }
+
+                        volumeValue.setText(progress + "%");
+
+                        application.volume()
+                                .setPercentage(progress);
+                    }
+
+                    @Override
+                    public void onStartTrackingTouch(
+                            SeekBar seekBar) {
+
+                        userAdjustingVolume = true;
+                    }
+
+                    @Override
+                    public void onStopTrackingTouch(
+                            SeekBar seekBar) {
+
+                        application.volume()
+                                .setPercentage(
+                                        seekBar.getProgress());
+
+                        userAdjustingVolume = false;
+                        refreshVolumeUi();
+                    }
+                });
+
+        refreshVolumeUi();
+    }
+
+    private void refreshVolumeUi() {
+        if (volumePanel == null
+                || volumeSeekBar == null
+                || volumeValue == null
+                || application == null) {
+            return;
+        }
+
+        boolean visible =
+                selectedSource != MediaSourceType.HOME;
+
+        volumePanel.setVisibility(
+                visible
+                        ? View.VISIBLE
+                        : View.GONE);
+
+        if (!visible) {
+            return;
+        }
+
+        MediaVolumeController volume =
+                application.volume();
+
+        volume.refresh();
+
+        boolean available =
+                volume.isAvailable();
+
+        volumeSeekBar.setEnabled(available);
+
+        if (!available) {
+            volumeValue.setText("--");
+            return;
+        }
+
+        int percentage =
+                volume.getPercentage();
+
+        if (!userAdjustingVolume) {
+            volumeSeekBar.setProgress(percentage);
+        }
+
+        volumeValue.setText(percentage + "%");
     }
 
     private void bindSeekBar() {
@@ -225,14 +336,35 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
             @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {}
             @Override public void onStartTrackingTouch(SeekBar seekBar) { renderer.setUserSeeking(true); }
             @Override public void onStopTrackingTouch(SeekBar seekBar) {
-                if (selectedSource == MediaSourceType.BLUETOOTH
-                        && bluetoothState != null
-                        && bluetoothState.remoteDurationMs > 0L) {
-                    application.bluetooth().seekRemoteTo(
-                            bluetoothState.remoteDurationMs
-                                    * seekBar.getProgress()
-                                    / 1000L);
-                } else if (playbackState.durationMs > 0L) {
+                if (selectedSource == MediaSourceType.BLUETOOTH) {
+                    if (bluetoothState != null
+                            && bluetoothState.remoteDurationMs > 0L) {
+
+                        long target =
+                                bluetoothState.remoteDurationMs
+                                        * seekBar.getProgress()
+                                        / 1000L;
+
+                        application.bluetooth()
+                                .seekRemoteTo(target);
+
+                        /*
+                         * Keep the user's thumb position stable briefly while
+                         * the remote AVRCP MediaSession publishes its next
+                         * playback-position snapshot.
+                         */
+                        seekBar.postDelayed(
+                                () -> renderer.setUserSeeking(false),
+                                700L);
+
+                        return;
+                    }
+
+                    renderer.setUserSeeking(false);
+                    return;
+                }
+
+                if (playbackState.durationMs > 0L) {
                     application.playback().seekTo(
                             playbackState.durationMs
                                     * seekBar.getProgress()
@@ -287,12 +419,16 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
         startStatusAnimation();
         clockHandler.removeCallbacks(clockTicker);
         clockHandler.post(clockTicker);
+
+        volumeHandler.removeCallbacks(volumeTicker);
+        volumeHandler.post(volumeTicker);
     }
 
     @Override protected void onResume() {
         super.onResume();
         configureSystemBarAppearance();
         if (selectedSource == MediaSourceType.VIDEO) attachYoutube();
+        refreshVolumeUi();
     }
 
     @Override public void onWindowFocusChanged(boolean hasFocus) {
@@ -304,6 +440,7 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
         renderer.visualizer().stop();
         stopStatusAnimation();
         clockHandler.removeCallbacks(clockTicker);
+        volumeHandler.removeCallbacks(volumeTicker);
         application.playback().removeListener(this);
         application.bluetooth().stop(this);
         application.youtubeWeb().detach(true);
@@ -331,6 +468,8 @@ public final class MainActivity extends AppCompatActivity implements PlaybackCon
 
     private void render() {
         if (renderer == null || demoMode) return;
+        refreshVolumeUi();
+
         renderer.render(selectedSource, playbackState, bluetoothState, libraryState,
                 radioState, application.radio(), false);
         attachPlayerIfReady();

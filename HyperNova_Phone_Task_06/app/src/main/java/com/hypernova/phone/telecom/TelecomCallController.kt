@@ -50,14 +50,6 @@ class TelecomCallController(
     val state: StateFlow<TelecomCallState> =
         Companion.state.asStateFlow()
 
-    private val dtmfHandler =
-        Handler(
-            Looper.getMainLooper()
-        )
-
-    private var pendingDtmfStop:
-        Runnable? = null
-
     fun canPlaceCalls(): Boolean {
 
         return telecomManager != null &&
@@ -140,9 +132,15 @@ class TelecomCallController(
 
     fun answer():
         CommandResult =
-        withCall(
+        withGatedCall(
             "answer"
         ) { call ->
+
+            TelecomCallPolicy.canAnswer(
+                call.state,
+                call.details.callDirection
+            )
+        }?.let { call ->
 
             /*
              * Answer signalling first.
@@ -151,58 +149,116 @@ class TelecomCallController(
              * That avoids racing the Bluetooth HFP AG while the remote
              * handset is still transitioning out of RINGING.
              */
-            call.answer(
-                0
-            )
-        }
+            runTelecomCommand(
+                "answer"
+            ) {
+
+                call.answer(
+                    0
+                )
+            }
+        } ?: CommandResult.Rejected(
+            "No incoming call to answer"
+        )
 
     fun decline():
         CommandResult =
-        withCall(
+        withGatedCall(
             "decline"
         ) { call ->
 
-            call.reject(
-                false,
-                null
+            TelecomCallPolicy.canDecline(
+                call.state,
+                call.details.callDirection
             )
-        }
+        }?.let { call ->
+
+            runTelecomCommand(
+                "decline"
+            ) {
+
+                call.reject(
+                    false,
+                    null
+                )
+            }
+        } ?: CommandResult.Rejected(
+            "No incoming call to decline"
+        )
 
     fun disconnect():
         CommandResult =
-        withCall(
+        withGatedCall(
             "disconnect"
         ) { call ->
 
-            /*
-             * HfpClientConnection ignores call events after it has already
-             * closed, therefore request SCO teardown before disconnecting
-             * the Telecom call.
-             */
-            requestHfpScoDisconnect(
-                call
+            TelecomCallPolicy.canDisconnect(
+                call.state
             )
+        }?.let { call ->
 
-            call.disconnect()
-        }
+            runTelecomCommand(
+                "disconnect"
+            ) {
+
+                /*
+                 * HfpClientConnection ignores call events after it has
+                 * already closed, therefore request SCO teardown before
+                 * disconnecting the Telecom call.
+                 */
+                requestHfpScoDisconnect(
+                    call
+                )
+
+                call.disconnect()
+            }
+        } ?: CommandResult.Rejected(
+            "No active Telecom call"
+        )
 
     fun hold():
         CommandResult =
-        withCall(
+        withGatedCall(
             "hold"
         ) { call ->
 
-            call.hold()
-        }
+            TelecomCallPolicy.canHoldNow(
+                call.state,
+                call.details.callCapabilities
+            )
+        }?.let { call ->
+
+            runTelecomCommand(
+                "hold"
+            ) {
+
+                call.hold()
+            }
+        } ?: CommandResult.Rejected(
+            "Hold is not available for this call"
+        )
 
     fun unhold():
         CommandResult =
-        withCall(
+        withGatedCall(
             "resume"
         ) { call ->
 
-            call.unhold()
-        }
+            TelecomCallPolicy.canUnholdNow(
+                call.state,
+                call.details.callCapabilities
+            )
+        }?.let { call ->
+
+            runTelecomCommand(
+                "resume"
+            ) {
+
+                call.unhold()
+            }
+        } ?: CommandResult.Rejected(
+            "Resume is not available for this call"
+        )
 
     /**
      * Send one real DTMF digit through the current Telecom Call.
@@ -216,7 +272,7 @@ class TelecomCallController(
 
         if (
             tone == null ||
-            tone !in VALID_DTMF_DIGITS
+            !TelecomCallPolicy.isValidDtmf(tone)
         ) {
 
             return CommandResult.Rejected(
@@ -243,18 +299,11 @@ class TelecomCallController(
             )
         }
 
-        return try {
+        return runTelecomCommand(
+            "DTMF"
+        ) {
 
-            pendingDtmfStop?.let { pending ->
-
-                dtmfHandler.removeCallbacks(
-                    pending
-                )
-
-                runCatching {
-                    call.stopDtmfTone()
-                }
-            }
+            cancelPendingDtmf()
 
             call.playDtmfTone(
                 tone
@@ -287,22 +336,6 @@ class TelecomCallController(
             Log.i(
                 TAG,
                 "DTMF '$tone' dispatched to Telecom"
-            )
-
-            CommandResult.Dispatched
-
-        } catch (
-            exception: Exception
-        ) {
-
-            Log.w(
-                TAG,
-                "DTMF command rejected by Telecom",
-                exception
-            )
-
-            CommandResult.Rejected(
-                "DTMF is unavailable for this call"
             )
         }
     }
@@ -397,22 +430,58 @@ class TelecomCallController(
         }
     }
 
-    private fun withCall(
+    /**
+     * Return the tracked call only when it satisfies the real
+     * Telecom state/capability gate for the requested command.
+     */
+    private fun withGatedCall(
         command: String,
-        action: (Call) -> Unit
-    ): CommandResult {
+        gate: (Call) -> Boolean
+    ): Call? {
 
         val call =
             currentCall
-                ?: return CommandResult.Rejected(
-                    "No active Telecom call"
+                ?: return null
+
+        val allowed =
+            try {
+
+                gate(call)
+
+            } catch (
+                exception: Exception
+            ) {
+
+                Log.w(
+                    TAG,
+                    "$command gate could not read Telecom state",
+                    exception
                 )
+
+                false
+            }
+
+        if (
+            !allowed
+        ) {
+
+            Log.w(
+                TAG,
+                "$command rejected by state/capability gating"
+            )
+        }
+
+        return if (allowed) call else null
+    }
+
+    private fun runTelecomCommand(
+        command: String,
+        action: () -> Unit
+    ): CommandResult {
 
         return try {
 
-            action(
-                call
-            )
+            action()
 
             Log.i(
                 TAG,
@@ -484,22 +553,6 @@ class TelecomCallController(
         private const val HFP_CLIENT_CONNECTION_SERVICE =
             "com.android.bluetooth.hfpclient.HfpClientConnectionService"
 
-        private val VALID_DTMF_DIGITS =
-            setOf(
-                '0',
-                '1',
-                '2',
-                '3',
-                '4',
-                '5',
-                '6',
-                '7',
-                '8',
-                '9',
-                '*',
-                '#'
-            )
-
         private val state =
             MutableStateFlow(
                 TelecomCallState()
@@ -508,8 +561,24 @@ class TelecomCallController(
         private var currentCall:
             Call? = null
 
-        private var callback:
-            Call.Callback? = null
+        /*
+         * One callback per delivered Call.
+         *
+         * A shared single callback reference broke bookkeeping whenever
+         * Telecom removed a call that was not the currently tracked one:
+         * the reference was nulled while still registered on the live
+         * call, leaking it and making later unregistration impossible.
+         */
+        private val trackedCallbacks =
+            mutableMapOf<Call, Call.Callback>()
+
+        private val dtmfHandler =
+            Handler(
+                Looper.getMainLooper()
+            )
+
+        private var pendingDtmfStop:
+            Runnable? = null
 
         /*
          * This flag avoids firing SCO_CONNECT repeatedly for every
@@ -518,19 +587,34 @@ class TelecomCallController(
         private var hfpScoConnectRequested =
             false
 
+        /**
+         * Stop any in-flight DTMF tone and drop its pending stop
+         * runnable so a removed call is never touched by stale
+         * handler messages.
+         */
+        private fun cancelPendingDtmf() {
+
+            pendingDtmfStop?.let { pending ->
+
+                dtmfHandler.removeCallbacks(
+                    pending
+                )
+            }
+
+            currentCall?.let { call ->
+
+                runCatching {
+                    call.stopDtmfTone()
+                }
+            }
+
+            pendingDtmfStop =
+                null
+        }
+
         internal fun onCallAdded(
             call: Call
         ) {
-
-            currentCall?.let { old ->
-
-                callback?.let { oldCallback ->
-
-                    old.unregisterCallback(
-                        oldCallback
-                    )
-                }
-            }
 
             currentCall =
                 call
@@ -538,7 +622,7 @@ class TelecomCallController(
             hfpScoConnectRequested =
                 false
 
-            callback =
+            val callCallback =
                 object :
                     Call.Callback() {
 
@@ -568,6 +652,21 @@ class TelecomCallController(
                             )
                         }
 
+                        /*
+                         * Leaving ACTIVE tears down or suspends the SCO
+                         * bearer on NXP HFP Client. Reset the guard here so
+                         * HELD -> ACTIVE re-requests SCO_CONNECT instead of
+                         * being suppressed by the previous active period.
+                         */
+                        if (
+                            stateValue ==
+                            Call.STATE_HOLDING
+                        ) {
+
+                            hfpScoConnectRequested =
+                                false
+                        }
+
                         if (
                             stateValue in
                             setOf(
@@ -592,12 +691,27 @@ class TelecomCallController(
                             call.state
                         )
                     }
-                }.also { callCallback ->
-
-                    call.registerCallback(
-                        callCallback
-                    )
                 }
+
+            try {
+
+                call.registerCallback(
+                    callCallback
+                )
+
+                trackedCallbacks[call] =
+                    callCallback
+
+            } catch (
+                exception: Exception
+            ) {
+
+                Log.w(
+                    TAG,
+                    "Could not observe Telecom call callbacks",
+                    exception
+                )
+            }
 
             publish(
                 call,
@@ -640,7 +754,7 @@ class TelecomCallController(
                 call
             )
 
-            callback?.let { registeredCallback ->
+            trackedCallbacks.remove(call)?.let { registeredCallback ->
 
                 runCatching {
 
@@ -650,42 +764,85 @@ class TelecomCallController(
                 }
             }
 
-            if (
+            val wasTrackedCall =
                 currentCall ==
                 call
+
+            var promotedCall:
+                Call? = null
+
+            if (
+                wasTrackedCall
             ) {
 
+                cancelPendingDtmf()
+
+                /*
+                 * Deterministically promote the most recently delivered
+                 * remaining call so commands keep targeting a live call
+                 * and published state never goes stale behind Telecom.
+                 */
+                promotedCall =
+                    trackedCallbacks.keys.lastOrNull()
+
                 currentCall =
-                    null
+                    promotedCall
             }
 
-            callback =
-                null
+            if (
+                trackedCallbacks.isEmpty()
+            ) {
 
-            hfpScoConnectRequested =
-                false
+                hfpScoConnectRequested =
+                    false
 
-            state.value =
-                state.value.copy(
-                    status =
-                        CallStatus.CALL_ENDED,
+                state.value =
+                    state.value.copy(
+                        status =
+                            CallStatus.CALL_ENDED,
 
-                    isMuted =
-                        false,
+                        isMuted =
+                            false,
 
-                    canDisconnect =
-                        false,
+                        canDisconnect =
+                            false,
 
-                    canAnswer =
-                        false,
+                        canAnswer =
+                            false,
 
-                    canHold =
-                        false
-                )
+                        canHold =
+                            false
+                    )
+
+            } else {
+
+                promotedCall?.let { promoted ->
+
+                    publish(
+                        promoted,
+                        promoted.state
+                    )
+
+                    /*
+                     * Mirror onCallAdded: an already-ACTIVE promoted call
+                     * must own the SCO bearer request lifecycle.
+                     */
+                    if (
+                        promoted.state ==
+                        Call.STATE_ACTIVE
+                    ) {
+
+                        requestHfpScoConnect(
+                            promoted
+                        )
+                    }
+                }
+            }
 
             Log.i(
                 TAG,
-                "Telecom call removed"
+                "Telecom call removed; " +
+                    "tracked=${trackedCallbacks.size}"
             )
         }
 
@@ -842,55 +999,10 @@ class TelecomCallController(
                     ?.schemeSpecificPart
 
             val mapped =
-                when (
-                    callState
-                ) {
-
-                    Call.STATE_NEW,
-                    Call.STATE_CONNECTING,
-                    Call.STATE_DIALING,
-                    Call.STATE_SELECT_PHONE_ACCOUNT -> {
-
-                        CallStatus.DIALING
-                    }
-
-                    Call.STATE_RINGING,
-                    Call.STATE_SIMULATED_RINGING -> {
-
-                        if (
-                            details.callDirection ==
-                            Call.Details.DIRECTION_INCOMING
-                        ) {
-
-                            CallStatus.INCOMING
-
-                        } else {
-
-                            CallStatus.RINGING
-                        }
-                    }
-
-                    Call.STATE_ACTIVE -> {
-
-                        CallStatus.ACTIVE
-                    }
-
-                    Call.STATE_HOLDING -> {
-
-                        CallStatus.HELD
-                    }
-
-                    Call.STATE_DISCONNECTED,
-                    Call.STATE_DISCONNECTING -> {
-
-                        CallStatus.CALL_ENDED
-                    }
-
-                    else -> {
-
-                        CallStatus.IDLE
-                    }
-                }
+                TelecomCallPolicy.mapStatus(
+                    callState,
+                    details.callDirection
+                )
 
             val previous =
                 state.value
@@ -946,9 +1058,13 @@ class TelecomCallController(
                     isMuted =
                         previous.isMuted,
 
+                    /*
+                     * Real Telecom hold support: CAPABILITY_HOLD or
+                     * CAPABILITY_SUPPORT_HOLD.
+                     */
                     canHold =
-                        details.can(
-                            Call.Details.CAPABILITY_HOLD
+                        TelecomCallPolicy.canHold(
+                            details.callCapabilities
                         ),
 
                     canAnswer =
@@ -967,17 +1083,6 @@ class TelecomCallController(
                 TAG,
                 "Telecom call transitioned to $mapped"
             )
-        }
-
-        private fun Call.Details.can(
-            capability: Int
-        ): Boolean {
-
-            return (
-                callCapabilities and
-                    capability
-                ) ==
-                capability
         }
     }
 }

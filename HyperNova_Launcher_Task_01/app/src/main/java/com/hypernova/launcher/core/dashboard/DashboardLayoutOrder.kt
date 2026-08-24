@@ -8,9 +8,20 @@ enum class DashboardCard {
     NAVIGATION,
 }
 
-/** Product-approved HOME hierarchy, kept testable outside Android Views. */
+/**
+ * Product-approved HOME hierarchy.
+ *
+ * Phone and Settings remain available from the fixed bottom navigation bar
+ * and are intentionally not rendered as HOME dashboard widgets.
+ */
 object DashboardLayoutOrder {
-    val firstRow = listOf(DashboardCard.CLIMATE, DashboardCard.MEDIA)
-    val secondRow = listOf(DashboardCard.SETTINGS, DashboardCard.PHONE)
-    val dominantRow = listOf(DashboardCard.NAVIGATION)
+
+    val firstRow = listOf(
+        DashboardCard.CLIMATE,
+        DashboardCard.MEDIA,
+    )
+
+    val dominantRow = listOf(
+        DashboardCard.NAVIGATION,
+    )
 }

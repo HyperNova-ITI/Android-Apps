@@ -65,6 +65,15 @@ class HyperNovaInCallService : InCallService() {
 
         observeTelecomState()
 
+        /*
+         * Seed the mute state Telecom already holds so a service
+         * rebinding during a muted call does not present a stale
+         * default until the next onCallAudioStateChanged() arrives.
+         */
+        callAudioState?.let(
+            TelecomCallController::onCallAudioStateChanged
+        )
+
         Log.i(
             TAG,
             "InCallService created"
@@ -620,9 +629,11 @@ class HyperNovaInCallService : InCallService() {
                         CallStatus.INCOMING -> {
 
                             /*
-                             * HyperNova owns the selected car-mode InCall UX.
-                             * Remove the stock HUN and show the HyperNova call
-                             * surface instead.
+                             * Show the compact HyperNova incoming-call bar in
+                             * its own standalone task.
+                             *
+                             * The currently visible cockpit application stays
+                             * visible underneath the transparent top window.
                              */
                             incomingCallNotifier
                                 .cancelIncomingCall()

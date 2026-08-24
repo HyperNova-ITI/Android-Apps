@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="hn_navigation_surface">#020A13</color>
+    <color name="hn_navigation_status_surface">#0C2532</color>
+    <color name="hn_navigation_status_stroke">#257F8B</color>
+    <color name="hn_navigation_text_primary">#F4FBFD</color>
+    <color name="hn_navigation_text_secondary">#B6CCD3</color>
+    <color name="hn_navigation_error">#FFB4AB</color>
+</resources>

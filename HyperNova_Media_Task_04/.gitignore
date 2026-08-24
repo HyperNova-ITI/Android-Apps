@@ -13,3 +13,6 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Local Media patch backups
+artifacts/media-controls-*/backups/
