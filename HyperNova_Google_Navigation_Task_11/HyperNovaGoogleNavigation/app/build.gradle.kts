@@ -72,6 +72,7 @@ kotlin {
 }
 
 secrets {
+    propertiesFileName = "secrets.properties"
     defaultPropertiesFileName = "secrets.properties.example"
 }
 

@@ -75,7 +75,8 @@ run_gradle_step() {
     "$PROJECT/gradlew" \
         -p "$PROJECT" \
         "$TASK" \
-        -j10 \
+        --max-workers=10 \
+        --no-daemon \
         --console=plain \
         >> "$LOG" 2>&1 \
         || fail "$NAME"
@@ -126,6 +127,15 @@ log "Java: $JAVA_HOME"
 run_gradle_step \
     "2. ASSEMBLE DEBUG" \
     ":app:assembleDebug"
+
+CONFIGURED_MAPS_KEY="$(sed -n 's/^MAPS_API_KEY=//p' "$PROJECT/secrets.properties")"
+[ -f "$SRC" ] || fail "Built APK not found after assemble"
+if grep -aFq "$CONFIGURED_MAPS_KEY" "$SRC"; then
+    log "MAPS_API_KEY embedded value: VERIFIED"
+else
+    fail "Built APK does not contain the configured MAPS_API_KEY"
+fi
+unset CONFIGURED_MAPS_KEY
 
 run_gradle_step \
     "3. UNIT TESTS" \
@@ -190,8 +200,10 @@ log "============================================================"
 log "8. APK SHA256"
 log "============================================================"
 
-sha256sum "$DST" \
-    | tee "$OUT/SHA256SUMS.txt" \
+(
+    cd "$OUT"
+    sha256sum "$(basename "$DST")"
+) | tee "$OUT/SHA256SUMS.txt" \
     >> "$LOG" \
     || fail "SHA256 generation failed"
 
