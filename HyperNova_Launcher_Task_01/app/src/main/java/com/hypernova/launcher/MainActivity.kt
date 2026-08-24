@@ -51,7 +51,6 @@ import com.hypernova.launcher.databinding.ActivityMainBinding
 import com.hypernova.launcher.ui.LauncherNavigationMapController
 import com.hypernova.launcher.ui.LauncherGoogleMapController
 import com.hypernova.launcher.ui.LauncherSoftwareRouteOverlay
-import com.hypernova.contracts.navigation.NavigationContract
 import com.hypernova.visuals.CockpitAppearance
 import org.maplibre.android.MapLibre
 import org.maplibre.android.maps.MapView
@@ -901,7 +900,7 @@ class MainActivity : AppCompatActivity() {
     /**
      * Open HyperNova Navigation directly from the HOME Navigation widget.
      */
-    private fun openNavigationFromHomeWidget() {
+    private fun openNavigationFromHomeWidget(placeQuery: String? = null) {
         // The i.MX8QM guest compositor can gray the display when the launcher Google WebView and
         // Navigation's Google WebView overlap during the task transition. Hide HOME's Chromium
         // surface synchronously; onResume restores it when the driver returns.
@@ -911,6 +910,10 @@ class MainActivity : AppCompatActivity() {
                 "com.hypernova.navigation.action.OPEN"
             ).apply {
                 setPackage("com.hypernova.navigation")
+                placeQuery
+                    ?.trim()
+                    ?.takeIf(String::isNotBlank)
+                    ?.let { putExtra(NAVIGATION_PLACE_QUERY_EXTRA, it) }
                 addFlags(
                     Intent.FLAG_ACTIVITY_NEW_TASK or
                         Intent.FLAG_ACTIVITY_CLEAR_TOP or
@@ -933,6 +936,10 @@ class MainActivity : AppCompatActivity() {
                 )
 
             if (fallbackIntent != null) {
+                placeQuery
+                    ?.trim()
+                    ?.takeIf(String::isNotBlank)
+                    ?.let { fallbackIntent.putExtra(NAVIGATION_PLACE_QUERY_EXTRA, it) }
                 fallbackIntent.addFlags(
                     Intent.FLAG_ACTIVITY_NEW_TASK or
                         Intent.FLAG_ACTIVITY_CLEAR_TOP or
@@ -1323,12 +1330,10 @@ class MainActivity : AppCompatActivity() {
                     uri.path.orEmpty().startsWith("/maps"))
 
         if (isGoogleMaps) {
-            val navigationIntent = Intent(NavigationContract.OPEN_ACTION).apply {
-                setPackage(NavigationContract.PACKAGE_NAME)
-                putExtra(NAVIGATION_PLACE_QUERY_EXTRA, card.title)
-            }
-            runCatching { startActivity(navigationIntent) }
-                .onFailure { openHyperNovaApp(AppDestination.NAVIGATION) }
+            // Use the same compositor-safe transition as the HOME map and bottom bar. Launching
+            // directly from this card used to leave Launcher's Chromium surface visible under
+            // Navigation's WebView, producing a black frame on the i.MX8QM guest.
+            openNavigationFromHomeWidget(card.title)
             return
         }
 
