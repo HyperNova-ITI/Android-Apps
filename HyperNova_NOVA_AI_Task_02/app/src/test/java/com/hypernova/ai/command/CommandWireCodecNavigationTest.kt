@@ -24,4 +24,21 @@ class CommandWireCodecNavigationTest {
         assertEquals(NavigationContract.OP_START_NAVIGATION, request.operation)
         assertTrue(request.arguments is CommandArguments.None)
     }
+
+    @Test
+    fun placeContactCarriesOnlyTheOpaqueNavigationDestinationId() {
+        val request =
+            CommandWireCodec.parseRequest(
+                JSONObject()
+                    .put("type", "command_request")
+                    .put("v", HyperNovaContract.API_VERSION)
+                    .put("request_id", "nav-contact-1")
+                    .put("domain", CommandWireCodec.DOMAIN_NAVIGATION)
+                    .put("operation", NavigationContract.OP_GET_DESTINATION_CONTACT)
+                    .put("args", JSONObject().put("destination_id", "nav_search_opaque")),
+            )
+
+        assertEquals(NavigationContract.OP_GET_DESTINATION_CONTACT, request.operation)
+        assertEquals(CommandArguments.Destination("nav_search_opaque"), request.arguments)
+    }
 }

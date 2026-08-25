@@ -46,6 +46,15 @@
                 <action android:name="com.hypernova.navigation.action.BIND_COMMAND" />
             </intent-filter>
         </service>
+
+        <service
+            android:name=".service.NavigationPlaceContactService"
+            android:exported="true"
+            android:permission="com.hypernova.permission.CONTROL_COCKPIT_APPS">
+            <intent-filter>
+                <action android:name="com.hypernova.navigation.action.BIND_PLACE_CONTACT" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

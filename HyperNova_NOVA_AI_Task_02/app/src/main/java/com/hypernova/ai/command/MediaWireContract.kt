@@ -16,4 +16,10 @@ object MediaWireContract {
     const val OP_NEXT = "next"
     const val OP_PREVIOUS = "previous"
     const val OP_SET_VOLUME = "set_volume"
+    const val OP_PLAY_RADIO = "play_radio"
+
+    const val ACTION_PLAY_RADIO = "com.hypernova.media.command.PLAY_RADIO"
+    const val EXTRA_QUERY = "query"
+    const val EXTRA_MESSAGE = "message"
+    const val EXTRA_STATION_NAME = "station_name"
 }

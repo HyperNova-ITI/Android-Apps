@@ -351,6 +351,12 @@ class NavigationStatusClient(
     }
 
     private fun publish(snapshot: NavigationStatusSnapshot) {
+        // The one-shot reconciliation path is authoritative too. Preserve its complete route
+        // preview so a later progress callback cannot fall back to the empty observer seed when
+        // Android delivered the initial observer callback before Launcher finished binding.
+        if (snapshot.connectionState == AppConnectionState.READY) {
+            observerSnapshot = snapshot
+        }
         onSnapshotChanged(snapshot)
     }
 

@@ -22,6 +22,11 @@
     <string name="mute_description">Silence NOVA’s spoken replies</string>
     <string name="unmute_description">Restore NOVA’s spoken replies</string>
     <string name="cancel_description">Stop the current request</string>
+    <string name="clear">Clear</string>
+    <string name="clear_memory">Clear NOVA memory?</string>
+    <string name="clear_memory_description">Clear saved preferences and conversation history</string>
+    <string name="clear_memory_confirmation">This forgets saved preferences and starts a fresh conversation.</string>
+    <string name="keep_memory">Keep</string>
     <string name="follow_up_countdown">Continue speaking · %1$ds</string>
     <string name="muted_hint">Replies are muted</string>
 

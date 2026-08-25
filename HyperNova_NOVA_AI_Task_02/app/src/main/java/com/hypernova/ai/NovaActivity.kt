@@ -19,6 +19,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.google.android.material.progressindicator.LinearProgressIndicator
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.hypernova.ai.databinding.ActivityNovaBinding
 import com.hypernova.ai.runtime.NovaEvidenceCard
 import com.hypernova.ai.runtime.NovaMessage
@@ -78,6 +79,16 @@ class NovaActivity : AppCompatActivity() {
         NovaRuntimeState.muted.observe(this, ::renderMuted)
 
         binding.buttonBack.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
+        binding.buttonClearMemory.setOnClickListener {
+            MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.clear_memory)
+                .setMessage(R.string.clear_memory_confirmation)
+                .setNegativeButton(R.string.keep_memory, null)
+                .setPositiveButton(R.string.clear) { _, _ ->
+                    sendRuntimeAction(NovaRuntimeService.ACTION_RESET_MEMORY)
+                }
+                .show()
+        }
         binding.buttonSecondary.setOnClickListener { startRuntime(reconnect = true) }
         binding.buttonCancel.setOnClickListener { sendRuntimeAction(NovaRuntimeService.ACTION_CANCEL) }
         binding.buttonMute.setOnClickListener {
@@ -161,6 +172,7 @@ class NovaActivity : AppCompatActivity() {
 
         // Offline, the only useful control is reconnecting; the rest would do nothing.
         buttonSecondary.visibility = if (unavailable) View.VISIBLE else View.GONE
+        buttonClearMemory.visibility = if (unavailable) View.GONE else View.VISIBLE
         buttonMute.visibility = if (unavailable) View.GONE else View.VISIBLE
         buttonCancel.visibility = if (unavailable) View.GONE else View.VISIBLE
         buttonCancel.isEnabled = state.canCancel

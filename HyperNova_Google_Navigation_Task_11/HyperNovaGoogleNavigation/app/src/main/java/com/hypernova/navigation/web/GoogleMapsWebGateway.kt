@@ -27,6 +27,7 @@ import com.hypernova.navigation.navigation.NavigationGatewayListener
 import com.hypernova.navigation.navigation.NavigatorInitializationFailure
 import com.hypernova.navigation.places.DestinationSearchGateway
 import com.hypernova.navigation.places.GooglePlacesException
+import com.hypernova.navigation.places.PlaceContact
 import java.util.concurrent.ConcurrentHashMap
 import java.util.UUID
 import kotlinx.coroutines.CompletableDeferred
@@ -191,6 +192,30 @@ class GoogleMapsWebGateway internal constructor(
             GoogleRouteResult.InternalError(
                 failure.message ?: "Google route geometry is unavailable.",
             )
+        }
+    }
+
+    suspend fun contact(destination: GoogleDestinationRecord): PlaceContact? {
+        awaitReadyForSearch()
+        val response =
+            execute(
+                operation = OP_CONTACT,
+                invocation = { requestId ->
+                    "window.hypernovaContact(" +
+                        "${JSONObject.quote(requestId)}," +
+                        "${JSONObject.quote(destination.placeId)});"
+                },
+            )
+        if (!response.ok) {
+            if (response.errorCode == ERROR_NO_PHONE) return null
+            throw GooglePlacesException.RequestFailed(
+                IllegalStateException(response.message.ifBlank { "Google Place contact lookup failed." }),
+            )
+        }
+        return try {
+            GoogleMapsBridgeCodec.parseContact(response.payload)
+        } catch (_: IllegalArgumentException) {
+            null
         }
     }
 
@@ -434,11 +459,13 @@ class GoogleMapsWebGateway internal constructor(
         const val SURFACE_NOTIFICATION_DEBOUNCE_MILLIS = 350L
         const val OP_SEARCH = "search"
         const val OP_ROUTE = "route"
+        const val OP_CONTACT = "contact"
         const val ERROR_NO_ROUTE = "NO_ROUTE"
         const val ERROR_AUTHORIZATION = "AUTHORIZATION"
         const val ERROR_NETWORK = "NETWORK"
         const val ERROR_LOCATION = "LOCATION"
         const val ERROR_CANCELLED = "CANCELLED"
         const val ERROR_INTERNAL = "INTERNAL"
+        const val ERROR_NO_PHONE = "NO_PHONE"
     }
 }

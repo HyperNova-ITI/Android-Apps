@@ -42,14 +42,14 @@ android {
         testInstrumentationRunner =
             "androidx.test.runner.AndroidJUnitRunner"
 
-        // The only target that runs these apps is the NXP i.MX8QM Android guest,
-        // which reports arm64-v8a as its ONLY supported ABI (ro.product.cpu.abilist).
-        // MapLibre ships libmaplibre.so for four ABIs, so without this filter every
-        // build carries ~34 MB of native code the board physically cannot execute --
-        // and it is not free at rest: AGP defaults to extractNativeLibs=false, so the
-        // whole APK sits in /data/app with all four copies. /data is 1.7 GB total.
-        ndk {
-            abiFilters += "arm64-v8a"
+        // The NXP guest reports arm64-v8a as its only supported ABI and has a small
+        // /data partition, so production deployment keeps only that MapLibre binary.
+        // Development/demo builds without -PnxpDeployment must retain x86_64 so the
+        // same launcher can be exercised on the Android 16 emulator.
+        if (nxpDeployment.get()) {
+            ndk {
+                abiFilters += "arm64-v8a"
+            }
         }
     }
 

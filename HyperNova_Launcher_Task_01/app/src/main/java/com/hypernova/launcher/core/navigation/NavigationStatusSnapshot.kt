@@ -105,7 +105,9 @@ object NavigationStatusMapper {
         result: NavigationRoutePreviewResult,
     ): NavigationStatusSnapshot {
         val previewAllowed =
-            snapshot.runtimeState == NavigationRuntimeState.CALCULATING ||
+            (snapshot.runtimeState == NavigationRuntimeState.IDLE &&
+                snapshot.routeId.isNotBlank()) ||
+                snapshot.runtimeState == NavigationRuntimeState.CALCULATING ||
                 snapshot.runtimeState == NavigationRuntimeState.ACTIVE ||
                 snapshot.runtimeState == NavigationRuntimeState.ARRIVED
         val matchesState = runtimeState(result.navigationState) == snapshot.runtimeState

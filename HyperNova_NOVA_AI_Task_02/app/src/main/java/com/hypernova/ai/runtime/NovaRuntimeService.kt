@@ -86,6 +86,7 @@ class NovaRuntimeService : Service(),
             ACTION_CANCEL -> cancelCurrentTurn()
             ACTION_SET_MUTED -> setMuted(intent.getBooleanExtra(EXTRA_MUTED, false))
             ACTION_SET_DEAFENED -> setDeafened(intent.getBooleanExtra(EXTRA_DEAFENED, false))
+            ACTION_RESET_MEMORY -> resetMemory()
         }
         return START_STICKY
     }
@@ -123,6 +124,13 @@ class NovaRuntimeService : Service(),
         preferences().edit().putBoolean(KEY_DEAFENED, deafened).apply()
         NovaRuntimeState.publishDeafened(deafened)
         controlClient.sendDeafened(deafened, turnId)
+    }
+
+    private fun resetMemory() {
+        if (!::controlClient.isInitialized) return
+        cancelCurrentTurn()
+        controlClient.sendResetMemory()
+        NovaRuntimeState.clearConversation()
     }
 
     private fun applyStoredMute() {
@@ -448,6 +456,7 @@ class NovaRuntimeService : Service(),
         const val ACTION_CANCEL = "com.hypernova.ai.action.CANCEL"
         const val ACTION_SET_MUTED = "com.hypernova.ai.action.SET_MUTED"
         const val ACTION_SET_DEAFENED = "com.hypernova.ai.action.SET_DEAFENED"
+        const val ACTION_RESET_MEMORY = "com.hypernova.ai.action.RESET_MEMORY"
         const val EXTRA_MUTED = "muted"
         const val EXTRA_DEAFENED = "deafened"
         private const val PREFERENCES = "nova_runtime"

@@ -64,7 +64,7 @@
             android:gravity="center_vertical"
             android:orientation="horizontal"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/buttonClearMemory"
             app:layout_constraintTop_toTopOf="parent">
 
             <View
@@ -85,6 +85,22 @@
                 android:textStyle="bold" />
 
         </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonClearMemory"
+            style="@style/Widget.HyperNovaNova.OutlineButton"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:layout_marginStart="12dp"
+            android:contentDescription="@string/clear_memory_description"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:minWidth="64dp"
+            android:text="@string/clear"
+            android:textSize="11sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

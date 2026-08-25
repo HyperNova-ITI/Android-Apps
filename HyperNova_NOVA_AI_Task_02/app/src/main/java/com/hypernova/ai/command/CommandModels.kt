@@ -18,6 +18,7 @@ sealed interface CommandArguments {
     data class AudioRoute(val route: Int) : CommandArguments
     data class Dtmf(val digit: String) : CommandArguments
     data class VolumePercent(val percent: Int) : CommandArguments
+    data class RadioQuery(val query: String) : CommandArguments
 }
 
 data class CommandRequest(

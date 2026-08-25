@@ -95,6 +95,13 @@ class NovaControlClient(
         if (turnId != null) put("turn_id", turnId)
     })
 
+    /** Clear saved preferences and both model sessions after an explicit driver confirmation. */
+    fun sendResetMemory(): Boolean = enqueue(JSONObject().apply {
+        put("type", "reset_memory")
+        put("v", 1)
+        put("seq", sequence.incrementAndGet())
+    })
+
     fun sendCommandResult(result: CommandResult): Boolean =
         enqueue(CommandWireCodec.toJson(result).apply {
             put("seq", sequence.incrementAndGet())

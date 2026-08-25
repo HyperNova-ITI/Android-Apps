@@ -58,6 +58,8 @@ public final class RadioRepository {
     public RadioUiState currentState() { return state; }
     public RadioSearchQuery currentQuery() { return query; }
     public List<RadioStation> all() { return state.stations; }
+    /** Full bounded local catalog for trusted MediaSession selection, independent of UI filters. */
+    public List<RadioStation> cachedCatalog() { return database.allVisible(); }
     public List<RadioStation> recent() {
         return database.query(query.withMode(RadioSearchQuery.Mode.RECENT));
     }

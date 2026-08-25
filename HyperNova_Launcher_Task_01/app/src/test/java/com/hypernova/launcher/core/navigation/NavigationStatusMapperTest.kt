@@ -268,7 +268,7 @@ class NavigationStatusMapperTest {
     }
 
     @Test
-    fun `idle state clears preview even if a producer sends geometry`() {
+    fun `prepared idle route retains preview geometry for launcher reconciliation`() {
         val result = previewResult(
             state = NavigationContract.STATE_IDLE,
             preview = NavigationRoutePreview(
@@ -280,14 +280,31 @@ class NavigationStatusMapperTest {
             ),
         )
 
-        assertEquals(
-            emptyList<Any>(),
-            NavigationStatusMapper.withRoutePreview(
-                NavigationStatusMapper.fromResult(
-                    currentStateResult(NavigationContract.STATE_IDLE),
+        val base = NavigationStatusMapper.fromResult(
+            NavigationResult(
+                "launcher-request",
+                NavigationContract.OP_GET_CURRENT_STATE,
+                HyperNovaContract.STATUS_CONFIRMED,
+                "Route preview ready",
+                HyperNovaContract.ERROR_NONE,
+                emptyList(),
+                NavigationDestination(
+                    "prepared-route",
+                    NavigationContract.SOURCE_SEARCH,
+                    "Home",
+                    "ZED Sheikh Zayed",
+                    "saved",
+                    -1L,
                 ),
-                result,
-            ).routePoints,
+                NavigationContract.STATE_IDLE,
+                300L,
+                2_500L,
+            ),
+        )
+
+        assertEquals(
+            2,
+            NavigationStatusMapper.withRoutePreview(base, result).routePoints.size,
         )
     }
 

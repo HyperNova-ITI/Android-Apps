@@ -7,30 +7,31 @@ import android.content.ServiceConnection
 import android.os.IBinder
 import android.util.Log
 import com.hypernova.contracts.HyperNovaContract
-import com.hypernova.contracts.navigation.INavigationCommandCallback
-import com.hypernova.contracts.navigation.INavigationCommandService
+import com.hypernova.contracts.navigation.INavigationPlaceContactCallback
+import com.hypernova.contracts.navigation.INavigationPlaceContactService
 import com.hypernova.contracts.navigation.NavigationContract
-import com.hypernova.contracts.navigation.NavigationResult
+import com.hypernova.contracts.navigation.NavigationPlaceContactResult
 
-class NavigationCommandClient(context: Context) {
+/** Client for Navigation's additive read-only Google Place contact service. */
+class NavigationPlaceContactClient(context: Context) {
     private data class Pending(
         val request: CommandRequest,
         val sink: (CommandResult) -> Unit,
-        var callback: INavigationCommandCallback? = null,
+        var callback: INavigationPlaceContactCallback? = null,
     )
 
     private val appContext = context.applicationContext
     private val lock = Any()
     private val queued = linkedMapOf<String, Pending>()
     private val outstanding = linkedMapOf<String, Pending>()
-    private var service: INavigationCommandService? = null
+    private var service: INavigationPlaceContactService? = null
     private var bound = false
     private var binding = false
     private var stopped = false
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName, binder: IBinder) {
-            val connected = INavigationCommandService.Stub.asInterface(binder)
+            val connected = INavigationPlaceContactService.Stub.asInterface(binder)
             val valid = try {
                 connected.getApiVersion() == HyperNovaContract.API_VERSION
             } catch (_: Exception) {
@@ -42,10 +43,9 @@ class NavigationCommandClient(context: Context) {
                     binding = false
                 }
                 safeUnbind()
-                failAll("Navigation API version mismatch")
+                failAll("Navigation place-contact API version mismatch")
                 return
             }
-
             val waiting = synchronized(lock) {
                 if (stopped) return
                 service = connected
@@ -57,7 +57,7 @@ class NavigationCommandClient(context: Context) {
 
         override fun onServiceDisconnected(name: ComponentName) {
             synchronized(lock) { service = null }
-            failOutstanding("Navigation service disconnected")
+            failOutstanding("Navigation place-contact service disconnected")
         }
 
         override fun onBindingDied(name: ComponentName) {
@@ -66,7 +66,7 @@ class NavigationCommandClient(context: Context) {
                 binding = false
             }
             safeUnbind()
-            failAll("Navigation service binding died")
+            failAll("Navigation place-contact service binding died")
         }
 
         override fun onNullBinding(name: ComponentName) {
@@ -75,7 +75,7 @@ class NavigationCommandClient(context: Context) {
                 binding = false
             }
             safeUnbind()
-            failAll("Navigation service returned no command interface")
+            failAll("Navigation place-contact service returned no interface")
         }
     }
 
@@ -83,18 +83,14 @@ class NavigationCommandClient(context: Context) {
         val pending = Pending(request, sink)
         val connected = synchronized(lock) {
             if (stopped) {
-                sink(request.unavailable("Navigation client is stopped"))
+                sink(request.unavailable("Navigation place-contact client is stopped"))
                 return
             }
             service?.also { return@synchronized it }
             queued[request.requestId] = pending
             null
         }
-        if (connected != null) {
-            dispatch(connected, pending)
-        } else {
-            ensureBound()
-        }
+        if (connected != null) dispatch(connected, pending) else ensureBound()
     }
 
     fun shutdown() {
@@ -115,103 +111,56 @@ class NavigationCommandClient(context: Context) {
             }
         }
         if (!shouldBind) return
-
         val started = try {
             appContext.bindService(
-                Intent(NavigationContract.BIND_COMMAND_ACTION).apply {
+                Intent(NavigationContract.BIND_PLACE_CONTACT_ACTION).apply {
                     component = ComponentName(
                         NavigationContract.PACKAGE_NAME,
-                        NavigationContract.COMMAND_SERVICE,
+                        NavigationContract.PLACE_CONTACT_SERVICE,
                     )
                 },
                 connection,
                 Context.BIND_AUTO_CREATE,
             )
         } catch (error: Exception) {
-            Log.w(TAG, "Navigation bind failed", error)
+            Log.w(TAG, "Navigation place-contact bind failed", error)
             false
         }
         synchronized(lock) {
-            if (started) {
-                bound = true
-            } else {
-                binding = false
-            }
+            if (started) bound = true else binding = false
         }
-        if (!started) failAll("Navigation service is unavailable")
+        if (!started) failAll("Place calling is unavailable in HyperNova Navigation")
     }
 
-    private fun dispatch(target: INavigationCommandService, pending: Pending) {
+    private fun dispatch(target: INavigationPlaceContactService, pending: Pending) {
         val request = pending.request
-        val callback = object : INavigationCommandCallback.Stub() {
-            override fun onResult(result: NavigationResult) {
-                val mapped = AndroidResultMapper.navigation(request, result)
-                if (mapped.status.isFinal) {
-                    synchronized(lock) { outstanding.remove(request.requestId) }
-                }
-                if (
-                    mapped.status == CommandStatus.CONFIRMED &&
-                    request.operation == NavigationContract.OP_START_NAVIGATION
-                ) {
-                    // A prepared destination belongs in the stable Launcher widget. Foreground
-                    // Navigation only after guidance itself is confirmed; merely setting a
-                    // destination must not switch windows or imply that the trip has started.
-                    openNavigation()
-                }
-                pending.sink(mapped)
+        val destination = request.arguments as? CommandArguments.Destination
+        if (destination == null) {
+            pending.sink(request.failure(
+                CommandStatus.REJECTED,
+                "A destination is required for place calling",
+                HyperNovaContract.ERROR_INVALID_ARGUMENT,
+            ))
+            return
+        }
+        val callback = object : INavigationPlaceContactCallback.Stub() {
+            override fun onResult(result: NavigationPlaceContactResult?) {
+                synchronized(lock) { outstanding.remove(request.requestId) }
+                pending.sink(AndroidResultMapper.navigationPlaceContact(request, result))
             }
         }
         pending.callback = callback
         synchronized(lock) { outstanding[request.requestId] = pending }
-
         try {
-            when (request.operation) {
-                NavigationContract.OP_SEARCH_DESTINATIONS -> target.searchDestinations(
-                    request.requestId,
-                    (request.arguments as CommandArguments.Search).query,
-                    callback,
-                )
-                NavigationContract.OP_GET_SAVED_DESTINATIONS -> target.getSavedDestinations(
-                    request.requestId,
-                    callback,
-                )
-                NavigationContract.OP_SET_DESTINATION -> target.setDestination(
-                    request.requestId,
-                    (request.arguments as CommandArguments.Destination).destinationId,
-                    callback,
-                )
-                NavigationContract.OP_START_NAVIGATION -> target.startNavigation(
-                    request.requestId,
-                    callback,
-                )
-                NavigationContract.OP_CANCEL_NAVIGATION -> target.cancelNavigation(
-                    request.requestId,
-                    callback,
-                )
-                else -> pending.sink(
-                    request.failure(
-                        CommandStatus.REJECTED,
-                        "Unsupported Navigation operation: ${request.operation}",
-                        HyperNovaContract.ERROR_UNSUPPORTED_OPERATION,
-                    ),
-                )
-            }
-        } catch (error: Exception) {
-            Log.w(TAG, "Navigation command failed", error)
-            synchronized(lock) { outstanding.remove(request.requestId) }
-            pending.sink(request.unavailable("Navigation service is unavailable"))
-        }
-    }
-
-    private fun openNavigation() {
-        try {
-            appContext.startActivity(
-                Intent(NavigationContract.OPEN_ACTION)
-                    .setPackage(NavigationContract.PACKAGE_NAME)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            target.getDestinationContact(
+                request.requestId,
+                destination.destinationId,
+                callback,
             )
         } catch (error: Exception) {
-            Log.w(TAG, "Could not open Navigation UI", error)
+            Log.w(TAG, "Navigation place-contact command failed", error)
+            synchronized(lock) { outstanding.remove(request.requestId) }
+            pending.sink(request.unavailable("Navigation place-contact service is unavailable"))
         }
     }
 
@@ -243,7 +192,7 @@ class NavigationCommandClient(context: Context) {
         try {
             appContext.unbindService(connection)
         } catch (_: Exception) {
-            // The platform may already have removed a dead binding.
+            // Android may already have removed the dead binding.
         }
     }
 
@@ -254,6 +203,6 @@ class NavigationCommandClient(context: Context) {
     )
 
     private companion object {
-        const val TAG = "NavigationCommandClient"
+        const val TAG = "NavigationPlaceContact"
     }
 }

@@ -7,6 +7,7 @@ import com.hypernova.contracts.climate.ClimateState
 import com.hypernova.contracts.navigation.NavigationContract
 import com.hypernova.contracts.navigation.NavigationDestination
 import com.hypernova.contracts.navigation.NavigationResult
+import com.hypernova.contracts.navigation.NavigationPlaceContactResult
 import com.hypernova.contracts.phone.PhoneCallHistoryEntry
 import com.hypernova.contracts.phone.PhoneContact
 import com.hypernova.contracts.phone.PhoneContactNumber
@@ -33,6 +34,27 @@ object AndroidResultMapper {
         }
         if (result.etaSeconds >= 0) data["eta_seconds"] = result.etaSeconds
         if (result.distanceMeters >= 0) data["distance_meters"] = result.distanceMeters
+        return CommandResult(
+            request = request,
+            status = status,
+            message = result.message.orEmpty().ifBlank { status.wireValue },
+            errorCode = result.errorCode?.takeIf(String::isNotBlank),
+            data = data,
+        )
+    }
+
+    fun navigationPlaceContact(
+        request: CommandRequest,
+        result: NavigationPlaceContactResult?,
+    ): CommandResult {
+        if (result == null || result.requestId != request.requestId) {
+            return invalidProviderResult(request)
+        }
+        val status = CommandStatus.fromContract(result.status) ?: return invalidProviderResult(request)
+        val data = linkedMapOf<String, Any?>()
+        result.destinationId?.takeIf(String::isNotBlank)?.let { data["destination_id"] = it }
+        result.displayName?.takeIf(String::isNotBlank)?.let { data["display_name"] = it }
+        result.phoneNumber?.takeIf(String::isNotBlank)?.let { data["phone_number"] = it }
         return CommandResult(
             request = request,
             status = status,

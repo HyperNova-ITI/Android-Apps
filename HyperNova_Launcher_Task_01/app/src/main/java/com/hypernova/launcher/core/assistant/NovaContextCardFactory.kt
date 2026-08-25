@@ -30,7 +30,13 @@ object NovaContextCardFactory {
             } else {
                 "Vehicle update"
             },
-            detail = state.assistant.primaryMessage,
+            // The complete verified guidance is already the main NOVA message. Repeating that
+            // paragraph verbatim inside the alert card looked like a duplicated/corrupted event.
+            detail = if (state.assistant.blocked) {
+                "Follow the guidance above. This alert stays active until the vehicle reports it cleared."
+            } else {
+                state.assistant.primaryMessage
+            },
         )
         else -> null
     }

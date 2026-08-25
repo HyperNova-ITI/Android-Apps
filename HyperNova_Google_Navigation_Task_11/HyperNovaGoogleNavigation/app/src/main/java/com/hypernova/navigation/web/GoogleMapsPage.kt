@@ -507,6 +507,28 @@ internal object GoogleMapsPage {
                   }
                 };
 
+                window.hypernovaContact = async function(requestId, placeId) {
+                  try {
+                    await ensurePlacesLibrary();
+                    const place = new PlaceClass({ id: placeId });
+                    await place.fetchFields({
+                      fields: ['displayName', 'internationalPhoneNumber', 'nationalPhoneNumber']
+                    });
+                    const phoneNumber = text(place.internationalPhoneNumber || place.nationalPhoneNumber);
+                    if (!phoneNumber) {
+                      respond(requestId, 'contact', false, {}, 'NO_PHONE', 'No phone number is listed for this place.');
+                      return;
+                    }
+                    respond(requestId, 'contact', true, {
+                      displayName: text(place.displayName),
+                      phoneNumber: phoneNumber
+                    }, '', '');
+                  } catch (error) {
+                    const classified = classifyError(error);
+                    respond(requestId, 'contact', false, {}, classified[0], classified[1]);
+                  }
+                };
+
                 window.hypernovaCancelRoute = function() {
                   clearObjects(routePolylines, 'setMap');
                   clearObjects(routeMarkers, 'map');

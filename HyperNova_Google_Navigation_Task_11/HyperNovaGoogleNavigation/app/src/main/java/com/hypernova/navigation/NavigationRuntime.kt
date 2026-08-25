@@ -19,8 +19,11 @@ import com.hypernova.navigation.persistence.DestinationResolution
 import com.hypernova.navigation.persistence.DestinationTokenEntry
 import com.hypernova.navigation.persistence.DestinationTokenStore
 import com.hypernova.navigation.persistence.SharedPreferencesDestinationTokenPersistence
+import com.hypernova.navigation.persistence.SavedDestinationDefaults
 import com.hypernova.navigation.places.ConfigurationRequiredSearchGateway
 import com.hypernova.navigation.places.DestinationSearchGateway
+import com.hypernova.navigation.places.GooglePlacesException
+import com.hypernova.navigation.places.PlaceContact
 import com.hypernova.navigation.session.NavigationSessionStore
 import com.hypernova.navigation.web.GoogleMapsWebGateway
 import java.util.concurrent.atomic.AtomicLong
@@ -98,6 +101,23 @@ class NavigationRuntime private constructor(
 
     fun resolveDestination(token: String): DestinationResolution =
         destinationTokenStore.resolve(token.trim())
+
+    suspend fun destinationContact(entry: DestinationTokenEntry): PlaceContact? {
+        val gateway = navigationGateway as? GoogleMapsWebGateway
+            ?: throw GooglePlacesException.ConfigurationRequired
+        gateway.initialize()
+        if (!gateway.isReady) {
+            when (val readiness = readinessGate.await()) {
+                NavigatorReadinessGate.State.Ready -> Unit
+                NavigatorReadinessGate.State.Waiting -> error("Readiness gate returned a waiting state")
+                is NavigatorReadinessGate.State.TerminalFailure ->
+                    throw GooglePlacesException.RequestFailed(
+                        IllegalStateException("Google Maps is unavailable: ${readiness.failure}"),
+                    )
+            }
+        }
+        return gateway.contact(entry.record)
+    }
 
     suspend fun prepareDestination(entry: DestinationTokenEntry): RoutePreparationResult {
         val generation = routeCommandGeneration.incrementAndGet()
@@ -276,15 +296,17 @@ class NavigationRuntime private constructor(
                             else "Add a restricted Google Maps Platform API key to secrets.properties.",
                     ),
                 )
+            val destinationTokenStore =
+                DestinationTokenStore(
+                    SharedPreferencesDestinationTokenPersistence(application),
+                )
+            SavedDestinationDefaults.seedMissingHome(destinationTokenStore)
             return NavigationRuntime(
                 application = application,
                 apiKey = apiKey,
                 isGoogleConfigured = configured,
                 sessionStore = sessionStore,
-                destinationTokenStore =
-                    DestinationTokenStore(
-                        SharedPreferencesDestinationTokenPersistence(application),
-                    ),
+                destinationTokenStore = destinationTokenStore,
             )
         }
     }

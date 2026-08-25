@@ -83,6 +83,9 @@ object CommandWireCodec {
             NavigationContract.OP_SET_DESTINATION ->
                 CommandArguments.Destination(args.requiredText("destination_id"))
 
+            NavigationContract.OP_GET_DESTINATION_CONTACT ->
+                CommandArguments.Destination(args.requiredText("destination_id"))
+
             else -> throw CommandParseException("Unsupported Navigation operation: $operation")
         }
 
@@ -183,6 +186,9 @@ object CommandWireCodec {
                 }
                 CommandArguments.VolumePercent(percent)
             }
+
+            MediaWireContract.OP_PLAY_RADIO ->
+                CommandArguments.RadioQuery(args.requiredText("query"))
 
             else -> throw CommandParseException("Unsupported Media operation: $operation")
         }

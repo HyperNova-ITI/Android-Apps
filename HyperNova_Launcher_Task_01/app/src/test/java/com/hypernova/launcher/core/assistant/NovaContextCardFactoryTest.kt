@@ -53,7 +53,10 @@ class NovaContextCardFactoryTest {
 
         assertEquals("VEHICLE ALERT", card.label)
         assertEquals("Fault P0217 active", card.title)
-        assertEquals("Engine coolant temperature is too high.", card.detail)
+        assertEquals(
+            "Follow the guidance above. This alert stays active until the vehicle reports it cleared.",
+            card.detail,
+        )
     }
 
     private fun fixture(): LauncherUiState {

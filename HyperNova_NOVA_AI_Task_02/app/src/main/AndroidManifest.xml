@@ -28,6 +28,9 @@
             <action android:name="com.hypernova.navigation.action.BIND_COMMAND" />
         </intent>
         <intent>
+            <action android:name="com.hypernova.navigation.action.BIND_PLACE_CONTACT" />
+        </intent>
+        <intent>
             <action android:name="com.hypernova.climate.action.BIND_COMMAND" />
         </intent>
         <intent>

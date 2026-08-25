@@ -82,4 +82,19 @@ class GoogleMapsBridgeCodecTest {
 
         assertTrue(failure.message.orEmpty().contains("geometry"))
     }
+
+    @Test
+    fun placeContactRequiresARealProviderPhoneNumber() {
+        val contact = GoogleMapsBridgeCodec.parseContact(
+            """{"displayName":"Burger and fries B&F","phoneNumber":"+20 100 123 4567"}""",
+        )
+
+        assertEquals("Burger and fries B&F", contact.displayName)
+        assertEquals("+20 100 123 4567", contact.phoneNumber)
+        assertThrows(IllegalArgumentException::class.java) {
+            GoogleMapsBridgeCodec.parseContact(
+                """{"displayName":"No Phone Cafe","phoneNumber":""}""",
+            )
+        }
+    }
 }

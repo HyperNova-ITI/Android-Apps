@@ -95,6 +95,7 @@ class MainActivity : AppCompatActivity() {
     private var activityResumed = false
     private var novaTypingAnimator: ValueAnimator? = null
     private var novaTextTarget = ""
+    private var lastRenderedNovaEvidence: List<NovaEvidenceCard>? = null
     private var visibleNovaContextDomain: String? = null
     private var activeNovaContextDestination: AppDestination? = null
     private val pendingIntegrationConnections = mutableListOf<Runnable>()
@@ -588,7 +589,7 @@ class MainActivity : AppCompatActivity() {
      * Navigation's route geometry and performs no Places/Routes requests, so it stays useful
      * without recreating the expensive Navigation engine inside Launcher.
      */
-    private fun shouldCreateHomeMapSurface(): Boolean = BuildConfig.MAPS_API_KEY.isNotBlank()
+    private fun shouldCreateHomeMapSurface(): Boolean = false
 
     /** Overlay the local fallback with a Google-owned, read-only destination preview. */
     private fun initializeGoogleNavigationMap() {
@@ -798,8 +799,10 @@ class MainActivity : AppCompatActivity() {
      */
     private fun configureNovaActions() {
         binding.novaFace.setOrbitVisible(false)
+        // Treat the complete NOVA stage as the application entry point. Child controls and
+        // evidence/context cards retain their own listeners and consume their own taps.
         configureDestinationClick(
-            view = binding.novaFace,
+            view = binding.novaHeroSection,
             destination = AppDestination.NOVA_AI
         )
 
@@ -1244,11 +1247,13 @@ class MainActivity : AppCompatActivity() {
      */
     private fun refreshAndRenderState() {
         val refreshedState = stateController.refresh()
-        if (::latestUiState.isInitialized && refreshedState == latestUiState) return
+        val previousState = if (::latestUiState.isInitialized) latestUiState else null
+        if (refreshedState == previousState) return
         latestUiState = refreshedState
 
         renderLauncherState(
-            latestUiState
+            state = latestUiState,
+            previousState = previousState,
         )
 
         Log.d(TAG, "Launcher state changed")
@@ -1258,15 +1263,34 @@ class MainActivity : AppCompatActivity() {
      * Render every launcher section.
      */
     private fun renderLauncherState(
-        state: LauncherUiState
+        state: LauncherUiState,
+        previousState: LauncherUiState? = null,
     ) {
-        renderSystemState(state)
-        renderAssistantState(state)
-        renderNavigationState(state)
-        renderMediaState(state.media)
-        renderPhoneState(state.phone)
-        renderClimateState(state.climate)
-        renderSettingsState(state.settings)
+        if (previousState?.system != state.system) renderSystemState(state)
+
+        val assistantChanged = previousState?.assistant != state.assistant
+        if (assistantChanged) renderAssistantState(state)
+
+        if (previousState?.navigation != state.navigation) renderNavigationState(state)
+        if (previousState?.media != state.media) renderMediaState(state.media)
+        if (previousState?.phone != state.phone) renderPhoneState(state.phone)
+        if (previousState?.climate != state.climate) renderClimateState(state.climate)
+        if (previousState?.settings != state.settings) renderSettingsState(state.settings)
+
+        // A NOVA context card can mirror authoritative state owned by another application. If
+        // that app changes without a new assistant snapshot, update only the context card instead
+        // of redrawing the entire NOVA stage (which previously restarted animations and flickered).
+        if (
+            !assistantChanged &&
+            (
+                previousState?.navigation != state.navigation ||
+                    previousState?.media != state.media ||
+                    previousState?.phone != state.phone ||
+                    previousState?.climate != state.climate
+            )
+        ) {
+            renderNovaContext(state)
+        }
     }
 
     /**
@@ -1350,7 +1374,10 @@ class MainActivity : AppCompatActivity() {
 
         binding.novaActivityProgress.visibility =
             if (state.assistant.showActivityProgress) View.VISIBLE else View.GONE
-        renderNovaEvidence(state.assistant.evidenceCards)
+        if (lastRenderedNovaEvidence != state.assistant.evidenceCards) {
+            lastRenderedNovaEvidence = state.assistant.evidenceCards
+            renderNovaEvidence(state.assistant.evidenceCards)
+        }
 
         binding.textNovaQuestion.setTextColor(
             ContextCompat.getColor(
@@ -1431,11 +1458,16 @@ class MainActivity : AppCompatActivity() {
 
     private fun renderNovaPrimaryMessage(text: String, animate: Boolean) {
         if (text == novaTextTarget) return
+        val extendsVisibleStream =
+            novaTextTarget.isNotBlank() && text.startsWith(novaTextTarget)
         novaTextTarget = text
         novaTypingAnimator?.cancel()
         binding.textNovaQuestion.contentDescription = text
 
-        if (!animate || text.length < 12) {
+        // Cloud progress already grows this text in place. When the final SAY frame repeats that
+        // same prefix with its last words, commit it directly instead of clearing the field and
+        // replaying a second typewriter animation that looks like a duplicated response.
+        if (!animate || text.length < 12 || extendsVisibleStream) {
             binding.textNovaQuestion.text = text
             return
         }

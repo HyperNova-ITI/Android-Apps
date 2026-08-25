@@ -4,6 +4,7 @@ import com.hypernova.contracts.navigation.NavigationContract
 import com.hypernova.navigation.model.GeoPoint
 import com.hypernova.navigation.model.GoogleDestinationRecord
 import com.hypernova.navigation.model.RouteData
+import com.hypernova.navigation.places.PlaceContact
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -83,6 +84,15 @@ internal object GoogleMapsBridgeCodec {
         )
     }
 
+    fun parseContact(payload: String): PlaceContact {
+        val value = JSONObject(payload)
+        val displayName = value.optString("displayName").trim().take(MAX_TITLE_LENGTH)
+        val phoneNumber = value.optString("phoneNumber").trim().take(MAX_PHONE_LENGTH)
+        require(displayName.isNotBlank()) { "Google Place display name is unavailable." }
+        require(phoneNumber.count(Char::isDigit) >= 5) { "Google Place phone number is unavailable." }
+        return PlaceContact(displayName, phoneNumber)
+    }
+
     private fun JSONObject.finiteDoubleOrNull(name: String): Double? {
         if (!has(name) || isNull(name)) return null
         return optDouble(name, Double.NaN).takeIf(Double::isFinite)
@@ -92,4 +102,5 @@ internal object GoogleMapsBridgeCodec {
     private const val MAX_TITLE_LENGTH = 200
     private const val MAX_SUBTITLE_LENGTH = 500
     private const val MAX_CATEGORY_LENGTH = 120
+    private const val MAX_PHONE_LENGTH = 48
 }
