@@ -1098,12 +1098,8 @@ class MainActivity : AppCompatActivity() {
         binding.navPower.setOnClickListener {
             openSystemControl()
         }
+    }
 
-}
-
-    /**
-     * Attach one standard application click listener.
-     */
     /**
      * Open HyperNova System Control from the power button in the fixed bottom bar.
      */
@@ -1154,6 +1150,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Attach one standard application click listener.
+     */
     private fun configureDestinationClick(
         view: View,
         destination: AppDestination
