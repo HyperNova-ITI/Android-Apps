@@ -15,7 +15,7 @@
     <string name="watchdog_title">Watchdog Timer</string>
     <string name="watchdog_description">Start the watchdog timeout validation path.</string>
 
-    <string name="backend_offline">UI ONLY • BACKEND NOT CONNECTED</string>
+    <string name="backend_offline">CHECKING ROOT BACKEND...</string>
     <string name="backend_pending_format">%1$s selected • backend command not wired yet</string>
 
     <string name="power_icon_description">System control</string>
