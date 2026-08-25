@@ -171,8 +171,6 @@
         <FrameLayout android:id="@+id/navPhone" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clickable="true" android:focusable="true" android:foreground="?attr/selectableItemBackgroundBorderless">
             <ImageView android:layout_width="38dp" android:layout_height="38dp" android:layout_gravity="center" android:alpha="0.88" android:contentDescription="@string/bottom_nav_phone" android:scaleType="centerInside" android:src="@drawable/ic_nav_phone" app:tint="@color/hypernova_text_secondary" />
         </FrameLayout>
-        <FrameLayout android:id="@+id/navSettings" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clickable="true" android:focusable="true" android:foreground="?attr/selectableItemBackgroundBorderless">
-            <ImageView android:layout_width="40dp" android:layout_height="40dp" android:layout_gravity="center" android:alpha="0.88" android:contentDescription="@string/settings_icon_description" android:scaleType="centerInside" android:src="@drawable/ic_nav_settings" app:tint="@color/hypernova_text_secondary" />
-        </FrameLayout>
+        <FrameLayout android:id="@+id/navPower" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clickable="true" android:focusable="true" android:foreground="?attr/selectableItemBackgroundBorderless"><ImageView android:layout_width="40dp" android:layout_height="40dp" android:layout_gravity="center" android:alpha="0.88" android:contentDescription="@string/bottom_nav_power" android:scaleType="centerInside" android:src="@drawable/ic_nav_power" app:tint="@color/hypernova_text_secondary" /></FrameLayout>
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

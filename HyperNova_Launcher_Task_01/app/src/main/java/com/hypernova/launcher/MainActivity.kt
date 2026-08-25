@@ -1093,16 +1093,67 @@ class MainActivity : AppCompatActivity() {
             view = binding.navPhone,
             destination = AppDestination.PHONE
         )
+        binding.navPower.isClickable = true
+        binding.navPower.isFocusable = true
+        binding.navPower.setOnClickListener {
+            openSystemControl()
+        }
 
-        configureDestinationClick(
-            view = binding.navSettings,
-            destination = AppDestination.SETTINGS
-        )
-    }
+}
 
     /**
      * Attach one standard application click listener.
      */
+    /**
+     * Open HyperNova System Control from the power button in the fixed bottom bar.
+     */
+    private fun openSystemControl() {
+        val openIntent =
+            Intent("com.hypernova.wdt.action.OPEN").apply {
+                setPackage("com.hypernova.wdt")
+                addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP,
+                )
+            }
+
+        runCatching {
+            startActivity(openIntent)
+        }.onFailure { primaryFailure ->
+            Log.w(
+                TAG,
+                "System Control OPEN action failed; trying package launch intent",
+                primaryFailure,
+            )
+
+            val fallback = packageManager.getLaunchIntentForPackage("com.hypernova.wdt")
+            if (fallback != null) {
+                fallback.addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP,
+                )
+                runCatching {
+                    startActivity(fallback)
+                }.onFailure { fallbackFailure ->
+                    Log.e(TAG, "Could not open HyperNova System Control", fallbackFailure)
+                    Toast.makeText(
+                        this,
+                        getString(R.string.system_control_unavailable),
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                }
+            } else {
+                Toast.makeText(
+                    this,
+                    getString(R.string.system_control_unavailable),
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
+        }
+    }
+
     private fun configureDestinationClick(
         view: View,
         destination: AppDestination

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">HyperNova System Control</string>
+    <string name="back">Back</string>
+    <string name="system_control">SYSTEM CONTROL</string>
+    <string name="power_recovery">POWER &amp; RECOVERY</string>
+    <string name="system_control_subtitle">Choose the system action to execute.</string>
+
+    <string name="restart_title">Restart</string>
+    <string name="restart_description">Restart the Android system cleanly.</string>
+
+    <string name="panic_title">Kernel Panic</string>
+    <string name="panic_description">Trigger the kernel panic validation path.</string>
+
+    <string name="watchdog_title">Watchdog Timer</string>
+    <string name="watchdog_description">Start the watchdog timeout validation path.</string>
+
+    <string name="backend_offline">UI ONLY • BACKEND NOT CONNECTED</string>
+    <string name="backend_pending_format">%1$s selected • backend command not wired yet</string>
+
+    <string name="power_icon_description">System control</string>
+    <string name="restart_icon_description">Restart</string>
+    <string name="panic_icon_description">Kernel panic</string>
+    <string name="watchdog_icon_description">Watchdog timer</string>
+</resources>

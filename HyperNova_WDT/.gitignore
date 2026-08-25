@@ -1,0 +1,22 @@
+# Gradle
+.gradle/
+build/
+**/build/
+
+# Android Studio
+.idea/
+*.iml
+
+# Local Android SDK
+local.properties
+
+# Generated / temporary
+*.log
+*.tmp
+
+# Local backups created by Launcher patch workflow
+backups/
+
+# OS
+.DS_Store
+Thumbs.db

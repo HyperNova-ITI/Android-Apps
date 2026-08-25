@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="hn_bg">#EEF4F8</color>
+    <color name="hn_bg_mid">#E4EDF3</color>
+    <color name="hn_surface">#FFFFFF</color>
+    <color name="hn_surface_2">#F7FBFD</color>
+    <color name="hn_pressed">#E4EDF3</color>
+    <color name="hn_border">#9BAFBD</color>
+    <color name="hn_border_soft">#C3D1DB</color>
+    <color name="hn_text_primary">#071722</color>
+    <color name="hn_text_secondary">#4E616E</color>
+    <color name="hn_cyan">#087F91</color>
+    <color name="hn_cyan_dim">#0AA7B8</color>
+    <color name="hn_red">#C62B42</color>
+    <color name="hn_amber">#9A5900</color>
+    <color name="hn_icon_cyan_bg">#D9F1F4</color>
+    <color name="hn_icon_cyan_stroke">#75C1CB</color>
+    <color name="hn_icon_red_bg">#FBE8EC</color>
+    <color name="hn_icon_red_stroke">#E3A9B4</color>
+    <color name="hn_icon_amber_bg">#FFF1D6</color>
+    <color name="hn_icon_amber_stroke">#E7C98E</color>
+    <color name="hn_status_bg">#E4EDF3</color>
+</resources>
