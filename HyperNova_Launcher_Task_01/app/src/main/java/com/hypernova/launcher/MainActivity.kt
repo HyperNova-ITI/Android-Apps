@@ -797,6 +797,7 @@ class MainActivity : AppCompatActivity() {
      * Configure the four NOVA shortcut actions.
      */
     private fun configureNovaActions() {
+        binding.novaFace.setOrbitVisible(false)
         configureDestinationClick(
             view = binding.novaFace,
             destination = AppDestination.NOVA_AI
@@ -807,6 +808,16 @@ class MainActivity : AppCompatActivity() {
         }
         binding.novaContextCard.setOnClickListener(openContext)
         binding.buttonNovaContextOpen.setOnClickListener(openContext)
+
+        binding.buttonNovaCancel.setOnClickListener {
+            novaStatusClient.cancelCurrentTurn()
+        }
+        binding.buttonNovaMute.setOnClickListener {
+            novaStatusClient.setMuted(!latestUiState.assistant.muted)
+        }
+        binding.buttonNovaDeafen.setOnClickListener {
+            novaStatusClient.setDeafened(!latestUiState.assistant.deafened)
+        }
     }
 
     /**
@@ -1233,7 +1244,9 @@ class MainActivity : AppCompatActivity() {
         }
         // The status chip is the single state indicator for this card. The all-caps eyebrow that
         // used to sit under the face said the same thing in different words.
-        binding.textNovaStatusChip.text = when (presentationState) {
+        binding.textNovaStatusChip.text = if (state.assistant.deafened) {
+            "MIC OFF"
+        } else when (presentationState) {
             AssistantRuntimeState.IDLE -> "READY"
             AssistantRuntimeState.LISTENING -> "LISTENING"
             AssistantRuntimeState.PROCESSING -> "THINKING"
@@ -1243,6 +1256,32 @@ class MainActivity : AppCompatActivity() {
             AssistantRuntimeState.SPEAKING -> "SPEAKING"
             AssistantRuntimeState.UNAVAILABLE -> "OFFLINE"
         }
+
+        val controlsAvailable = state.assistant.connectionState == AppConnectionState.READY
+        val turnActive = presentationState != AssistantRuntimeState.IDLE &&
+            presentationState != AssistantRuntimeState.UNAVAILABLE
+        binding.buttonNovaCancel.isEnabled = controlsAvailable && turnActive
+        binding.buttonNovaCancel.alpha = if (binding.buttonNovaCancel.isEnabled) 1f else 0.38f
+
+        binding.buttonNovaMute.isEnabled = controlsAvailable
+        binding.buttonNovaMute.isSelected = state.assistant.muted
+        binding.buttonNovaMute.alpha = if (controlsAvailable) 1f else 0.38f
+        binding.buttonNovaMute.setImageResource(
+            if (state.assistant.muted) R.drawable.ic_nova_volume_off else R.drawable.ic_nova_volume,
+        )
+        binding.buttonNovaMute.contentDescription = getString(
+            if (state.assistant.muted) R.string.nova_unmute else R.string.nova_mute,
+        )
+
+        binding.buttonNovaDeafen.isEnabled = controlsAvailable
+        binding.buttonNovaDeafen.isSelected = state.assistant.deafened
+        binding.buttonNovaDeafen.alpha = if (controlsAvailable) 1f else 0.38f
+        binding.buttonNovaDeafen.setImageResource(
+            if (state.assistant.deafened) R.drawable.ic_nova_mic_off else R.drawable.ic_nova_mic,
+        )
+        binding.buttonNovaDeafen.contentDescription = getString(
+            if (state.assistant.deafened) R.string.nova_undeafen else R.string.nova_deafen,
+        )
 
         renderNovaPrimaryMessage(
             text = state.assistant.primaryMessage,

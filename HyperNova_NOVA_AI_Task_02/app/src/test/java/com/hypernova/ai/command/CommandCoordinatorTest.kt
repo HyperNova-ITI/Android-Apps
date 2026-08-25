@@ -110,6 +110,19 @@ class CommandCoordinatorTest {
         assertEquals(CommandStatus.CONFIRMED, fixture.results.last().status)
     }
 
+    @Test
+    fun `cancelled turn drops its timeout and every late provider callback`() {
+        val fixture = Fixture()
+        fixture.coordinator.submit(request)
+
+        fixture.coordinator.cancelTurn(request.turnId)
+        fixture.scheduler.runPending()
+        fixture.executor.reply(CommandStatus.CONFIRMED, "Late controller acknowledgement")
+
+        assertTrue(fixture.scheduler.tasks.single().cancelled)
+        assertTrue(fixture.results.isEmpty())
+    }
+
     private class Fixture {
         val results = mutableListOf<CommandResult>()
         val executor = FakeExecutor()

@@ -24,6 +24,8 @@ object NovaStatusSnapshotCodec {
             blocked = value.optBoolean("blocked", false),
             speaking = value.optBoolean("speaking", false),
             showActivityProgress = value.optBoolean("activity_progress", false),
+            muted = value.optBoolean("muted", false),
+            deafened = value.optBoolean("deafened", false),
             evidenceCards = value.parseEvidenceCards(),
         )
     }

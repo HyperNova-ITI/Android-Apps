@@ -11,7 +11,7 @@ import android.util.Log
 import com.hypernova.ai.status.INovaStatusCallback
 import com.hypernova.ai.status.INovaStatusService
 
-/** Subscribes the launcher widget to NOVA's read-only status contract. */
+/** Subscribes to NOVA state and exposes its narrow signature-protected driver controls. */
 class NovaStatusClient(
     context: Context,
     private val snapshotSink: (NovaStatusSnapshot) -> Unit,
@@ -123,6 +123,24 @@ class NovaStatusClient(
         bound = false
     }
 
+    fun cancelCurrentTurn(): Boolean = invokeControl("cancel") { cancelCurrentTurn() }
+
+    fun setMuted(muted: Boolean): Boolean = invokeControl("mute") { setMuted(muted) }
+
+    fun setDeafened(deafened: Boolean): Boolean =
+        invokeControl("deafen") { setDeafened(deafened) }
+
+    private inline fun invokeControl(label: String, action: INovaStatusService.() -> Unit): Boolean {
+        val connected = service ?: return false
+        return try {
+            connected.action()
+            true
+        } catch (exception: Exception) {
+            Log.e(TAG, "Could not send NOVA $label control", exception)
+            false
+        }
+    }
+
     private fun releaseDeadBinding() {
         service = null
         if (bound) {
@@ -147,7 +165,7 @@ class NovaStatusClient(
         private const val ACTION_BIND_STATUS = "com.hypernova.ai.action.BIND_STATUS"
         private const val NOVA_PACKAGE = "com.hypernova.ai"
         private const val NOVA_STATUS_SERVICE = "com.hypernova.ai.status.NovaStatusService"
-        private const val SUPPORTED_API_VERSION = 2
+        private const val SUPPORTED_API_VERSION = 3
         private const val RECONNECT_INITIAL_MS = 1_000L
         private const val RECONNECT_MAX_MS = 5_000L
     }

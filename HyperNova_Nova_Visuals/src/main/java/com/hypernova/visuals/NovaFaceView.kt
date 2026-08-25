@@ -49,6 +49,7 @@ class NovaFaceView @JvmOverloads constructor(
     private var success = Color.rgb(57, 234, 75)
     private var warning = Color.rgb(245, 166, 35)
     private var error = Color.rgb(255, 94, 104)
+    private var orbitVisible = true
     private var animator: ValueAnimator? = null
     private var lastMotionFrame = -1
 
@@ -83,6 +84,13 @@ class NovaFaceView @JvmOverloads constructor(
         invalidate()
     }
 
+    /** Lets compact surfaces use the expressive face without the surrounding circular orbit. */
+    fun setOrbitVisible(visible: Boolean) {
+        if (orbitVisible == visible) return
+        orbitVisible = visible
+        invalidate()
+    }
+
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         updateMotionLifecycle()
@@ -112,14 +120,16 @@ class NovaFaceView @JvmOverloads constructor(
 
         val cx = paddingLeft + availableWidth / 2f
         val cy = paddingTop + availableHeight / 2f
-        val radius = size * 0.43f
+        val radius = size * if (orbitVisible) 0.43f else 0.56f
         val now = motion * CYCLE_MS
         val stateColor = stateColor()
         val active = state != FaceState.UNAVAILABLE
         val breathe = 0.5f + 0.5f * sin(now / CYCLE_MS * (2f * PI).toFloat())
 
-        drawHalo(canvas, cx, cy, radius, stateColor, breathe, active)
-        drawOrbit(canvas, cx, cy, radius, stateColor, now)
+        if (orbitVisible) {
+            drawHalo(canvas, cx, cy, radius, stateColor, breathe, active)
+            drawOrbit(canvas, cx, cy, radius, stateColor, now)
+        }
         drawVisor(canvas, cx, cy, radius, stateColor, active)
         drawExpression(canvas, cx, cy, radius, now, stateColor)
     }

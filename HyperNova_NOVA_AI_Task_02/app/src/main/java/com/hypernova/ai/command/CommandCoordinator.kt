@@ -119,6 +119,17 @@ class CommandCoordinator(
         executor.shutdown()
     }
 
+    /** Stop tracking callbacks for an abandoned turn and cancel its broker timeouts. */
+    fun cancelTurn(turnId: String?) {
+        if (turnId.isNullOrBlank()) return
+        val timeouts = synchronized(this) {
+            val cancelled = active.values.filter { it.request.turnId == turnId }
+            cancelled.forEach { active.remove(it.request.requestId) }
+            cancelled.map { it.timeout }
+        }
+        timeouts.forEach(Cancelable::cancel)
+    }
+
     private fun finish(result: CommandResult) {
         val shouldPublish = synchronized(this) {
             val running = active[result.request.requestId] ?: return@synchronized false

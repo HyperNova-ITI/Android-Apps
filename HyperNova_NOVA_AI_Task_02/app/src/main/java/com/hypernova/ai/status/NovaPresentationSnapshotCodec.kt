@@ -14,7 +14,7 @@ import org.json.JSONObject
 object NovaPresentationSnapshotCodec {
     const val SCHEMA_VERSION = 1
 
-    fun encode(snapshot: NovaRuntimeSnapshot): String {
+    fun encode(snapshot: NovaRuntimeSnapshot, muted: Boolean = false, deafened: Boolean = false): String {
         val ui = NovaUiStateFactory.create(snapshot)
         return JSONObject().apply {
             put("schema_version", SCHEMA_VERSION)
@@ -29,6 +29,8 @@ object NovaPresentationSnapshotCodec {
             put("blocked", snapshot.blocked)
             put("speaking", ui.isSpeaking)
             put("activity_progress", ui.showActivityProgress)
+            put("muted", muted)
+            put("deafened", deafened)
             if (snapshot.evidenceCards.isNotEmpty()) {
                 put("evidence_cards", JSONArray().apply {
                     snapshot.evidenceCards.take(4).forEach { card ->

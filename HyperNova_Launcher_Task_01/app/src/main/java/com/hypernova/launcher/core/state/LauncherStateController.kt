@@ -224,6 +224,8 @@ class LauncherStateController(
             blocked = snapshot.blocked,
             speaking = snapshot.speaking,
             showActivityProgress = snapshot.showActivityProgress,
+            muted = snapshot.muted,
+            deafened = snapshot.deafened,
             evidenceCards = snapshot.evidenceCards,
             artworkVisible = true,
         )

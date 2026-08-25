@@ -26,6 +26,9 @@ import com.hypernova.ai.protocol.AudioFrameType
 import com.hypernova.ai.ui.NovaVisibleState
 import com.hypernova.ai.vehicle.VehicleGatewayStateClient
 import org.json.JSONObject
+import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.atomic.AtomicLong
 
 class NovaRuntimeService : Service(),
     NovaControlClient.Listener,
@@ -38,6 +41,12 @@ class NovaRuntimeService : Service(),
     private lateinit var commandCoordinator: CommandCoordinator
     private lateinit var vehicleGatewayStateClient: VehicleGatewayStateClient
     private val stateCoordinator = NovaStateCoordinator()
+    private val audioFrameExecutor = Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "nova-audio-playback").apply { isDaemon = true }
+    }
+    private val audioGeneration = AtomicLong(0)
+    @Volatile private var activeAudioStreamId = 0L
+    @Volatile private var cancelledAudioStreamId = 0L
     private var lastActionBlocked = false
 
     override fun onCreate() {
@@ -76,6 +85,7 @@ class NovaRuntimeService : Service(),
             }
             ACTION_CANCEL -> cancelCurrentTurn()
             ACTION_SET_MUTED -> setMuted(intent.getBooleanExtra(EXTRA_MUTED, false))
+            ACTION_SET_DEAFENED -> setDeafened(intent.getBooleanExtra(EXTRA_DEAFENED, false))
         }
         return START_STICKY
     }
@@ -89,10 +99,14 @@ class NovaRuntimeService : Service(),
     private fun cancelCurrentTurn() {
         if (!::player.isInitialized) return
         val turnId = NovaRuntimeState.session.value?.turnId
+        audioGeneration.incrementAndGet()
+        if (activeAudioStreamId != 0L) cancelledAudioStreamId = activeAudioStreamId
+        activeAudioStreamId = 0L
         player.stop()
+        if (::commandCoordinator.isInitialized) commandCoordinator.cancelTurn(turnId)
         controlClient.sendCancel(turnId)
         lastActionBlocked = false
-        publishControlState(NovaVisibleState.IDLE)
+        NovaRuntimeState.publishCancelled()
     }
 
     private fun setMuted(muted: Boolean) {
@@ -102,10 +116,20 @@ class NovaRuntimeService : Service(),
         NovaRuntimeState.publishMuted(muted)
     }
 
+    private fun setDeafened(deafened: Boolean) {
+        if (!::controlClient.isInitialized) return
+        val turnId = NovaRuntimeState.session.value?.turnId
+        if (deafened) cancelCurrentTurn()
+        preferences().edit().putBoolean(KEY_DEAFENED, deafened).apply()
+        NovaRuntimeState.publishDeafened(deafened)
+        controlClient.sendDeafened(deafened, turnId)
+    }
+
     private fun applyStoredMute() {
         val muted = preferences().getBoolean(KEY_MUTED, false)
         player.setMuted(muted)
         NovaRuntimeState.publishMuted(muted)
+        NovaRuntimeState.publishDeafened(preferences().getBoolean(KEY_DEAFENED, false))
     }
 
     private fun preferences() = getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
@@ -113,9 +137,11 @@ class NovaRuntimeService : Service(),
     override fun onDestroy() {
         if (::commandCoordinator.isInitialized) commandCoordinator.shutdown()
         if (::vehicleGatewayStateClient.isInitialized) vehicleGatewayStateClient.shutdown()
-        if (::player.isInitialized) player.stop()
         if (::controlClient.isInitialized) controlClient.stop()
         if (::audioClient.isInitialized) audioClient.stop()
+        audioGeneration.incrementAndGet()
+        audioFrameExecutor.shutdownNow()
+        if (::player.isInitialized) player.stop()
         NovaRuntimeState.publish(NovaVisibleState.UNAVAILABLE)
         super.onDestroy()
     }
@@ -124,6 +150,9 @@ class NovaRuntimeService : Service(),
 
     override fun onControlConnectionChanged(connected: Boolean) {
         NovaRuntimeState.publish(stateCoordinator.onControlConnectionChanged(connected))
+        if (connected) {
+            controlClient.sendDeafened(NovaRuntimeState.deafened.value == true)
+        }
         if (connected && ::vehicleGatewayStateClient.isInitialized) {
             vehicleGatewayStateClient.publishLatest()
         }
@@ -260,10 +289,43 @@ class NovaRuntimeService : Service(),
     }
 
     override fun onAudioFrame(frame: AudioFrame) {
+        // NovaPcmPlayer.end() deliberately waits until the current clip has drained so successive
+        // clips do not cut one another off. Keep that wait away from NovaAudioClient's socket
+        // reader: the Pi may already be sending the next clip, and leaving the socket unread can
+        // fill its buffer and make the Pi disconnect with an audio-send timeout.
+        val generation = audioGeneration.get()
+        try {
+            audioFrameExecutor.execute {
+                if (generation == audioGeneration.get()) {
+                    handleAudioFrame(frame, generation)
+                }
+            }
+        } catch (_: RejectedExecutionException) {
+            // The foreground service is shutting down; late frames belong to the closing socket.
+        }
+    }
+
+    private fun handleAudioFrame(frame: AudioFrame, generation: Long) {
+        if (frame.streamId != 0L && frame.streamId == cancelledAudioStreamId) return
         when (frame.type) {
-            AudioFrameType.TTS_START -> player.start(frame.streamId, frame.payload)
+            AudioFrameType.TTS_START -> {
+                activeAudioStreamId = frame.streamId
+                if (frame.streamId != cancelledAudioStreamId) {
+                    player.start(frame.streamId, frame.payload)
+                }
+                // Cancel may race between the generation check and player.start(). TTS has only
+                // buffered at this point, so stopping here prevents even a single stale sample.
+                if (generation != audioGeneration.get()) {
+                    cancelledAudioStreamId = frame.streamId
+                    activeAudioStreamId = 0L
+                    player.stop()
+                }
+            }
             AudioFrameType.TTS_PCM -> player.write(frame.streamId, frame.payload)
-            AudioFrameType.TTS_END -> player.end(frame.streamId)
+            AudioFrameType.TTS_END -> {
+                player.end(frame.streamId)
+                if (activeAudioStreamId == frame.streamId) activeAudioStreamId = 0L
+            }
             AudioFrameType.AUDIO_ERROR -> {
                 Log.w(TAG, "Pi audio error: ${String(frame.payload, Charsets.UTF_8)}")
                 publishControlState(NovaVisibleState.ERROR)
@@ -385,9 +447,12 @@ class NovaRuntimeService : Service(),
         const val ACTION_RECONNECT = "com.hypernova.ai.action.RECONNECT"
         const val ACTION_CANCEL = "com.hypernova.ai.action.CANCEL"
         const val ACTION_SET_MUTED = "com.hypernova.ai.action.SET_MUTED"
+        const val ACTION_SET_DEAFENED = "com.hypernova.ai.action.SET_DEAFENED"
         const val EXTRA_MUTED = "muted"
+        const val EXTRA_DEAFENED = "deafened"
         private const val PREFERENCES = "nova_runtime"
         private const val KEY_MUTED = "muted"
+        private const val KEY_DEAFENED = "deafened"
         private const val TAG = "NovaRuntimeService"
         private const val NOTIFICATION_CHANNEL = "nova_runtime"
         private const val NOTIFICATION_ID = 1001

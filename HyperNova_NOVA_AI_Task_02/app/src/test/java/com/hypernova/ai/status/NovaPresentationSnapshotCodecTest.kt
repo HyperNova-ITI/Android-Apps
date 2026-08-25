@@ -20,6 +20,8 @@ class NovaPresentationSnapshotCodecTest {
                 actionDomain = "navigation",
                 actionName = "set_destination",
             ),
+            muted = true,
+            deafened = true,
         )
 
         val value = JSONObject(encoded)
@@ -28,6 +30,8 @@ class NovaPresentationSnapshotCodecTest {
         assertEquals("Home is set as your destination", value.getString("primary_message"))
         assertEquals("navigation", value.getString("action_domain"))
         assertEquals("set_destination", value.getString("action_name"))
+        assertEquals(true, value.getBoolean("muted"))
+        assertEquals(true, value.getBoolean("deafened"))
     }
 
     @Test

@@ -86,6 +86,15 @@ class NovaControlClient(
         if (turnId != null) put("turn_id", turnId)
     })
 
+    /** Suspend or resume all microphone-triggered turns while keeping the cockpit link alive. */
+    fun sendDeafened(deafened: Boolean, turnId: String? = null): Boolean = enqueue(JSONObject().apply {
+        put("type", "set_deafened")
+        put("v", 1)
+        put("seq", sequence.incrementAndGet())
+        put("deafened", deafened)
+        if (turnId != null) put("turn_id", turnId)
+    })
+
     fun sendCommandResult(result: CommandResult): Boolean =
         enqueue(CommandWireCodec.toJson(result).apply {
             put("seq", sequence.incrementAndGet())

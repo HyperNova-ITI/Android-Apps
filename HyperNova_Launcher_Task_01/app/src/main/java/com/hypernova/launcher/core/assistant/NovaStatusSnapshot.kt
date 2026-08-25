@@ -28,5 +28,7 @@ data class NovaStatusSnapshot(
     val blocked: Boolean = false,
     val speaking: Boolean = false,
     val showActivityProgress: Boolean = false,
+    val muted: Boolean = false,
+    val deafened: Boolean = false,
     val evidenceCards: List<NovaEvidenceCard> = emptyList(),
 )

@@ -15,6 +15,7 @@ object NovaRuntimeState {
     private val mutableSession = MutableLiveData(NovaRuntimeSnapshot())
     private val mutableConversation = MutableLiveData<List<NovaMessage>>(emptyList())
     private val mutableMuted = MutableLiveData(false)
+    private val mutableDeafened = MutableLiveData(false)
     private val mainHandler = Handler(Looper.getMainLooper())
     val state: LiveData<NovaVisibleState> = mutableState
     val session: LiveData<NovaRuntimeSnapshot> = mutableSession
@@ -24,6 +25,9 @@ object NovaRuntimeState {
 
     /** Whether NOVA's spoken replies are silenced. */
     val muted: LiveData<Boolean> = mutableMuted
+
+    /** Whether wake-word and follow-up listening are suspended on the microphone node. */
+    val deafened: LiveData<Boolean> = mutableDeafened
 
     private var latestSession = NovaRuntimeSnapshot()
     private val conversationLog = mutableListOf<NovaMessage>()
@@ -157,6 +161,17 @@ object NovaRuntimeState {
     /** Silence or restore NOVA's spoken replies. Owned by the runtime service. */
     fun publishMuted(muted: Boolean) = dispatch {
         if (mutableMuted.value != muted) mutableMuted.value = muted
+    }
+
+    fun publishDeafened(deafened: Boolean) = dispatch {
+        if (mutableDeafened.value != deafened) mutableDeafened.value = deafened
+    }
+
+    /** Remove every presentation field belonging to the abandoned turn. */
+    fun publishCancelled() = dispatch {
+        latestSession = NovaRuntimeSnapshot(visibleState = NovaVisibleState.IDLE)
+        mutableSession.value = latestSession
+        syncConversation()
     }
 
     /** Drop the running conversation, for example when the driver cancels and starts over. */

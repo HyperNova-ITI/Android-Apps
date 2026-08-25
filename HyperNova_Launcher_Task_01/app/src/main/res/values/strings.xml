@@ -84,6 +84,11 @@
     <string name="nova_transcript_format">You · %1$s</string>
     <string name="nova_context_card">NOVA result card</string>
     <string name="nova_context_open">OPEN</string>
+    <string name="nova_cancel_turn">Cancel current request</string>
+    <string name="nova_mute">Mute NOVA replies</string>
+    <string name="nova_unmute">Unmute NOVA replies</string>
+    <string name="nova_deafen">Pause NOVA listening</string>
+    <string name="nova_undeafen">Resume NOVA listening</string>
 
     <!-- Existing NOVA layout values -->
     <string name="nova_greeting">Assistant unavailable</string>

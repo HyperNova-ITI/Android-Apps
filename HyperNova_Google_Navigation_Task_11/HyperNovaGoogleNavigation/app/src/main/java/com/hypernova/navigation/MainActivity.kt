@@ -78,6 +78,16 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    override fun onPause() {
+        // Activities in the cockpit are singleTask and normally survive app switches, so onDestroy
+        // is not a reliable surface-release boundary. Leaving Navigation's Chromium surface
+        // attached while NOVA or Launcher becomes foreground can exhaust the i.MX8QM guest
+        // compositor and present a black frame. The application-owned WebView and its Maps document
+        // remain alive; onResume attaches the same instance again without a page reload.
+        viewModel.detachMapSurface(binding.navigationFragmentContainer)
+        super.onPause()
+    }
+
     override fun onDestroy() {
         viewModel.detachMapSurface(binding.navigationFragmentContainer)
         super.onDestroy()
