@@ -2354,9 +2354,27 @@ class PhoneCommandService : Service() {
             }
         }
 
+        // Confirm on DISPATCH, not on an observed call state.
+        //
+        // This head unit has no telephony stack -- Telecom logs
+        // "IllegalStateException: telephony service is null" on every outgoing call -- and this
+        // app registers no InCallService, so the call-state flow awaited here can stay empty while
+        // the call is genuinely ringing in the driver's ear. The Pi's 12 s transport budget then
+        // expired and NOVA announced "call number timed out" for a call that had been placed
+        // 121 ms earlier and was ringing.
+        //
+        // Telecom reports dialing in 13-121 ms on this bench, so a short grace window still picks
+        // up the true state whenever the observer works, and the result carries it. When it does
+        // not, the dispatch itself is confirmed rather than reporting a failure that did not
+        // happen.
+        //
+        // TRADE-OFF, taken deliberately: a call the network rejects AFTER dispatch is now reported
+        // as placed. The durable fix is to register an InCallService -- this app already holds
+        // MANAGE_ONGOING_CALLS -- and observe calls through Telecom instead of a telephony stack
+        // this board does not have.
         val confirmed =
             awaitCallState(
-                OUTGOING_CALL_CONFIRM_TIMEOUT_MILLIS
+                OUTGOING_CALL_DISPATCH_GRACE_MILLIS
             ) {
                     state ->
 
@@ -2369,12 +2387,25 @@ class PhoneCommandService : Service() {
                     )
             }
 
-        finishConfirmedOrTimeout(
-            requestId,
-            operation,
+        finishRequest(
             callback,
-            confirmed,
-            "Outgoing call confirmed by Telecom"
+            PhoneResult(
+                requestId,
+                operation,
+                HyperNovaContract.STATUS_CONFIRMED,
+                if (confirmed != null) {
+                    "Outgoing call confirmed by Telecom"
+                } else {
+                    "Calling"
+                },
+                HyperNovaContract.ERROR_NONE,
+                -1,
+                emptyList(),
+                null,
+                emptyList(),
+                confirmed?.toContractState()
+                    ?: currentContractState()
+            )
         )
     }
 
@@ -3476,6 +3507,14 @@ class PhoneCommandService : Service() {
 
         const val OUTGOING_CALL_CONFIRM_TIMEOUT_MILLIS =
             10_000L
+
+        /**
+         * Grace window for picking up a real call state after a successful dispatch. Telecom
+         * reports dialing in 13-121 ms here; this is not a deadline the call has to meet, only
+         * how long we look before confirming the dispatch on its own.
+         */
+        const val OUTGOING_CALL_DISPATCH_GRACE_MILLIS =
+            1_500L
 
         const val AUDIO_CONFIRM_TIMEOUT_MILLIS =
             4_000L
