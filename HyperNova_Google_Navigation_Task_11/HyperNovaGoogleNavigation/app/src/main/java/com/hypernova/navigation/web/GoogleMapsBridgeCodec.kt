@@ -5,10 +5,14 @@ import com.hypernova.navigation.model.GeoPoint
 import com.hypernova.navigation.model.GoogleDestinationRecord
 import com.hypernova.navigation.model.RouteData
 import com.hypernova.navigation.places.PlaceContact
+import com.hypernova.navigation.session.RouteGeometry
 import org.json.JSONArray
 import org.json.JSONObject
 
 internal object GoogleMapsBridgeCodec {
+    /** Memory guard on the raw bridge payload, before the route is sampled to preview size. */
+    private const val RAW_ROUTE_POINT_CEILING = 8_192
+
     fun parseMapDestination(payload: String): GoogleDestinationRecord {
         val value = JSONObject(payload)
         val placeId = value.optString("placeId").trim()
@@ -65,17 +69,41 @@ internal object GoogleMapsBridgeCodec {
     fun parseRoute(payload: String): RouteData {
         val value = JSONObject(payload)
         val rawPoints = value.optJSONArray("points") ?: JSONArray()
-        val points = buildList {
+        /*
+         * Read the WHOLE polyline, then sample it down.
+         *
+         * This used to `break` once MAX_ROUTE_PREVIEW_POINTS had been collected, which keeps the
+         * first 128 points of the route -- a prefix, not a summary. Google returns thousands of
+         * points for a long route, so 128 of them covered about 2 km of a 191 km trip. Every
+         * later stage (RouteGeometry.sanitizeAndBound, ContractProjection.simplifyRoutePoints,
+         * the Launcher's sampleForPreview) samples correctly, but they were all sampling an
+         * already-truncated prefix, so the HOME widget rendered a 2 km stub while the same card
+         * correctly read "191.5 km" -- distance and ETA come straight from this JSON and were
+         * never truncated, which is what made the bug look like a zoom problem.
+         *
+         * RAW_ROUTE_POINT_CEILING still bounds what a hostile or runaway bridge payload can
+         * allocate; it is a memory guard, not a route-shape decision.
+         */
+        val rawGeometry = buildList {
             for (index in 0 until rawPoints.length()) {
                 val point = rawPoints.optJSONObject(index) ?: continue
                 val latitude = point.finiteDoubleOrNull("latitude") ?: continue
                 val longitude = point.finiteDoubleOrNull("longitude") ?: continue
                 if (latitude in -90.0..90.0 && longitude in -180.0..180.0) {
                     add(GeoPoint(latitude, longitude))
-                    if (size == NavigationContract.MAX_ROUTE_PREVIEW_POINTS) break
+                    if (size == RAW_ROUTE_POINT_CEILING) break
                 }
             }
         }
+        val points =
+            if (rawGeometry.size >= 2) {
+                RouteGeometry.sanitizeAndBound(
+                    rawGeometry,
+                    NavigationContract.MAX_ROUTE_PREVIEW_POINTS,
+                )
+            } else {
+                rawGeometry
+            }
         require(points.size >= 2) { "Google route geometry is unavailable." }
         return RouteData(
             points = points,
