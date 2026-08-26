@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.hypernova.visuals.CockpitNavigationController
 
 class MainActivity : AppCompatActivity() {
 
@@ -24,6 +25,16 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         configureImmersiveMode()
+
+        findViewById<View>(R.id.buttonTheme).setOnClickListener {
+            ThemeModeController.toggle(this)
+        }
+
+        CockpitNavigationController.bind(
+            findViewById(R.id.cockpitNavigation),
+            CockpitNavigationController.Destination.POWER,
+        )
+
 
         backendStatus =
             findViewById(R.id.textBackendStatus)

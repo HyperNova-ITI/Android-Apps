@@ -23,7 +23,7 @@ public final class CockpitNavigationController {
         CLIMATE("com.hypernova.climate", "com.hypernova.climate.action.OPEN"),
         NOVA("com.hypernova.ai", "com.hypernova.ai.action.OPEN"),
         PHONE("com.hypernova.phone", "com.hypernova.phone.action.OPEN"),
-        SETTINGS("com.hypernova.settings", "com.hypernova.settings.action.OPEN");
+        POWER("com.hypernova.wdt", "com.hypernova.wdt.action.OPEN");
 
         final String packageName;
         final String openAction;
@@ -53,8 +53,8 @@ public final class CockpitNavigationController {
                 Destination.NOVA, activeDestination, 28, true);
         bindItem(bar, R.id.hnCockpitNavPhone, R.id.hnCockpitNavPhoneIcon,
                 Destination.PHONE, activeDestination, 38, false);
-        bindItem(bar, R.id.hnCockpitNavSettings, R.id.hnCockpitNavSettingsIcon,
-                Destination.SETTINGS, activeDestination, 40, false);
+        bindItem(bar, R.id.hnCockpitNavPower, R.id.hnCockpitNavPowerIcon,
+                Destination.POWER, activeDestination, 40, false);
     }
 
     private static void bindItem(

@@ -2,9 +2,13 @@ package com.hypernova.wdt
 
 import android.os.Handler
 import android.os.Looper
-import java.io.File
+import java.io.BufferedReader
+import java.io.BufferedWriter
+import java.io.InputStreamReader
+import java.io.OutputStreamWriter
+import java.net.InetSocketAddress
+import java.net.Socket
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 
 enum class SystemAction(
     val displayName: String,
@@ -21,55 +25,23 @@ data class SystemActionResult(
 
 object SystemActionExecutor {
 
+    private const val HOST = "127.0.0.1"
+    private const val PORT = 47631
+    private const val TOKEN = "HN_WDT_V1_6f0ca9d2b8c34c59a1f6e723"
+    private const val CONNECT_TIMEOUT_MS = 1200
+    private const val READ_TIMEOUT_MS = 3000
+
     private val worker = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
-
-    /*
-     * IMPORTANT:
-     * These commands are intentionally fixed.
-     *
-     * Do not expose arbitrary shell command execution to the Activity/UI.
-     */
-    private val commands =
-        mapOf(
-            SystemAction.RESTART to
-                """
-                sync
-                reboot -p
-                """.trimIndent(),
-
-            SystemAction.KERNEL_PANIC to
-                """
-                sync
-                echo 0 > /proc/sys/kernel/panic
-                echo 1 > /proc/sys/kernel/sysrq
-                echo c > /proc/sysrq-trigger
-                """.trimIndent(),
-
-            SystemAction.WATCHDOG to
-                """
-                PIDS="$(pidof watchdogd)"
-                if [ -z "${'$'}PIDS" ]; then
-                    echo "watchdogd is not running" >&2
-                    exit 20
-                fi
-
-                kill -STOP ${'$'}PIDS
-                """.trimIndent(),
-        )
 
     fun probeRoot(
         callback: (SystemActionResult) -> Unit,
     ) {
         worker.execute {
-            val result =
-                runAsRoot(
-                    command = "id -u",
-                    timeoutSeconds = 3,
-                )
+            val result = sendRequest("PING")
 
             val finalResult =
-                if (result.success && result.message.trim() == "0") {
+                if (result.success && result.message.startsWith("OK ROOT")) {
                     SystemActionResult(
                         success = true,
                         message = "ROOT BACKEND READY",
@@ -77,12 +49,7 @@ object SystemActionExecutor {
                 } else {
                     SystemActionResult(
                         success = false,
-                        message =
-                            if (result.message.isBlank()) {
-                                "ROOT BACKEND UNAVAILABLE"
-                            } else {
-                                "ROOT ERROR • ${result.message}"
-                            },
+                        message = "ROOT BACKEND OFFLINE",
                     )
                 }
 
@@ -94,139 +61,97 @@ object SystemActionExecutor {
         action: SystemAction,
         callback: (SystemActionResult) -> Unit,
     ) {
-        val command =
-            commands[action]
-                ?: run {
-                    callback(
-                        SystemActionResult(
-                            success = false,
-                            message = "Unknown system action",
-                        ),
-                    )
-                    return
-                }
+        val request =
+            when (action) {
+                SystemAction.RESTART -> "POWER_OFF"
+                SystemAction.KERNEL_PANIC -> "KERNEL_PANIC"
+                SystemAction.WATCHDOG -> "WATCHDOG"
+            }
 
         worker.execute {
-            val result =
-                runAsRoot(
-                    command = command,
-                    timeoutSeconds = 5,
-                )
+            val response = sendRequest(request)
 
             val finalResult =
-                when {
-                    result.success &&
-                        action == SystemAction.WATCHDOG ->
-                        SystemActionResult(
-                            success = true,
-                            message =
-                                "WATCHDOG TRIGGERED • waiting for hardware reset",
-                        )
+                if (response.success && response.message.startsWith("OK")) {
+                    when (action) {
+                        SystemAction.RESTART ->
+                            SystemActionResult(
+                                success = true,
+                                message = "POWER OFF TRIGGERED",
+                            )
 
-                    result.success ->
-                        SystemActionResult(
-                            success = true,
-                            message = "${action.displayName.uppercase()} TRIGGERED",
-                        )
+                        SystemAction.KERNEL_PANIC ->
+                            SystemActionResult(
+                                success = true,
+                                message = "KERNEL PANIC TRIGGERED",
+                            )
 
-                    else ->
-                        SystemActionResult(
-                            success = false,
-                            message =
-                                "${action.displayName.uppercase()} FAILED • ${result.message}",
-                        )
+                        SystemAction.WATCHDOG ->
+                            SystemActionResult(
+                                success = true,
+                                message = "WATCHDOG TRIGGERED • WAITING FOR RESET",
+                            )
+                    }
+                } else {
+                    SystemActionResult(
+                        success = false,
+                        message =
+                            if (response.message.isBlank()) {
+                                "ROOT BACKEND OFFLINE"
+                            } else {
+                                response.message
+                            },
+                    )
                 }
 
             postResult(callback, finalResult)
         }
     }
 
-    private fun runAsRoot(
-        command: String,
-        timeoutSeconds: Long,
-    ): SystemActionResult {
+    private fun sendRequest(request: String): SystemActionResult {
         return try {
-            val suBinary = findSuBinary()
-
-            val process =
-                ProcessBuilder(
-                    suBinary,
-                    "0",
-                    "/system/bin/sh",
-                    "-c",
-                    command,
+            Socket().use { socket ->
+                socket.connect(
+                    InetSocketAddress(HOST, PORT),
+                    CONNECT_TIMEOUT_MS,
                 )
-                    .redirectErrorStream(true)
-                    .start()
+                socket.soTimeout = READ_TIMEOUT_MS
 
-            val finished =
-                process.waitFor(
-                    timeoutSeconds,
-                    TimeUnit.SECONDS,
-                )
+                val writer =
+                    BufferedWriter(
+                        OutputStreamWriter(socket.getOutputStream()),
+                    )
 
-            if (!finished) {
-                process.destroy()
+                val reader =
+                    BufferedReader(
+                        InputStreamReader(socket.getInputStream()),
+                    )
 
-                return SystemActionResult(
-                    success = false,
-                    message = "root command timed out",
-                )
-            }
+                writer.write("$TOKEN $request")
+                writer.newLine()
+                writer.flush()
 
-            val output =
-                runCatching {
-                    process.inputStream
-                        .bufferedReader()
-                        .readText()
-                        .trim()
-                }.getOrDefault("")
+                val response = reader.readLine().orEmpty().trim()
 
-            val exitCode = process.exitValue()
-
-            if (exitCode == 0) {
-                SystemActionResult(
-                    success = true,
-                    message = output,
-                )
-            } else {
-                SystemActionResult(
-                    success = false,
-                    message =
-                        if (output.isBlank()) {
-                            "exit code $exitCode"
+                if (response.startsWith("OK")) {
+                    SystemActionResult(true, response)
+                } else {
+                    SystemActionResult(
+                        false,
+                        if (response.isBlank()) {
+                            "ROOT BACKEND OFFLINE"
                         } else {
-                            output
+                            response
                         },
-                )
+                    )
+                }
             }
-        } catch (throwable: Throwable) {
+        } catch (_: Throwable) {
             SystemActionResult(
                 success = false,
-                message =
-                    throwable.message
-                        ?: throwable.javaClass.simpleName,
+                message = "ROOT BACKEND OFFLINE",
             )
         }
-    }
-
-    private fun findSuBinary(): String {
-        val candidates =
-            listOf(
-                "/system/xbin/su",
-                "/system/bin/su",
-            )
-
-        for (candidate in candidates) {
-            val file = File(candidate)
-
-            if (file.exists() && file.canExecute()) {
-                return candidate
-            }
-        }
-
-        // Final PATH-based fallback.
-        return "su"
     }
 
     private fun postResult(

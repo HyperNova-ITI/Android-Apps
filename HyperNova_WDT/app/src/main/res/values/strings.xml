@@ -22,4 +22,5 @@
     <string name="restart_icon_description">Restart</string>
     <string name="panic_icon_description">Kernel panic</string>
     <string name="watchdog_icon_description">Watchdog timer</string>
+    <string name="toggle_theme">Toggle light or dark mode</string>
 </resources>
