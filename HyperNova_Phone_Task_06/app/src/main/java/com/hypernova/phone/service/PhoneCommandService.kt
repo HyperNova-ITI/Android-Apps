@@ -22,6 +22,7 @@ import com.hypernova.contracts.phone.PhoneContract
 import com.hypernova.contracts.phone.PhoneResult
 import com.hypernova.contracts.phone.PhoneState
 import com.hypernova.phone.data.PhoneRepository
+import com.hypernova.phone.contacts.PhoneNumberMatching
 import com.hypernova.phone.domain.BluetoothConnectionState
 import com.hypernova.phone.domain.CallHistoryType
 import com.hypernova.phone.domain.CallNumberPresentation
@@ -3390,26 +3391,10 @@ class PhoneCommandService : Service() {
         first: String,
         second: String
     ): Boolean =
-        try {
-            first ==
-                second ||
-                PhoneNumberUtils.compare(
-                    first,
-                    second
-                )
-
-        } catch (
-            exception: RuntimeException
-        ) {
-            PhoneNumberUtils
-                .normalizeNumber(
-                    first
-                ) ==
-                PhoneNumberUtils
-                    .normalizeNumber(
-                        second
-                    )
-        }
+        PhoneNumberMatching.sameNumber(
+            first,
+            second
+        )
 
     private fun hasPermission(
         permission: String
@@ -3518,4 +3503,3 @@ class PhoneCommandService : Service() {
             )
     }
 }
-

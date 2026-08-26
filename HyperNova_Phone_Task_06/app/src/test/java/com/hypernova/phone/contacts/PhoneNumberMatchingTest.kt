@@ -50,6 +50,16 @@ class PhoneNumberMatchingTest {
     }
 
     @Test
+    fun `same number matches Egyptian local and international formats`() {
+        assertTrue(
+            PhoneNumberMatching.sameNumber(
+                "+20 (10) 1234-5678",
+                "010 1234 5678"
+            )
+        )
+    }
+
+    @Test
     fun `different numbers never match`() {
         assertFalse(
             PhoneNumberMatching.sameNumber(

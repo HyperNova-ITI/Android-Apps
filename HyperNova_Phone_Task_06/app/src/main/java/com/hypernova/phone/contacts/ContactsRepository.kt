@@ -73,11 +73,17 @@ class ContactsRepository(
                         ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
                         ContactsContract.CommonDataKinds.Phone.NUMBER,
                         ContactsContract.CommonDataKinds.Phone.TYPE,
-                        ContactsContract.Contacts.STARRED
+                        ContactsContract.Contacts.STARRED,
+                        ContactsContract.CommonDataKinds.Phone.IS_SUPER_PRIMARY,
+                        ContactsContract.CommonDataKinds.Phone.IS_PRIMARY,
+                        ContactsContract.CommonDataKinds.Phone._ID
                     ),
                     null,
                     null,
-                    "${ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME} COLLATE NOCASE"
+                    "${ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME} COLLATE NOCASE, " +
+                        "${ContactsContract.CommonDataKinds.Phone.IS_SUPER_PRIMARY} DESC, " +
+                        "${ContactsContract.CommonDataKinds.Phone.IS_PRIMARY} DESC, " +
+                        "${ContactsContract.CommonDataKinds.Phone._ID} ASC"
                 )?.use { cursor ->
 
                     while (cursor.moveToNext()) {
@@ -842,4 +848,3 @@ class ContactsRepository(
             250
     }
 }
-

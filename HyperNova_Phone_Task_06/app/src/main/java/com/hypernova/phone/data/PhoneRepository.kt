@@ -5,12 +5,12 @@ import android.app.role.RoleManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.telecom.TelecomManager
-import android.telephony.PhoneNumberUtils
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.hypernova.phone.bluetooth.BluetoothPhoneClient
 import com.hypernova.phone.contacts.CallHistoryRepository
 import com.hypernova.phone.contacts.CallerIdentity
+import com.hypernova.phone.contacts.CallerIdentityFallbacks
 import com.hypernova.phone.contacts.ContactDetailsRecord
 import com.hypernova.phone.contacts.PhoneNumberMatching
 import com.hypernova.phone.contacts.RecentCallsLoadResult
@@ -137,7 +137,10 @@ class PhoneRepository(
     private val recentsGate =
         RecentsLoadGate()
 
-    private var providerObserversRegistered =
+    private var contactsObserverRegistered =
+        false
+
+    private var callLogObserverRegistered =
         false
 
     private var contactsProviderRefreshJob:
@@ -420,6 +423,9 @@ class PhoneRepository(
         ) {
             contactsStatus.value =
                 ContactsStatus.PERMISSION_REQUIRED
+
+            contactsEntries.value =
+                emptyList()
         }
 
         if (
@@ -430,89 +436,121 @@ class PhoneRepository(
             recentsStatus.value =
                 RecentsStatus
                     .RECENTS_PERMISSION_REQUIRED
+
+            recentEntries.value =
+                emptyList()
         }
+
+        /* A newly granted provider permission must restore observation. */
+        registerProviderObservers()
     }
 
     private fun registerProviderObservers() {
 
-        if (providerObserversRegistered) {
-            return
-        }
-
-        try {
-            context.contentResolver
-                .registerContentObserver(
-                    ContactsContract.AUTHORITY_URI,
-                    true,
-                    contactsProviderObserver
-                )
-
-            context.contentResolver
-                .registerContentObserver(
-                    CallLog.Calls.CONTENT_URI,
-                    true,
-                    callLogProviderObserver
-                )
-
-            providerObserversRegistered =
-                true
-
-            Log.i(
-                TAG,
-                "Contacts/CallLog provider observers registered"
+        if (
+            !contactsObserverRegistered &&
+            has(
+                Manifest.permission.READ_CONTACTS
             )
-
-        } catch (security: SecurityException) {
-
+        ) {
             try {
                 context.contentResolver
-                    .unregisterContentObserver(
+                    .registerContentObserver(
+                        ContactsContract.AUTHORITY_URI,
+                        true,
                         contactsProviderObserver
                     )
-            } catch (_: Exception) {
-            }
 
+                contactsObserverRegistered =
+                    true
+
+                Log.i(
+                    TAG,
+                    "ContactsProvider observer registered"
+                )
+            } catch (security: SecurityException) {
+                Log.w(
+                    TAG,
+                    "ContactsProvider observer unavailable",
+                    security
+                )
+            }
+        }
+
+        if (
+            !callLogObserverRegistered &&
+            has(
+                Manifest.permission.READ_CALL_LOG
+            )
+        ) {
             try {
                 context.contentResolver
-                    .unregisterContentObserver(
+                    .registerContentObserver(
+                        CallLog.Calls.CONTENT_URI,
+                        true,
                         callLogProviderObserver
                     )
-            } catch (_: Exception) {
-            }
 
-            Log.w(
-                TAG,
-                "Provider observer registration unavailable",
-                security
-            )
+                callLogObserverRegistered =
+                    true
+
+                Log.i(
+                    TAG,
+                    "CallLog observer registered"
+                )
+            } catch (security: SecurityException) {
+                Log.w(
+                    TAG,
+                    "CallLog observer unavailable",
+                    security
+                )
+            }
         }
     }
 
     private fun unregisterProviderObservers() {
 
-        if (!providerObserversRegistered) {
+        if (
+            !contactsObserverRegistered &&
+            !callLogObserverRegistered
+        ) {
             return
         }
 
-        try {
-            context.contentResolver
-                .unregisterContentObserver(
-                    contactsProviderObserver
+        if (contactsObserverRegistered) {
+            try {
+                context.contentResolver
+                    .unregisterContentObserver(
+                        contactsProviderObserver
+                    )
+            } catch (exception: Exception) {
+                Log.w(
+                    TAG,
+                    "ContactsProvider observer cleanup failed",
+                    exception
                 )
+            } finally {
+                contactsObserverRegistered =
+                    false
+            }
+        }
 
-            context.contentResolver
-                .unregisterContentObserver(
-                    callLogProviderObserver
+        if (callLogObserverRegistered) {
+            try {
+                context.contentResolver
+                    .unregisterContentObserver(
+                        callLogProviderObserver
+                    )
+            } catch (exception: Exception) {
+                Log.w(
+                    TAG,
+                    "CallLog observer cleanup failed",
+                    exception
                 )
-        } catch (exception: Exception) {
-            Log.w(
-                TAG,
-                "Provider observer cleanup failed",
-                exception
-            )
-        } finally {
-            providerObserversRegistered =
-                false
+            } finally {
+                callLogObserverRegistered =
+                    false
+            }
         }
     }
 
@@ -781,59 +819,12 @@ class PhoneRepository(
      */
     private fun meaningfulTelecomDisplayName(
         call: TelecomCallState
-    ): String? {
-
-        val displayName =
-            call.displayName
-                ?.trim()
-                ?.takeIf {
-                    it.isNotEmpty()
-                }
-                ?: return null
-
-        val number =
-            call.number
-                ?.trim()
-                ?.takeIf {
-                    it.isNotEmpty()
-                }
-
-        if (
-            number == null
-        ) {
-            return displayName
-        }
-
-        if (
-            displayName ==
-                number
-        ) {
-            return null
-        }
-
-        val samePhoneNumber =
-            try {
-
-                PhoneNumberUtils.compare(
-                    displayName,
-                    number
-                )
-
-            } catch (
-                _: RuntimeException
-            ) {
-
-                false
-            }
-
-        return if (
-            samePhoneNumber
-        ) {
-            null
-        } else {
-            displayName
-        }
-    }
+    ): String? =
+        CallerIdentityFallbacks
+            .meaningfulName(
+                call.displayName,
+                call.number
+            )
 
     fun ensureContactsLoaded() {
         loadContacts(
@@ -870,7 +861,15 @@ class PhoneRepository(
             contactsJob?.isActive ==
                 true
         ) {
-            return
+            if (!force) {
+                return
+            }
+
+            /*
+             * A PBAP provider notification is a newer authoritative
+             * snapshot. Cancel the older load so its result cannot win.
+             */
+            contactsJob?.cancel()
         }
 
         if (
@@ -1104,6 +1103,10 @@ class PhoneRepository(
                 has(
                     Manifest.permission
                         .BLUETOOTH_CONNECT
+                ) &&
+                has(
+                    Manifest.permission
+                        .READ_PHONE_STATE
                 )
             ) {
                 CapabilityStatus.AVAILABLE

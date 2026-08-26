@@ -222,8 +222,10 @@ class MainActivity :
     }
 
     override fun requestBluetooth() =
-        requestManagedPermission(
-            Manifest.permission.BLUETOOTH_CONNECT
+        requestManagedPermissions(
+            Manifest.permission.BLUETOOTH_CONNECT,
+            Manifest.permission.READ_PHONE_STATE,
+            Manifest.permission.POST_NOTIFICATIONS
         )
 
     override fun requestContacts() =
@@ -510,17 +512,24 @@ class MainActivity :
      */
     private fun requestManagedPermission(
         permission: String
-    ) {
+    ) = requestManagedPermissions(
+        permission
+    )
 
-        val granted =
-            ContextCompat.checkSelfPermission(
-                this,
-                permission
-            ) ==
-                PackageManager.PERMISSION_GRANTED
+    private fun requestManagedPermissions(
+        vararg permissions: String
+    ) {
+        val missing =
+            permissions.filter { permission ->
+                ContextCompat.checkSelfPermission(
+                    this,
+                    permission
+                ) !=
+                    PackageManager.PERMISSION_GRANTED
+            }
 
         if (
-            granted
+            missing.isEmpty()
         ) {
 
             viewModel.onCapabilityChanged()
@@ -531,11 +540,12 @@ class MainActivity :
         if (
             isAutomotive
         ) {
-
-            Log.w(
-                TAG,
-                "AAOS permission is missing from product policy: $permission"
-            )
+            missing.forEach { permission ->
+                Log.w(
+                    TAG,
+                    "AAOS permission is missing from product policy: $permission"
+                )
+            }
 
             /*
              * Deliberately do NOT invoke permissionLauncher here.
@@ -550,9 +560,7 @@ class MainActivity :
         }
 
         permissionLauncher.launch(
-            arrayOf(
-                permission
-            )
+            missing.toTypedArray()
         )
     }
 

@@ -50,6 +50,7 @@ for p in \
     android.permission.READ_CALL_LOG \
     android.permission.CALL_PHONE \
     android.permission.BLUETOOTH_CONNECT \
+    android.permission.READ_PHONE_STATE \
     android.permission.POST_NOTIFICATIONS
 do
     "$ADB" shell pm grant \

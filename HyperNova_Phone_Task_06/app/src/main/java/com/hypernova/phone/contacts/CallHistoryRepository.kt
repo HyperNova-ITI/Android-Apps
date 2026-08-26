@@ -95,9 +95,11 @@ class CallHistoryRepository(
                 val resolvedNames =
                     identityResolver.resolve(
                         raw
-                            .mapNotNull { it.number }
-                            .filter {
-                                PhoneNumberMatching.isUsableNumber(it)
+                            .mapNotNull { row ->
+                                usableRecentNumber(
+                                    row.number,
+                                    row.presentation.toPresentation()
+                                )
                             }
                             .toSet()
                     )
@@ -105,12 +107,15 @@ class CallHistoryRepository(
                 val entries =
                     raw.map { row ->
 
+                        val presentation =
+                            row.presentation
+                                .toPresentation()
+
                         val usableNumber =
-                            row.number
-                                ?.trim()
-                                ?.takeIf {
-                                    PhoneNumberMatching.isUsableNumber(it)
-                                }
+                            usableRecentNumber(
+                                row.number,
+                                presentation
+                            )
 
                         /*
                          * Deterministic fallback order:
@@ -118,13 +123,15 @@ class CallHistoryRepository(
                          * name, then the raw number itself.
                          */
                         val displayName =
-                            CallerIdentityFallbacks.resolve(
-                                contactsProviderName = usableNumber
-                                    ?.let { resolvedNames[it] },
-                                contactsProviderPhotoUri = null,
-                                callLogCachedName = row.cachedName,
-                                number = usableNumber
-                            ).displayName
+                            usableNumber?.let { number ->
+                                CallerIdentityFallbacks.resolve(
+                                    contactsProviderName =
+                                        resolvedNames[number],
+                                    contactsProviderPhotoUri = null,
+                                    callLogCachedName = row.cachedName,
+                                    number = number
+                                ).displayName
+                            }
 
                         RecentCallEntry(
                             id = row.id,
@@ -154,8 +161,7 @@ class CallHistoryRepository(
                                 row.duration,
 
                             presentation =
-                                row.presentation
-                                    .toPresentation()
+                                presentation
                         )
                     }
 
@@ -438,3 +444,18 @@ private fun Int.toPresentation():
             CallNumberPresentation.PRIVATE
     }
 
+/**
+ * Android may retain a numeric value in a non-allowed CallLog row.
+ * Respect NUMBER_PRESENTATION before contact lookup or UI exposure.
+ */
+internal fun usableRecentNumber(
+    number: String?,
+    presentation: CallNumberPresentation
+): String? =
+    number
+        ?.trim()
+        ?.takeIf {
+            presentation ==
+                CallNumberPresentation.ALLOWED &&
+                PhoneNumberMatching.isUsableNumber(it)
+        }

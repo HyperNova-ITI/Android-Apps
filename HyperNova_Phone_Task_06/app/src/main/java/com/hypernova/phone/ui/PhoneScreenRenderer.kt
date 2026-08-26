@@ -16,6 +16,7 @@ import android.widget.GridLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
+import android.widget.SearchView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
@@ -33,6 +34,7 @@ import com.hypernova.phone.domain.RecentCallLabels
 import com.hypernova.phone.domain.RecentFilter
 import com.hypernova.phone.domain.RecentsStatus
 import com.hypernova.phone.domain.TelecomCallState
+import com.hypernova.phone.contacts.PhoneNumberMatching
 import java.text.DateFormat
 import java.util.Date
 
@@ -45,6 +47,9 @@ class PhoneScreenRenderer(
     private val binding: ActivityMainBinding,
     private val actions: Actions
 ) {
+
+    private var contactSearchQuery =
+        ""
 
     interface Actions {
 
@@ -603,7 +608,7 @@ class PhoneScreenRenderer(
                         CapabilityStatus
                             .PERMISSION_REQUIRED
                     ) {
-                        "Allow Bluetooth access"
+                        "Allow phone access"
                     } else {
                         "Open device list"
                     }
@@ -821,13 +826,6 @@ class PhoneScreenRenderer(
     ) =
         scroll { column ->
 
-            column.addView(
-                searchBar(
-                    "Search contacts",
-                    "Voice search will be provided by NOVA AI integration."
-                )
-            )
-
             when (
                 state.data.capabilities.contacts
             ) {
@@ -848,68 +846,140 @@ class PhoneScreenRenderer(
                     )
 
                 else -> {
-
-                    if (
-                        state.data.contacts
-                            .isEmpty()
-                    ) {
-
-                        column.addView(
-                            emptyCard(
-                                "No contacts available",
-                                "No contacts were returned by the Contacts provider."
-                            ).withTop(
-                                14
-                            )
-                        )
-
-                    } else {
-
-                        val favorites =
-                            state.data.contacts
-                                .filter {
-                                    it.isFavorite
-                                }
-
-                        if (
-                            favorites.isNotEmpty()
-                        ) {
-
-                            column.addView(
-                                sectionLabel(
-                                    "FAVORITES"
-                                )
-                            )
-
-                            favorites.forEach {
-
-                                column.addView(
-                                    contactRow(
-                                        it
-                                    )
-                                )
-                            }
+                    val results =
+                        LinearLayout(context).apply {
+                            orientation =
+                                LinearLayout.VERTICAL
                         }
 
-                        column.addView(
-                            sectionLabel(
-                                "ALL CONTACTS"
+                    val search =
+                        SearchView(context).apply {
+                            queryHint =
+                                "Search real contacts"
+                            isIconified =
+                                false
+                            setQuery(
+                                contactSearchQuery,
+                                false
                             )
+                            setOnQueryTextListener(
+                                object :
+                                    SearchView.OnQueryTextListener {
+
+                                    override fun onQueryTextSubmit(
+                                        query: String?
+                                    ): Boolean {
+                                        clearFocus()
+                                        return true
+                                    }
+
+                                    override fun onQueryTextChange(
+                                        newText: String?
+                                    ): Boolean {
+                                        contactSearchQuery =
+                                            newText.orEmpty()
+                                        renderContactRows(
+                                            results,
+                                            state.data.contacts,
+                                            contactSearchQuery
+                                        )
+                                        return true
+                                    }
+                                }
+                            )
+                            clearFocus()
+                        }
+
+                    column.addView(search)
+                    column.addView(
+                        results.withTop(
+                            14
                         )
+                    )
 
-                        state.data.contacts
-                            .forEach {
-
-                                column.addView(
-                                    contactRow(
-                                        it
-                                    )
-                                )
-                            }
-                    }
+                    renderContactRows(
+                        results,
+                        state.data.contacts,
+                        contactSearchQuery
+                    )
                 }
             }
         }
+
+    private fun renderContactRows(
+        target: LinearLayout,
+        contacts: List<ContactEntry>,
+        query: String
+    ) {
+        target.removeAllViews()
+
+        val filtered =
+            contacts.filter { contact ->
+                contactMatchesQuery(
+                    contact,
+                    query
+                )
+            }
+
+        if (filtered.isEmpty()) {
+            target.addView(
+                emptyCard(
+                    if (contacts.isEmpty()) {
+                        "No contacts available"
+                    } else {
+                        "No matching contacts"
+                    },
+                    if (contacts.isEmpty()) {
+                        "No contacts were returned by the Contacts provider."
+                    } else {
+                        "No synchronized contact matches this search."
+                    }
+                )
+            )
+            return
+        }
+
+        if (query.isBlank()) {
+            val favorites =
+                filtered.filter {
+                    it.isFavorite
+                }
+
+            if (favorites.isNotEmpty()) {
+                target.addView(
+                    sectionLabel(
+                        "FAVORITES"
+                    )
+                )
+
+                favorites.forEach { contact ->
+                    target.addView(
+                        contactRow(
+                            contact
+                        )
+                    )
+                }
+            }
+        }
+
+        target.addView(
+            sectionLabel(
+                if (query.isBlank()) {
+                    "ALL CONTACTS"
+                } else {
+                    "SEARCH RESULTS"
+                }
+            )
+        )
+
+        filtered.forEach { contact ->
+            target.addView(
+                contactRow(
+                    contact
+                )
+            )
+        }
+    }
 
     private fun recents(
         state: PhoneUiState
@@ -1112,9 +1182,9 @@ class PhoneScreenRenderer(
 
                 column.addView(
                     permissionCard(
-                        "Bluetooth access required",
-                        "Grant access to view paired devices available to this application.",
-                        "Allow Bluetooth"
+                        "Phone access required",
+                        "Grant Bluetooth and phone-state access to verify hands-free calling.",
+                        "Allow phone access"
                     ) {
                         actions.requestBluetooth()
                     }
@@ -2185,28 +2255,6 @@ class PhoneScreenRenderer(
             8
         )
 
-    private fun searchBar(
-        hint: String,
-        detail: String
-    ): View =
-        card {
-
-            addView(
-                title(
-                    hint,
-                    16
-                )
-            )
-
-            addView(
-                body(
-                    detail
-                ).withTop(
-                    4
-                )
-            )
-        }
-
     private fun emptyCard(
         headline: String,
         message: String,
@@ -2937,6 +2985,50 @@ class PhoneScreenRenderer(
                 CallStatus.FAILED
             )
     }
+}
+
+internal fun contactMatchesQuery(
+    contact: ContactEntry,
+    query: String
+): Boolean {
+    val cleaned =
+        query.trim()
+
+    if (cleaned.isEmpty()) {
+        return true
+    }
+
+    if (
+        contact.displayName.contains(
+            cleaned,
+            ignoreCase = true
+        ) ||
+        contact.number.contains(
+            cleaned,
+            ignoreCase = true
+        )
+    ) {
+        return true
+    }
+
+    val queryDigits =
+        PhoneNumberMatching.cacheKey(
+            cleaned
+        )
+            ?.filter(Char::isDigit)
+            .orEmpty()
+
+    val contactDigits =
+        PhoneNumberMatching.cacheKey(
+            contact.number
+        )
+            ?.filter(Char::isDigit)
+            .orEmpty()
+
+    return queryDigits.isNotEmpty() &&
+        contactDigits.contains(
+            queryDigits
+        )
 }
 
 /**

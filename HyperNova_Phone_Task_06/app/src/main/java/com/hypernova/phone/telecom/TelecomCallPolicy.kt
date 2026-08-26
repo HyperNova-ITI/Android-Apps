@@ -1,6 +1,7 @@
 package com.hypernova.phone.telecom
 
 import android.telecom.Call
+import android.telecom.TelecomManager
 import com.hypernova.phone.domain.CallStatus
 
 /**
@@ -152,6 +153,71 @@ internal object TelecomCallPolicy {
 
         return tone in VALID_DTMF_DIGITS
     }
+
+    fun shouldShowCompactIncomingUi(
+        status: CallStatus
+    ): Boolean =
+        status ==
+            CallStatus.INCOMING
+
+    fun shouldShowFullInCallUi(
+        status: CallStatus
+    ): Boolean =
+        status in
+            setOf(
+                CallStatus.DIALING,
+                CallStatus.RINGING,
+                CallStatus.ACTIVE,
+                CallStatus.HELD
+            )
+
+    fun isNumberPresentationAllowed(
+        presentation: Int
+    ): Boolean =
+        presentation ==
+            TelecomManager.PRESENTATION_ALLOWED
+
+    fun isCallerDisplayNamePresentationAllowed(
+        presentation: Int
+    ): Boolean =
+        presentation ==
+            TelecomManager.PRESENTATION_ALLOWED
+
+    /**
+     * Keep one active-call timer within a real ACTIVE -> HELD -> ACTIVE
+     * lifecycle, and clear it for every pre-call or terminal state.
+     *
+     * Clearing on DIALING/RINGING is important: the controller StateFlow is
+     * process-wide, so a later call must not inherit the previous call's
+     * start timestamp.
+     */
+    fun activeStartedAtMillis(
+        newStatus: CallStatus,
+        previousStatus: CallStatus,
+        previousStartedAtMillis: Long?,
+        nowMillis: Long
+    ): Long? =
+        when (newStatus) {
+            CallStatus.ACTIVE ->
+                if (
+                    previousStatus in
+                    setOf(
+                        CallStatus.ACTIVE,
+                        CallStatus.HELD
+                    ) &&
+                    previousStartedAtMillis != null
+                ) {
+                    previousStartedAtMillis
+                } else {
+                    nowMillis
+                }
+
+            CallStatus.HELD ->
+                previousStartedAtMillis
+
+            else ->
+                null
+        }
 
     private fun hasCapability(
         capabilities: Int,

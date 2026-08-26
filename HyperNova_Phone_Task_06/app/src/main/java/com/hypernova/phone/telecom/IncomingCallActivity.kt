@@ -1,11 +1,17 @@
 package com.hypernova.phone.telecom
 
-import android.content.Intent
+import android.Manifest
+import android.content.pm.PackageManager
+import android.database.ContentObserver
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.provider.CallLog
+import android.provider.ContactsContract
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -14,13 +20,19 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
-import com.hypernova.phone.MainActivity
+import androidx.core.content.ContextCompat
+import com.hypernova.phone.contacts.CallerIdentity
+import com.hypernova.phone.contacts.CallerIdentityFallbacks
+import com.hypernova.phone.contacts.ContactsRepository
+import com.hypernova.phone.contacts.PhoneNumberMatching
 import com.hypernova.phone.domain.CallStatus
 import com.hypernova.phone.domain.TelecomCallState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -40,6 +52,9 @@ class IncomingCallActivity : ComponentActivity() {
 
     private lateinit var telecom:
         TelecomCallController
+
+    private lateinit var contactsRepository:
+        ContactsRepository
 
     private lateinit var callerName:
         TextView
@@ -62,8 +77,61 @@ class IncomingCallActivity : ComponentActivity() {
     private var hasSeenIncoming =
         false
 
-    private var phoneOpened =
+    private var latestCallState =
+        TelecomCallState()
+
+    private var resolvedIdentityNumber:
+        String? = null
+
+    private var resolvedIdentity:
+        CallerIdentity? = null
+
+    private var identityLookupNumber:
+        String? = null
+
+    private var identityLookupJob:
+        Job? = null
+
+    private var providerRefreshJob:
+        Job? = null
+
+    private var contactsObserverRegistered =
         false
+
+    private var callLogObserverRegistered =
+        false
+
+    private val providerObserver =
+        object :
+            ContentObserver(
+                Handler(
+                    Looper.getMainLooper()
+                )
+            ) {
+
+            override fun onChange(
+                selfChange: Boolean
+            ) {
+                super.onChange(
+                    selfChange
+                )
+
+                providerRefreshJob
+                    ?.cancel()
+
+                providerRefreshJob =
+                    uiScope.launch {
+                        delay(
+                            PROVIDER_REFRESH_DEBOUNCE_MILLIS
+                        )
+
+                        requestCallerIdentity(
+                            latestCallState,
+                            force = true
+                        )
+                    }
+            }
+        }
 
     override fun onCreate(
         savedInstanceState: Bundle?
@@ -94,12 +162,18 @@ class IncomingCallActivity : ComponentActivity() {
         telecom =
             TelecomCallController(applicationContext)
 
+        contactsRepository =
+            ContactsRepository(applicationContext)
+
         val content =
             buildContent()
 
         setContentView(content)
         configureFloatingWindow()
-        render(telecom.state.value)
+        latestCallState =
+            telecom.state.value
+        render(latestCallState)
+        registerProviderObservers()
         observeCall()
         animateBarIn(content)
     }
@@ -129,6 +203,9 @@ class IncomingCallActivity : ComponentActivity() {
     private fun observeCall() {
         uiScope.launch {
             telecom.state.collectLatest { state ->
+                latestCallState =
+                    state
+
                 render(state)
 
                 when (state.status) {
@@ -140,7 +217,11 @@ class IncomingCallActivity : ComponentActivity() {
                     CallStatus.ACTIVE,
                     CallStatus.MUTED,
                     CallStatus.HELD -> {
-                        openPhoneForActiveCall()
+                        /*
+                         * HyperNovaInCallService owns the single full-screen
+                         * launch after Telecom confirms ACTIVE.
+                         */
+                        finish()
                     }
 
                     CallStatus.CALL_ENDED,
@@ -165,17 +246,56 @@ class IncomingCallActivity : ComponentActivity() {
     private fun render(
         state: TelecomCallState
     ) {
+        renderPresentation(
+            state
+        )
+
+        requestCallerIdentity(
+            state,
+            force = false
+        )
+    }
+
+    private fun renderPresentation(
+        state: TelecomCallState
+    ) {
         val number =
-            state.number
-                ?.trim()
+            PhoneNumberMatching
+                .normalize(
+                    state.number
+                )
                 .orEmpty()
 
+        val telecomName =
+            CallerIdentityFallbacks
+                .meaningfulName(
+                    state.displayName,
+                    number
+                )
+
+        val providerName =
+            if (
+                resolvedIdentityNumber != null &&
+                PhoneNumberMatching.sameNumber(
+                    resolvedIdentityNumber,
+                    number
+                )
+            ) {
+                resolvedIdentity
+                    ?.displayName
+                    ?.takeUnless {
+                        PhoneNumberMatching.sameNumber(
+                            it,
+                            number
+                        )
+                    }
+            } else {
+                null
+            }
+
         val resolvedName =
-            CallerIdentityResolver.resolve(
-                context = applicationContext,
-                telecomDisplayName = state.displayName,
-                number = number
-            )
+            telecomName
+                ?: providerName
 
         callerName.text =
             resolvedName
@@ -219,6 +339,191 @@ class IncomingCallActivity : ComponentActivity() {
                     "PHONE"
             }
     }
+
+    /**
+     * Provider work never runs in the Telecom/main-thread callback.
+     * ContactsRepository performs PhoneLookup, a bounded contacts scan,
+     * CallLog fallback, and raw-number fallback on Dispatchers.IO.
+     */
+    private fun requestCallerIdentity(
+        state: TelecomCallState,
+        force: Boolean
+    ) {
+        if (
+            state.status !in
+            setOf(
+                CallStatus.INCOMING,
+                CallStatus.RINGING
+            )
+        ) {
+            identityLookupJob
+                ?.cancel()
+
+            identityLookupNumber =
+                null
+            resolvedIdentityNumber =
+                null
+            resolvedIdentity =
+                null
+
+            return
+        }
+
+        val number =
+            PhoneNumberMatching
+                .normalize(
+                    state.number
+                )
+                ?.takeIf {
+                    PhoneNumberMatching.isUsableNumber(
+                        it
+                    )
+                }
+                ?: return
+
+        if (
+            CallerIdentityFallbacks
+                .meaningfulName(
+                    state.displayName,
+                    number
+                ) != null
+        ) {
+            return
+        }
+
+        if (
+            !force &&
+            identityLookupNumber != null &&
+            PhoneNumberMatching.sameNumber(
+                identityLookupNumber,
+                number
+            )
+        ) {
+            return
+        }
+
+        identityLookupNumber =
+            number
+
+        if (
+            resolvedIdentityNumber == null ||
+            !PhoneNumberMatching.sameNumber(
+                resolvedIdentityNumber,
+                number
+            )
+        ) {
+            resolvedIdentityNumber =
+                null
+            resolvedIdentity =
+                null
+        }
+
+        identityLookupJob
+            ?.cancel()
+
+        identityLookupJob =
+            uiScope.launch {
+                val identity =
+                    contactsRepository
+                        .resolveCallerIdentity(
+                            number
+                        )
+
+                val current =
+                    latestCallState
+
+                if (
+                    current.status !in
+                    setOf(
+                        CallStatus.INCOMING,
+                        CallStatus.RINGING
+                    ) ||
+                    !PhoneNumberMatching.sameNumber(
+                        current.number,
+                        number
+                    )
+                ) {
+                    return@launch
+                }
+
+                resolvedIdentityNumber =
+                    number
+                resolvedIdentity =
+                    identity
+
+                renderPresentation(
+                    current
+                )
+            }
+    }
+
+    private fun registerProviderObservers() {
+        if (
+            hasPermission(
+                Manifest.permission.READ_CONTACTS
+            )
+        ) {
+            try {
+                contentResolver
+                    .registerContentObserver(
+                        ContactsContract.AUTHORITY_URI,
+                        true,
+                        providerObserver
+                    )
+
+                contactsObserverRegistered =
+                    true
+            } catch (_: SecurityException) {
+            }
+        }
+
+        if (
+            hasPermission(
+                Manifest.permission.READ_CALL_LOG
+            )
+        ) {
+            try {
+                contentResolver
+                    .registerContentObserver(
+                        CallLog.Calls.CONTENT_URI,
+                        true,
+                        providerObserver
+                    )
+
+                callLogObserverRegistered =
+                    true
+            } catch (_: SecurityException) {
+            }
+        }
+    }
+
+    private fun unregisterProviderObservers() {
+        if (
+            contactsObserverRegistered ||
+            callLogObserverRegistered
+        ) {
+            runCatching {
+                contentResolver
+                    .unregisterContentObserver(
+                        providerObserver
+                    )
+            }
+        }
+
+        contactsObserverRegistered =
+            false
+        callLogObserverRegistered =
+            false
+    }
+
+    private fun hasPermission(
+        permission: String
+    ): Boolean =
+        ContextCompat.checkSelfPermission(
+            this,
+            permission
+        ) ==
+            PackageManager.PERMISSION_GRANTED
 
     private fun buildContent(): View {
         val root =
@@ -547,48 +852,6 @@ class IncomingCallActivity : ComponentActivity() {
         }
     }
 
-    private fun openPhoneForActiveCall() {
-        if (phoneOpened) {
-            return
-        }
-
-        phoneOpened =
-            true
-
-        val intent =
-            Intent(
-                this,
-                MainActivity::class.java
-            ).apply {
-                action =
-                    ACTION_OPEN_PHONE
-
-                addFlags(
-                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                        Intent.FLAG_ACTIVITY_SINGLE_TOP
-                )
-
-                putExtra(
-                    HyperNovaInCallService.EXTRA_SHOW_IN_CALL_DIALPAD,
-                    false
-                )
-            }
-
-        try {
-            startActivity(intent)
-            finish()
-        } catch (
-            exception:
-                RuntimeException
-        ) {
-            phoneOpened =
-                false
-            restoreButtons()
-            callLabel.text =
-                "CALL CONNECTED"
-        }
-    }
-
     private fun roundedDrawable(
         fillColor: Int,
         strokeColor: Int,
@@ -617,13 +880,14 @@ class IncomingCallActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        unregisterProviderObservers()
         uiScope.cancel()
         super.onDestroy()
     }
 
     private companion object {
-        const val ACTION_OPEN_PHONE =
-            "com.hypernova.phone.action.OPEN"
+        const val PROVIDER_REFRESH_DEBOUNCE_MILLIS =
+            450L
 
         val COLOR_BAR =
             Color.parseColor(

@@ -802,6 +802,22 @@ class BluetoothPhoneClient(
             )
         }
 
+        if (
+            !hasReadPhoneStatePermission()
+        ) {
+            return BluetoothUiState(
+                state =
+                    BluetoothConnectionState
+                        .DEVICE_LIST,
+
+                pairedDevices =
+                    paired,
+
+                detail =
+                    "Phone-state access is required to verify hands-free calling"
+            )
+        }
+
         /*
          * NXP Standard Android fallback.
          *

@@ -1,6 +1,7 @@
 package com.hypernova.phone.telecom
 
 import android.telecom.Call
+import android.telecom.TelecomManager
 import com.hypernova.phone.domain.CallStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -154,6 +155,96 @@ class TelecomCallPolicyTest {
         assertTrue(TelecomCallPolicy.isValidDtmf('#'))
         assertFalse(TelecomCallPolicy.isValidDtmf('a'))
         assertFalse(TelecomCallPolicy.isValidDtmf('+'))
+    }
+
+    @Test fun newCallCannotReusePreviousActiveTimer() {
+        assertEquals(
+            null,
+            TelecomCallPolicy.activeStartedAtMillis(
+                newStatus = CallStatus.DIALING,
+                previousStatus = CallStatus.CALL_ENDED,
+                previousStartedAtMillis = 1_000L,
+                nowMillis = 9_000L
+            )
+        )
+
+        assertEquals(
+            9_000L,
+            TelecomCallPolicy.activeStartedAtMillis(
+                newStatus = CallStatus.ACTIVE,
+                previousStatus = CallStatus.DIALING,
+                previousStartedAtMillis = null,
+                nowMillis = 9_000L
+            )
+        )
+    }
+
+    @Test fun holdResumeKeepsOriginalActiveTimer() {
+        assertEquals(
+            1_000L,
+            TelecomCallPolicy.activeStartedAtMillis(
+                newStatus = CallStatus.HELD,
+                previousStatus = CallStatus.ACTIVE,
+                previousStartedAtMillis = 1_000L,
+                nowMillis = 9_000L
+            )
+        )
+
+        assertEquals(
+            1_000L,
+            TelecomCallPolicy.activeStartedAtMillis(
+                newStatus = CallStatus.ACTIVE,
+                previousStatus = CallStatus.HELD,
+                previousStartedAtMillis = 1_000L,
+                nowMillis = 12_000L
+            )
+        )
+    }
+
+    @Test fun incomingUsesCompactUiAndNeverFullScreen() {
+        assertTrue(
+            TelecomCallPolicy
+                .shouldShowCompactIncomingUi(
+                    CallStatus.INCOMING
+                )
+        )
+        assertFalse(
+            TelecomCallPolicy
+                .shouldShowFullInCallUi(
+                    CallStatus.INCOMING
+                )
+        )
+    }
+
+    @Test fun outgoingAndActiveStatesUseFullCallUi() {
+        listOf(
+            CallStatus.DIALING,
+            CallStatus.RINGING,
+            CallStatus.ACTIVE,
+            CallStatus.HELD
+        ).forEach { status ->
+            assertTrue(
+                TelecomCallPolicy
+                    .shouldShowFullInCallUi(
+                        status
+                    )
+            )
+        }
+    }
+
+    @Test fun restrictedCallerDisplayNameCannotLeakWhenHandleIsAllowed() {
+        assertTrue(
+            TelecomCallPolicy
+                .isNumberPresentationAllowed(
+                    TelecomManager.PRESENTATION_ALLOWED
+                )
+        )
+        assertFalse(
+            TelecomCallPolicy
+                .isCallerDisplayNamePresentationAllowed(
+                    TelecomManager.PRESENTATION_RESTRICTED
+                )
+        )
     }
 
     private fun directionOutgoing(): Int =

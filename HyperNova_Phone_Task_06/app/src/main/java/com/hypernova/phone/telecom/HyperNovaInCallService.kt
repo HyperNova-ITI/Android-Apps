@@ -45,8 +45,11 @@ class HyperNovaInCallService : InCallService() {
     private lateinit var incomingCallNotifier:
         IncomingCallNotifier
 
-    private var lastObservedStatus:
-        CallStatus = CallStatus.IDLE
+    private var incomingBarRequested =
+        false
+
+    private var fullInCallUiRequested =
+        false
 
     override fun onCreate() {
         super.onCreate()
@@ -110,9 +113,6 @@ class HyperNovaInCallService : InCallService() {
         incomingCallNotifier
             .cancelIncomingCall()
 
-        lastObservedStatus =
-            CallStatus.CALL_ENDED
-
         super.onCallRemoved(call)
     }
 
@@ -163,6 +163,50 @@ class HyperNovaInCallService : InCallService() {
                 "showDialpad=$showDialpad"
         )
 
+        val callState =
+            telecomCallController
+                .state
+                .value
+
+        /*
+         * Telecom may request its selected InCall UI while an incoming
+         * call is still ringing. Preserve the foreground cockpit app and
+         * keep that request on the compact standalone bar.
+         */
+        if (
+            TelecomCallPolicy
+                .shouldShowCompactIncomingUi(
+                    callState.status
+                )
+        ) {
+            if (!incomingBarRequested) {
+                showIncomingCallActivity(
+                    callState
+                )
+                incomingBarRequested =
+                    true
+            }
+
+            Log.i(
+                TAG,
+                "Foreground request kept on compact incoming-call UI"
+            )
+            return
+        }
+
+        if (
+            !TelecomCallPolicy
+                .shouldShowFullInCallUi(
+                    callState.status
+                )
+        ) {
+            Log.i(
+                TAG,
+                "Ignoring foreground request without a live full-screen call"
+            )
+            return
+        }
+
         val intent =
             Intent(
                 this,
@@ -189,6 +233,9 @@ class HyperNovaInCallService : InCallService() {
             startActivity(
                 intent
             )
+
+            fullInCallUiRequested =
+                true
 
             Log.i(
                 TAG,
@@ -595,8 +642,11 @@ class HyperNovaInCallService : InCallService() {
                 null
         }
 
-        lastObservedStatus =
-            CallStatus.IDLE
+        incomingBarRequested =
+            false
+
+        fullInCallUiRequested =
+            false
 
         Log.i(
             TAG,
@@ -613,9 +663,6 @@ class HyperNovaInCallService : InCallService() {
             telecomCallController
                 .state
                 .collectLatest { state ->
-
-                    val previousStatus =
-                        lastObservedStatus
 
                     Log.i(
                         TAG,
@@ -635,12 +682,45 @@ class HyperNovaInCallService : InCallService() {
                              * The currently visible cockpit application stays
                              * visible underneath the transparent top window.
                              */
+                            fullInCallUiRequested =
+                                false
+
+                            if (
+                                !incomingBarRequested
+                            ) {
+                                incomingCallNotifier
+                                    .cancelIncomingCall()
+
+                                showIncomingCallActivity(
+                                    state
+                                )
+
+                                incomingBarRequested =
+                                    true
+                            }
+                        }
+
+                        CallStatus.DIALING,
+                        CallStatus.RINGING -> {
                             incomingCallNotifier
                                 .cancelIncomingCall()
 
-                            showIncomingCallActivity(
-                                state
-                            )
+                            incomingBarRequested =
+                                false
+
+                            /*
+                             * A real outgoing Telecom callback owns the full
+                             * Phone UI, including calls initiated through the
+                             * NOVA Binder while another cockpit app is open.
+                             */
+                            if (
+                                !fullInCallUiRequested
+                            ) {
+                                fullInCallUiRequested =
+                                    requestInCallUi(
+                                        "Outgoing call ${state.status}"
+                                    )
+                            }
                         }
 
                         CallStatus.ACTIVE -> {
@@ -648,33 +728,40 @@ class HyperNovaInCallService : InCallService() {
                             incomingCallNotifier
                                 .cancelIncomingCall()
 
-                            /*
-                             * Only request the foreground UI when ENTERING
-                             * ACTIVE.
-                             *
-                             * This includes:
-                             *
-                             * INCOMING -> ACTIVE
-                             * HELD     -> ACTIVE
-                             */
-                            if (
-                                previousStatus !=
-                                CallStatus.ACTIVE
-                            ) {
+                            incomingBarRequested =
+                                false
 
-                                requestInCallUi()
+                            if (
+                                !fullInCallUiRequested
+                            ) {
+                                fullInCallUiRequested =
+                                    requestInCallUi(
+                                        "Call ACTIVE"
+                                    )
                             }
+                        }
+
+                        CallStatus.HELD -> {
+                            incomingCallNotifier
+                                .cancelIncomingCall()
+
+                            incomingBarRequested =
+                                false
                         }
 
                         else -> {
 
                             incomingCallNotifier
                                 .cancelIncomingCall()
+
+                            incomingBarRequested =
+                                false
+
+                            fullInCallUiRequested =
+                                false
                         }
                     }
 
-                    lastObservedStatus =
-                        state.status
                 }
         }
     }
@@ -740,7 +827,9 @@ class HyperNovaInCallService : InCallService() {
      * selected car-mode InCall UI avoids the READ_PHONE_STATE restriction
      * seen on this AAOS target.
      */
-    private fun requestInCallUi() {
+    private fun requestInCallUi(
+        reason: String
+    ): Boolean {
 
         val intent =
             Intent(
@@ -771,8 +860,10 @@ class HyperNovaInCallService : InCallService() {
 
             Log.i(
                 TAG,
-                "Call ACTIVE; HyperNova Phone opened"
+                "$reason; HyperNova Phone opened"
             )
+
+            return true
 
         } catch (
             exception: RuntimeException
@@ -783,6 +874,8 @@ class HyperNovaInCallService : InCallService() {
                 "Could not open HyperNova Phone for active call",
                 exception
             )
+
+            return false
         }
     }
 

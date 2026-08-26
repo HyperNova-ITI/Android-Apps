@@ -12,6 +12,7 @@ import android.telecom.CallAudioState
 import android.telecom.TelecomManager
 import android.util.Log
 import androidx.core.content.ContextCompat
+import com.hypernova.phone.contacts.CallerIdentityFallbacks
 import com.hypernova.phone.domain.CallStatus
 import com.hypernova.phone.domain.TelecomCallState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,11 +42,6 @@ import kotlinx.coroutines.flow.asStateFlow
 class TelecomCallController(
     private val context: Context
 ) {
-
-    init {
-        appContext =
-            context.applicationContext
-    }
 
     val state: StateFlow<TelecomCallState> =
         Companion.state.asStateFlow()
@@ -525,10 +521,6 @@ class TelecomCallController(
     }
 
     companion object {
-
-        private var appContext:
-            Context? = null
-
         private const val TAG =
             "HN-Telecom"
 
@@ -796,22 +788,14 @@ class TelecomCallController(
                 hfpScoConnectRequested =
                     false
 
+                /*
+                 * No identity, timer, mute state, or controls from the
+                 * completed call may survive into the next call.
+                 */
                 state.value =
-                    state.value.copy(
+                    TelecomCallState(
                         status =
-                            CallStatus.CALL_ENDED,
-
-                        isMuted =
-                            false,
-
-                        canDisconnect =
-                            false,
-
-                        canAnswer =
-                            false,
-
-                        canHold =
-                            false
+                            CallStatus.CALL_ENDED
                     )
 
             } else {
@@ -995,8 +979,17 @@ class TelecomCallController(
                 call.details
 
             val handle =
-                details.handle
-                    ?.schemeSpecificPart
+                if (
+                    TelecomCallPolicy
+                        .isNumberPresentationAllowed(
+                            details.handlePresentation
+                        )
+                ) {
+                    details.handle
+                        ?.schemeSpecificPart
+                } else {
+                    null
+                }
 
             val mapped =
                 TelecomCallPolicy.mapStatus(
@@ -1008,18 +1001,32 @@ class TelecomCallController(
                 state.value
 
             val activeSince =
+                TelecomCallPolicy
+                    .activeStartedAtMillis(
+                        newStatus = mapped,
+                        previousStatus = previous.status,
+                        previousStartedAtMillis =
+                            previous.startedAtMillis,
+                        nowMillis =
+                            System.currentTimeMillis()
+                    )
+
+            val telecomDisplayName =
                 if (
-                    mapped ==
-                    CallStatus.ACTIVE &&
-                    previous.startedAtMillis ==
-                    null
+                    TelecomCallPolicy
+                        .isCallerDisplayNamePresentationAllowed(
+                            details.callerDisplayNamePresentation
+                        )
                 ) {
-
-                    System.currentTimeMillis()
-
+                    details.contactDisplayName
+                        ?.toString()
+                        ?.takeIf {
+                            it.isNotBlank()
+                        }
+                        ?: details.callerDisplayName
+                            ?.toString()
                 } else {
-
-                    previous.startedAtMillis
+                    null
                 }
 
             state.value =
@@ -1028,22 +1035,11 @@ class TelecomCallController(
                         mapped,
 
                     displayName =
-                        CallerIdentityResolver.resolve(
-                            context =
-                                appContext,
-
-                            telecomDisplayName =
-                                details.contactDisplayName
-                                    ?.toString()
-                                    ?.takeIf {
-                                        it.isNotBlank()
-                                    }
-                                    ?: details.callerDisplayName
-                                        ?.toString(),
-
-                            number =
+                        CallerIdentityFallbacks
+                            .meaningfulName(
+                                telecomDisplayName,
                                 handle
-                        ),
+                            ),
 
                     number =
                         handle,

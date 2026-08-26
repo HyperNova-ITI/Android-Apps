@@ -8,7 +8,7 @@
 # - Required permissions are granted (parsed from pm output)
 # - Exact system dialer (InCallService component) is set
 # - HfpClientConnectionService is registered (full class name)
-# - ContactsContract Phone rows and PBAP/account state
+# - ContactsContract Phone rows, CallLog rows, and PBAP/account state
 #
 # Usage: ./nxp_phone_runtime_setup.sh [--set-system-dialer]
 #
@@ -120,16 +120,30 @@ check_hfp_phoneaccount() {
 
 # Check ContactsContract Phone rows and PBAP/account state.
 check_pbap_contacts() {
-    log_info "Checking Contacts and PBAP state..."
+    log_info "Checking Contacts, CallLog, and PBAP state..."
 
     # Count real ContactsContract Phone rows.
+    local contacts_output
     local contacts_count
-    contacts_count=$(adb shell content query --uri content://com.android.contacts/data/phones --projection display_name 2>/dev/null | tr -d '\r' | wc -l || true)
+    contacts_output=$(adb shell content query --uri content://com.android.contacts/data/phones --projection _id:display_name 2>/dev/null | tr -d '\r' || true)
+    contacts_count=$(echo "$contacts_output" | grep -c '^Row:' || true)
 
     if [ "$contacts_count" -gt 0 ]; then
         log_info "✓ Found $contacts_count phone rows in ContactsContract"
     else
         log_warn "⚠ No phone rows found in ContactsContract"
+    fi
+
+    # Count real CallLog rows without printing personal call data.
+    local call_log_output
+    local call_log_count
+    call_log_output=$(adb shell content query --uri content://call_log/calls --projection _id 2>/dev/null | tr -d '\r' || true)
+    call_log_count=$(echo "$call_log_output" | grep -c '^Row:' || true)
+
+    if [ "$call_log_count" -gt 0 ]; then
+        log_info "✓ Found $call_log_count rows in CallLog"
+    else
+        log_warn "⚠ No rows found in CallLog"
     fi
 
     # Inspect PBAP/account state from the Bluetooth stack dumpsys.

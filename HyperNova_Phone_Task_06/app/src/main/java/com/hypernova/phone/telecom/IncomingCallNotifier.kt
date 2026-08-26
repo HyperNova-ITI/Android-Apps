@@ -9,12 +9,12 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.drawable.Icon
-import android.telephony.PhoneNumberUtils
 import android.util.Log
 import androidx.core.content.ContextCompat
-import com.hypernova.phone.MainActivity
 import com.hypernova.phone.R
+import com.hypernova.phone.contacts.CallerIdentityFallbacks
 import com.hypernova.phone.contacts.ContactsRepository
+import com.hypernova.phone.contacts.PhoneNumberMatching
 import com.hypernova.phone.domain.TelecomCallState
 
 /**
@@ -30,7 +30,9 @@ import com.hypernova.phone.domain.TelecomCallState
  *      ↓
  * Telecom caller name if available
  *      ↓ otherwise
- * Android Contacts PhoneLookup
+ * ContactsProvider PhoneLookup / bounded number scan
+ *      ↓ otherwise
+ * CallLog cached name
  *      ↓
  * HyperNova HUN
  *
@@ -110,12 +112,8 @@ class IncomingCallNotifier(
                 REQUEST_OPEN_PHONE,
                 Intent(
                     appContext,
-                    MainActivity::class.java
+                    IncomingCallActivity::class.java
                 ).apply {
-
-                    action =
-                        ACTION_OPEN_PHONE
-
                     addFlags(
                         Intent.FLAG_ACTIVITY_NEW_TASK or
                             Intent.FLAG_ACTIVITY_SINGLE_TOP or
@@ -232,11 +230,13 @@ class IncomingCallNotifier(
      * 1. Real callerDisplayName supplied by Android Telecom,
      *    provided it is not merely the phone number again.
      *
-     * 2. Real Android Contacts PhoneLookup result.
+     * 2. Real Android ContactsProvider result.
      *
-     * 3. Real incoming telephone number.
+     * 3. Real CallLog cached contact name.
      *
-     * 4. Generic "Unknown number".
+     * 4. Real incoming telephone number.
+     *
+     * 5. Generic "Unknown number".
      */
     private suspend fun resolveCallerPresentation(
         state: TelecomCallState
@@ -264,15 +264,11 @@ class IncomingCallNotifier(
          * lookup.
          */
         val meaningfulTelecomName =
-            telecomDisplayName
-                ?.takeUnless { candidate ->
-
-                    number != null &&
-                        representsSamePhoneNumber(
-                            candidate,
-                            number
-                        )
-                }
+            CallerIdentityFallbacks
+                .meaningfulName(
+                    telecomDisplayName,
+                    number
+                )
 
         if (meaningfulTelecomName != null) {
 
@@ -297,14 +293,22 @@ class IncomingCallNotifier(
          */
         if (number != null) {
 
-            val contactName =
+            val providerIdentity =
                 contactsRepository
-                    .findDisplayNameByNumber(
+                    .resolveCallerIdentity(
                         number
                     )
+
+            val contactName =
+                providerIdentity
+                    ?.displayName
                     ?.trim()
                     ?.takeIf {
-                        it.isNotEmpty()
+                        it.isNotEmpty() &&
+                            !PhoneNumberMatching.sameNumber(
+                                it,
+                                number
+                            )
                     }
 
             if (contactName != null) {
@@ -365,41 +369,6 @@ class IncomingCallNotifier(
             secondary =
                 INCOMING_CALL_LABEL
         )
-    }
-
-    /**
-     * Compare Telecom's display label against its number.
-     *
-     * PhoneNumberUtils handles common formatting differences such as:
-     *
-     * 010xxxxxxxx
-     * +2010xxxxxxxx
-     *
-     * better than direct String equality.
-     */
-    private fun representsSamePhoneNumber(
-        first: String,
-        second: String
-    ): Boolean {
-
-        if (
-            first.trim() ==
-            second.trim()
-        ) {
-            return true
-        }
-
-        return try {
-
-            PhoneNumberUtils.compare(
-                first,
-                second
-            )
-
-        } catch (_: RuntimeException) {
-
-            false
-        }
     }
 
     /**
@@ -481,9 +450,6 @@ class IncomingCallNotifier(
 
         private const val CHANNEL_DESCRIPTION =
             "Incoming call heads-up notifications"
-
-        private const val ACTION_OPEN_PHONE =
-            "com.hypernova.phone.action.OPEN"
 
         private const val UNKNOWN_CALLER_LABEL =
             "Unknown number"
