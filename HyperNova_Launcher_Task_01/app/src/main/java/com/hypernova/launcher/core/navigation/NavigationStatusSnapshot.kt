@@ -128,8 +128,8 @@ object NavigationStatusMapper {
                         longitude = point.longitude,
                     ).takeIf(::isValidPreviewPoint)
                 }
-                .take(NavigationContract.MAX_ROUTE_PREVIEW_POINTS)
                 .toList()
+                .sampleForPreview(NavigationContract.MAX_ROUTE_PREVIEW_POINTS)
         val routePoints = mappedRoutePoints.takeIf { it.size >= 2 }.orEmpty()
         val currentPosition =
             if (routePoints.isNotEmpty()) {
@@ -252,8 +252,8 @@ object NavigationStatusMapper {
                     NavigationPreviewPoint(point.latitude, point.longitude)
                         .takeIf(::isValidPreviewPoint)
                 }
-                .take(NavigationContract.MAX_ROUTE_PREVIEW_POINTS)
                 .toList()
+                .sampleForPreview(NavigationContract.MAX_ROUTE_PREVIEW_POINTS)
         return mapped.takeIf { it.size >= 2 }.orEmpty()
     }
 
