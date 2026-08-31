@@ -1,9 +1,11 @@
 package com.hypernova.launcher.ui
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
 import androidx.core.content.ContextCompat
@@ -21,6 +23,8 @@ class NavigationRoutePreviewView @JvmOverloads constructor(
     private val density = resources.displayMetrics.density
     private val routePath = Path()
     private val gridPath = Path()
+    private val bitmapDestination = RectF()
+    private val bitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
     private val vehicleArrowPath = Path().apply {
         moveTo(0f, dp(-8f))
         lineTo(dp(6f), dp(7f))
@@ -76,6 +80,8 @@ class NavigationRoutePreviewView @JvmOverloads constructor(
     }
 
     private var routePoints: List<NavigationPreviewPoint> = emptyList()
+    private var baseMapBitmap: Bitmap? = null
+    private var baseMapIncludesRoute = false
     private var currentPosition: NavigationPreviewPoint? = null
     private var currentBearingDegrees: Float? = null
     private var projectedCurrentPosition: NavigationCanvasPoint? = null
@@ -113,6 +119,22 @@ class NavigationRoutePreviewView @JvmOverloads constructor(
         invalidate()
     }
 
+    fun setBaseMap(bitmap: Bitmap, includesRoute: Boolean) {
+        if (baseMapBitmap !== bitmap) {
+            baseMapBitmap?.recycle()
+        }
+        baseMapBitmap = bitmap
+        baseMapIncludesRoute = includesRoute
+        invalidate()
+    }
+
+    fun clearBaseMap() {
+        baseMapBitmap?.recycle()
+        baseMapBitmap = null
+        baseMapIncludesRoute = false
+        invalidate()
+    }
+
     override fun onSizeChanged(width: Int, height: Int, oldWidth: Int, oldHeight: Int) {
         super.onSizeChanged(width, height, oldWidth, oldHeight)
         rebuildGridPath(width, height)
@@ -121,10 +143,15 @@ class NavigationRoutePreviewView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), backgroundPaint)
-        canvas.drawPath(gridPath, gridPaint)
+        val baseMap = baseMapBitmap
+        if (baseMap != null && !baseMap.isRecycled) {
+            drawBaseMap(canvas, baseMap)
+        } else {
+            canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), backgroundPaint)
+            canvas.drawPath(gridPath, gridPaint)
+        }
 
-        if (routePath.isEmpty) return
+        if (routePath.isEmpty || (baseMap != null && baseMapIncludesRoute)) return
 
         canvas.drawPath(routePath, routeGlowPaint)
         canvas.drawPath(routePath, routePaint)
@@ -204,6 +231,19 @@ class NavigationRoutePreviewView @JvmOverloads constructor(
             gridPath.lineTo(diagonal + heightPx, heightPx)
             diagonal += spacing * 2f
         }
+    }
+
+    private fun drawBaseMap(canvas: Canvas, bitmap: Bitmap) {
+        // Draw the complete Google-owned image. Cropping would also crop its required logo and
+        // attribution. Keep its complete bottom edge above the route-information overlay, whose
+        // reserved height is already expressed by this View's bottom padding.
+        bitmapDestination.set(
+            0f,
+            0f,
+            width.toFloat(),
+            (height - paddingBottom).coerceAtLeast(1).toFloat(),
+        )
+        canvas.drawBitmap(bitmap, null, bitmapDestination, bitmapPaint)
     }
 
     private fun color(resource: Int): Int = ContextCompat.getColor(context, resource)

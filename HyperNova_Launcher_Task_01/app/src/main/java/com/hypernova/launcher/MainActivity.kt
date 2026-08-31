@@ -50,6 +50,7 @@ import com.hypernova.launcher.core.vehicle.VehicleStatusClient
 import com.hypernova.launcher.databinding.ActivityMainBinding
 import com.hypernova.launcher.ui.LauncherNavigationMapController
 import com.hypernova.launcher.ui.LauncherGoogleMapController
+import com.hypernova.launcher.ui.LauncherStaticMapController
 import com.hypernova.launcher.ui.LauncherSoftwareRouteOverlay
 import com.hypernova.visuals.CockpitAppearance
 import org.maplibre.android.MapLibre
@@ -84,6 +85,7 @@ class MainActivity : AppCompatActivity() {
     private var navigationMapView: MapView? = null
     private var navigationMapController: LauncherNavigationMapController? = null
     private var googleNavigationMapController: LauncherGoogleMapController? = null
+    private var staticNavigationMapController: LauncherStaticMapController? = null
 
     /*
      * Shown only when the real MapLibre renderer is unavailable.
@@ -385,6 +387,10 @@ class MainActivity : AppCompatActivity() {
             googleNavigationMapController?.destroy()
         }
         googleNavigationMapController = null
+        runOptionalIntegration("destroy Launcher Static map") {
+            staticNavigationMapController?.destroy()
+        }
+        staticNavigationMapController = null
 
         super.onDestroy()
     }
@@ -462,6 +468,20 @@ class MainActivity : AppCompatActivity() {
              */
             Log.i(TAG, "Using lightweight HOME navigation preview")
             binding.navigationRoutePreview.visibility = View.VISIBLE
+            if (BuildConfig.MAPS_API_KEY.isNotBlank()) {
+                staticNavigationMapController =
+                    LauncherStaticMapController(
+                        apiKey = BuildConfig.MAPS_API_KEY,
+                        target = binding.navigationRoutePreview,
+                    )
+                if (::latestUiState.isInitialized) {
+                    staticNavigationMapController?.setNavigation(
+                        latestUiState.navigation.routeId,
+                        latestUiState.navigation.routeVersion,
+                        latestUiState.navigation.routePoints,
+                    )
+                }
+            }
             return
         }
 
@@ -1594,6 +1614,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         googleNavigationMapController?.setRoute(
+            navigation.routeId,
+            navigation.routeVersion,
+            navigation.routePoints,
+        )
+        staticNavigationMapController?.setNavigation(
             navigation.routeId,
             navigation.routeVersion,
             navigation.routePoints,
