@@ -4,10 +4,10 @@ Package: `com.hypernova.wdt`
 
 UI actions:
 - Restart
-- Kernel Panic
 - Watchdog Timer
 
-No privileged/system command is executed yet. The buttons only update the UI.
+Both visible actions require confirmation and are sent to the local root backend. The engineering
+kernel-panic backend command is intentionally not exposed by the passenger UI.
 
 ## Prepare Gradle wrapper
 

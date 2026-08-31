@@ -17,7 +17,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var backendStatus: TextView
 
     private lateinit var restartAction: View
-    private lateinit var kernelPanicAction: View
     private lateinit var watchdogAction: View
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,9 +41,6 @@ class MainActivity : AppCompatActivity() {
         restartAction =
             findViewById(R.id.actionRestart)
 
-        kernelPanicAction =
-            findViewById(R.id.actionKernelPanic)
-
         watchdogAction =
             findViewById(R.id.actionWatchdog)
 
@@ -59,16 +55,6 @@ class MainActivity : AppCompatActivity() {
                 title = "Restart System?",
                 message =
                     "This will sync storage and immediately reboot the Android system.",
-            )
-        }
-
-        kernelPanicAction.setOnClickListener {
-            confirmSystemAction(
-                action = SystemAction.KERNEL_PANIC,
-                title = "Trigger Kernel Panic?",
-                message =
-                    "This intentionally crashes the Linux kernel using SysRq. " +
-                        "The system will become unavailable immediately.",
             )
         }
 
@@ -135,8 +121,8 @@ class MainActivity : AppCompatActivity() {
             backendStatus.text = result.message
 
             /*
-             * Restart and Kernel Panic normally kill the running Android
-             * environment before a callback can be delivered.
+             * Restart normally kills the running Android environment before
+             * a callback can be delivered.
              *
              * Watchdog returns after watchdogd is stopped, so the UI can
              * remain visible while waiting for the hardware watchdog.
@@ -161,13 +147,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun setActionsEnabled(enabled: Boolean) {
         restartAction.isEnabled = enabled
-        kernelPanicAction.isEnabled = enabled
         watchdogAction.isEnabled = enabled
 
         restartAction.alpha =
-            if (enabled) 1.0f else 0.55f
-
-        kernelPanicAction.alpha =
             if (enabled) 1.0f else 0.55f
 
         watchdogAction.alpha =

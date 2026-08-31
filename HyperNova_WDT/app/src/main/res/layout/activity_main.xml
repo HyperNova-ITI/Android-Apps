@@ -158,57 +158,6 @@
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/actionKernelPanic"
-            android:layout_width="match_parent"
-            android:layout_height="126dp"
-            android:layout_marginTop="16dp"
-            android:background="@drawable/bg_action_card"
-            android:clickable="true"
-            android:focusable="true"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:padding="18dp">
-            <FrameLayout
-                android:layout_width="84dp"
-                android:layout_height="84dp"
-                android:background="@drawable/bg_icon_red">
-                <ImageView
-                    android:layout_width="60dp"
-                    android:layout_height="60dp"
-                    android:layout_gravity="center"
-                    android:contentDescription="@string/panic_icon_description"
-                    android:src="@drawable/ic_kernel_panic"
-                    app:tint="@color/hn_red" />
-            </FrameLayout>
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
-                android:layout_weight="1"
-                android:orientation="vertical">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/panic_title"
-                    android:textColor="@color/hn_text_primary"
-                    android:textSize="21sp"
-                    android:textStyle="bold" />
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="@string/panic_description"
-                    android:textColor="@color/hn_text_secondary"
-                    android:textSize="13sp" />
-            </LinearLayout>
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_marginStart="12dp"
-                android:src="@drawable/ic_chevron" />
-        </LinearLayout>
-
-        <LinearLayout
             android:id="@+id/actionWatchdog"
             android:layout_width="match_parent"
             android:layout_height="126dp"
